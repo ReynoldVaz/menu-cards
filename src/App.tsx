@@ -3,26 +3,46 @@ import { TopTabs } from './components/TopTabs';
 import { MenuSection } from './components/MenuSection';
 import { TodaysSpecial } from './components/TodaysSpecial';
 import { EventsSection } from './components/EventsSection';
+import { SideDrawer } from './components/SideDrawer';
 import { useSheetsData } from './lib/useSheets';
+import { useState } from 'react';
+import { MenuFab } from './components/MenuFab';
 
 function App() {
   const { menuSections, todaysSpecial, upcomingEvents, loading, error, refresh, lastFetchedAt, lastFetchedRaw } = useSheetsData();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-orange-50">
       <div className="flex items-center justify-center p-4 py-8">
         <div className="max-w-4xl w-full">
           <div className="bg-white rounded-lg shadow-xl overflow-hidden border border-orange-100">
-            <Header />
+            <Header onMenuClick={() => setDrawerOpen(true)} />
 
-            {/* top tabs for quick navigation between sections (includes Today's special and Events) */}
-            <TopTabs
+            {/* top tabs for quick navigation between sections (includes Today's special and Events)
+                hidden on small screens where the drawer is used instead */}
+            <div className="hidden md:block">
+              <TopTabs
+                sections={[
+                  { id: 'todays-special', title: "Today's", icon: '⭐' },
+                  ...menuSections.map((s) => ({ id: s.id, title: s.title, icon: s.title.toLowerCase().includes('dessert') ? '🍨' : undefined })),
+                  { id: 'events', title: 'Events', icon: '🎉' },
+                ]}
+              />
+            </div>
+
+            {/* mobile drawer */}
+            <SideDrawer
+              open={drawerOpen}
+              onClose={() => setDrawerOpen(false)}
               sections={[
                 { id: 'todays-special', title: "Today's", icon: '⭐' },
                 ...menuSections.map((s) => ({ id: s.id, title: s.title, icon: s.title.toLowerCase().includes('dessert') ? '🍨' : undefined })),
                 { id: 'events', title: 'Events', icon: '🎉' },
               ]}
             />
+            {/* floating menu button for mobile so user can open drawer without scrolling to top */}
+            <MenuFab onClick={() => setDrawerOpen(true)} />
 
             <div className="p-6 sm:p-10 space-y-12">
               <div id="todays-special">
