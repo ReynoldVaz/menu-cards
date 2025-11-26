@@ -12,7 +12,7 @@ function App() {
           <div className="bg-white rounded-lg shadow-xl overflow-hidden border border-orange-100">
             <Header />
 
-            <div className="p-10 space-y-12">
+            <div className="p-6 sm:p-10 space-y-12">
               <TodaysSpecial item={todaysSpecial} />
 
               {menuSections.map((section, idx) => (
@@ -27,7 +27,7 @@ function App() {
               <EventsSection events={upcomingEvents} />
             </div>
 
-            <div className="bg-gradient-to-r from-orange-50 to-amber-50 px-10 py-6 text-center border-t border-orange-100">
+            <div className="bg-gradient-to-r from-orange-50 to-amber-50 px-4 sm:px-10 py-6 text-center border-t border-orange-100">
               <p className="text-gray-600 text-sm font-light">
                 Crafted with love and tradition
               </p>

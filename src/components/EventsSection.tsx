@@ -8,7 +8,7 @@ interface EventsSectionProps {
 export function EventsSection({ events }: EventsSectionProps) {
   return (
     <div className="mt-12 pt-8 border-t border-orange-100">
-      <h2 className="text-3xl font-bold text-orange-900 mb-8 text-center">
+      <h2 className="text-2xl sm:text-3xl font-bold text-orange-900 mb-8 text-center">
         Upcoming Events
       </h2>
 

@@ -7,11 +7,11 @@ interface EventCardProps {
 
 export function EventCard({ event }: EventCardProps) {
   return (
-    <div className="bg-white border border-orange-200 rounded-lg p-6 hover:shadow-lg hover:border-orange-400 transition-all duration-200">
+    <div className="bg-white border border-orange-200 rounded-lg p-4 sm:p-6 hover:shadow-lg hover:border-orange-400 transition-all duration-200">
       <div className="flex items-start gap-3 mb-3">
         <Music className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800">
             {event.title}
           </h3>
         </div>
