@@ -3,6 +3,7 @@ import { MenuItem } from '../data/menuData';
 import { ItemModal } from './ItemModal';
 
 interface MenuSectionProps {
+  id?: string;
   title: string;
   items: MenuItem[];
 }
@@ -20,7 +21,7 @@ function modalImagesFor(name: string) {
   ];
 }
 
-export function MenuSection({ title, items }: MenuSectionProps) {
+export function MenuSection({ id, title, items }: MenuSectionProps) {
   const [selected, setSelected] = useState<MenuItem | null>(null);
   const [images, setImages] = useState<string[]>([]);
 
@@ -32,7 +33,7 @@ export function MenuSection({ title, items }: MenuSectionProps) {
   }
 
   return (
-    <div>
+    <div id={id}>
       <div className="flex items-center gap-3 mb-8">
         <div className="h-px bg-gradient-to-r from-orange-400 to-transparent flex-1"></div>
         <h2 className="text-xl sm:text-2xl font-semibold text-orange-900 px-2 text-center min-w-max">

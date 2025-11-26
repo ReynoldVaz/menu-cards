@@ -1,4 +1,5 @@
 import { Header } from './components/Header';
+import { TopTabs } from './components/TopTabs';
 import { MenuSection } from './components/MenuSection';
 import { TodaysSpecial } from './components/TodaysSpecial';
 import { EventsSection } from './components/EventsSection';
@@ -14,19 +15,32 @@ function App() {
           <div className="bg-white rounded-lg shadow-xl overflow-hidden border border-orange-100">
             <Header />
 
+            {/* top tabs for quick navigation between sections (includes Today's special and Events) */}
+            <TopTabs
+              sections={[
+                { id: 'todays-special', title: "Today's", icon: '⭐' },
+                ...menuSections.map((s) => ({ id: s.id, title: s.title, icon: s.title.toLowerCase().includes('dessert') ? '🍨' : undefined })),
+                { id: 'events', title: 'Events', icon: '🎉' },
+              ]}
+            />
+
             <div className="p-6 sm:p-10 space-y-12">
-              <TodaysSpecial item={todaysSpecial} />
+              <div id="todays-special">
+                <TodaysSpecial item={todaysSpecial} />
+              </div>
 
               {menuSections.map((section, idx) => (
                 <div key={section.id}>
-                  <MenuSection title={section.title} items={section.items} />
+                  <MenuSection id={section.id} title={section.title} items={section.items} />
                   {idx < menuSections.length - 1 && (
                     <div className="border-b border-orange-100 mt-12"></div>
                   )}
                 </div>
               ))}
 
-              <EventsSection events={upcomingEvents} />
+              <div id="events">
+                <EventsSection events={upcomingEvents} />
+              </div>
 
               {loading && (
                 <p className="text-center text-sm text-gray-500">Refreshing menu from Google Sheets...</p>
