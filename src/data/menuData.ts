@@ -2,6 +2,10 @@ export interface MenuItem {
   name: string;
   description: string;
   price: string;
+  // optional additional metadata used by the modal
+  ingredients?: string[];
+  image?: string;
+  images?: string[];
 }
 
 export interface MenuSection {
@@ -28,11 +32,13 @@ export const menuSections: MenuSection[] = [
         name: 'Samosa Trio',
         description: 'Crispy pastries with potato & peas',
         price: '₹150',
+        ingredients: ['Potatoes', 'Peas', 'Flour', 'Spices', 'Oil'],
       },
       {
         name: 'Paneer Tikka',
         description: 'Grilled cottage cheese with spices',
         price: '₹280',
+        ingredients: ['Paneer', 'Yogurt', 'Red chili', 'Turmeric', 'Garam masala'],
       },
       {
         name: 'Onion Bhaji',
@@ -111,6 +117,7 @@ export const menuSections: MenuSection[] = [
         name: 'Butter Chicken',
         description: 'Tender chicken in creamy tomato sauce',
         price: '₹450',
+        ingredients: ['Chicken', 'Tomato', 'Cream', 'Butter', 'Kasuri methi'],
       },
       {
         name: 'Chicken Biryani',
@@ -142,6 +149,7 @@ export const menuSections: MenuSection[] = [
         name: 'Mango Lassi',
         description: 'Yogurt-based drink with fresh mango',
         price: '₹150',
+        ingredients: ['Yogurt', 'Mango', 'Sugar', 'Cardamom', 'Ice'],
       },
       {
         name: 'Jaljeera',
@@ -218,6 +226,7 @@ export const todaysSpecial: MenuItem = {
   name: 'Chef\'s Special Rogan Josh',
   description: 'A traditional recipe passed down through generations - tender lamb cooked with aromatic spices and yogurt',
   price: '₹550',
+  ingredients: ['Lamb', 'Yogurt', 'Ginger', 'Garlic', 'Red chili', 'Garam masala'],
 };
 
 export const upcomingEvents: Event[] = [
