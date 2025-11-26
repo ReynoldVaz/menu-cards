@@ -25,14 +25,16 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative max-w-3xl w-full mx-0 sm:mx-0 bg-white rounded-lg shadow-2xl overflow-hidden max-h-[calc(100vh-4rem)]">
-        <div className="flex justify-between items-start p-4 border-b">
+      <div className="relative max-w-3xl w-full mx-0 sm:mx-0 bg-white rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        
+        {/* Header */}
+        <div className="flex justify-between items-start p-4 border-b bg-white flex-shrink-0">
           <div className="min-w-0 flex-1">
-  <h3 className="text-lg font-bold text-gray-800 break-words">
-    {item.name}
-  </h3>
-  <p className="text-sm text-orange-600 font-semibold">{item.price}</p>
-</div>
+            <h3 className="text-lg font-bold text-gray-800 break-words">
+              {item.name}
+            </h3>
+            <p className="text-sm text-orange-600 font-semibold">{item.price}</p>
+          </div>
           <button
             onClick={onClose}
             aria-label="Close"
@@ -42,13 +44,20 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
           </button>
         </div>
 
-        <div className="p-4 sm:p-6 overflow-auto" style={{ maxHeight: 'calc(100vh - 160px)' }}>
+        {/* Scrollable Body */}
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* Media Section */}
             <div>
               <div className="relative bg-gray-50 rounded">
-                {/* merge videos (if any) and images into a single media array */}
                 {(() => {
-                  const videos = item.videos && item.videos.length > 0 ? item.videos : (item.video ? [item.video] : []);
+                  const videos = item.videos?.length
+                    ? item.videos
+                    : item.video
+                    ? [item.video]
+                    : [];
+
                   const media = [
                     ...videos.map((v) => ({ type: 'video' as const, src: v })),
                     ...images.map((s) => ({ type: 'image' as const, src: s })),
@@ -67,13 +76,11 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
                   return (
                     <>
                       <div className="w-full h-56 sm:h-80 rounded overflow-hidden">
-                        <div className="w-full h-full">
-                          {active.type === 'video' ? (
-                            <VideoPlayer src={active.src} poster={item.image ?? images[0]} />
-                          ) : (
-                            <ParallaxImage src={active.src} alt={`${item.name} image ${index + 1}`} />
-                          )}
-                        </div>
+                        {active.type === 'video' ? (
+                          <VideoPlayer src={active.src} poster={item.image ?? images[0]} />
+                        ) : (
+                          <ParallaxImage src={active.src} alt={`${item.name} image ${index + 1}`} />
+                        )}
                       </div>
 
                       {media.length > 1 && (
@@ -81,14 +88,14 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
                           <button
                             className="bg-white/80 rounded-full p-1 shadow"
                             onClick={() => setIndex((i) => (i - 1 + media.length) % media.length)}
-                            aria-label="Previous media"
+                            aria-label="Previous"
                           >
                             ‹
                           </button>
                           <button
                             className="bg-white/80 rounded-full p-1 shadow"
                             onClick={() => setIndex((i) => (i + 1) % media.length)}
-                            aria-label="Next media"
+                            aria-label="Next"
                           >
                             ›
                           </button>
@@ -100,14 +107,16 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
                           <button
                             key={`${m.type}:${m.src}`}
                             onClick={() => setIndex(i)}
-                            className={`flex-shrink-0 rounded overflow-hidden border ${i === index ? 'ring-2 ring-orange-400' : 'border-transparent'}`}
+                            className={`flex-shrink-0 rounded overflow-hidden border ${
+                              i === index ? 'ring-2 ring-orange-400' : 'border-transparent'
+                            }`}
                           >
                             <div className="w-20 h-14 overflow-hidden rounded bg-gray-50 flex items-center justify-center">
                               {m.type === 'image' ? (
                                 <SmartImage src={m.src} alt={`${item.name} thumb ${i + 1}`} />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-600">
-                                  <span className="text-sm">▶︎ Video</span>
+                                <div className="w-full h-full flex items-center justify-center text-gray-600 text-sm">
+                                  ▶︎ Video
                                 </div>
                               )}
                             </div>
@@ -120,32 +129,22 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
               </div>
             </div>
 
-            <div >
-              <div className="flex gap-2 flex-wrap" role="tablist" aria-label="Item details tabs">
-                <button
-                  role="tab"
-                  aria-selected={tab === 'description'}
-                  onClick={() => setTab('description')}
-                  className={`px-3 py-1 rounded-md text-sm ${tab === 'description' ? 'bg-orange-100 text-orange-800 font-semibold' : 'bg-white text-gray-700 border border-gray-100'}`}
-                >
-                  Description
-                </button>
-                <button
-                  role="tab"
-                  aria-selected={tab === 'ingredients'}
-                  onClick={() => setTab('ingredients')}
-                  className={`px-3 py-1 rounded-md text-sm ${tab === 'ingredients' ? 'bg-orange-100 text-orange-800 font-semibold' : 'bg-white text-gray-700 border border-gray-100'}`}
-                >
-                  Ingredients
-                </button>
-                <button
-                  role="tab"
-                  aria-selected={tab === 'price'}
-                  onClick={() => setTab('price')}
-                  className={`px-3 py-1 rounded-md text-sm ${tab === 'price' ? 'bg-orange-100 text-orange-800 font-semibold' : 'bg-white text-gray-700 border border-gray-100'}`}
-                >
-                  Price
-                </button>
+            {/* Tabs + Content */}
+            <div>
+              <div className="flex gap-2 flex-wrap" role="tablist">
+                {['description', 'ingredients', 'price'].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t as any)}
+                    className={`px-3 py-1 rounded-md text-sm ${
+                      tab === t
+                        ? 'bg-orange-100 text-orange-800 font-semibold'
+                        : 'bg-white text-gray-700 border border-gray-100'
+                    }`}
+                  >
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
               </div>
 
               <div className="mt-4">
@@ -159,7 +158,7 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
                 {tab === 'ingredients' && (
                   <div>
                     <h4 className="font-semibold text-gray-800">Ingredients</h4>
-                    {item.ingredients && item.ingredients.length > 0 ? (
+                    {item.ingredients?.length ? (
                       <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
                         {item.ingredients.map((ing, idx) => (
                           <li key={idx}>{ing}</li>
@@ -179,8 +178,10 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
                 )}
               </div>
             </div>
+
           </div>
         </div>
+
       </div>
     </div>
   );
