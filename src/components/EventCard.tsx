@@ -5,6 +5,7 @@ interface EventCardProps {
   event: Event;
 }
 
+
 export function EventCard({ event }: EventCardProps) {
   return (
     <div className="bg-white border border-orange-200 rounded-lg p-4 sm:p-6 hover:shadow-lg hover:border-orange-400 transition-all duration-200">
