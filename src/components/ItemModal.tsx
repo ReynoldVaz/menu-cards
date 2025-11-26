@@ -45,6 +45,32 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
                       src={images[index]}
                       alt={`${item.name} image ${index + 1}`}
                       className="w-full h-64 sm:h-80 object-cover rounded"
+                      onError={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        // eslint-disable-next-line no-console
+                        console.error('[ItemModal] image failed to load', img.src);
+                        const retries = Number(img.dataset.retryCount || '0');
+                        if (retries >= 3) {
+                          img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="20">image unavailable</text></svg>';
+                          return;
+                        }
+                        img.dataset.retryCount = String(retries + 1);
+                        const driveMatch = img.src.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+                        if (driveMatch) {
+                          const id = driveMatch[1];
+                          const alternatives = [
+                            `https://drive.google.com/uc?export=view&id=${id}`,
+                            `https://drive.google.com/uc?export=download&id=${id}`,
+                            `https://drive.google.com/thumbnail?id=${id}`,
+                          ];
+                          img.src = alternatives[retries] || alternatives[alternatives.length - 1];
+                          return;
+                        }
+                        // fallback to picsum
+                        // eslint-disable-next-line no-console
+                        console.log('[ItemModal] using picsum fallback for', item.name);
+                        img.src = `https://picsum.photos/seed/${encodeURIComponent(item.name)}/800/600`;
+                      }}
                     />
 
                     {images.length > 1 && (
@@ -73,7 +99,15 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
                           onClick={() => setIndex(i)}
                           className={`flex-shrink-0 rounded overflow-hidden border ${i === index ? 'ring-2 ring-orange-400' : 'border-transparent'}`}
                         >
-                          <img src={src} alt={`${item.name} thumb ${i + 1}`} className="w-20 h-14 object-cover" />
+                          <img src={src} alt={`${item.name} thumb ${i + 1}`} className="w-20 h-14 object-cover" onError={(e)=>{
+                            const img = e.target as HTMLImageElement;
+                            const retries = Number(img.dataset.retryCount || '0');
+                            if (retries >= 2) { img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="56"><rect width="100%" height="100%" fill="%23f3f4f6"/></svg>'; return; }
+                            img.dataset.retryCount = String(retries + 1);
+                            const m = img.src.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+                            if (m) { const id = m[1]; img.src = `https://drive.google.com/uc?export=view&id=${id}`; return; }
+                            img.src = `https://source.unsplash.com/160x120/?${encodeURIComponent(item.name)}`;
+                          }} />
                         </button>
                       ))}
                     </div>

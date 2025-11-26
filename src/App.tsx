@@ -2,9 +2,11 @@ import { Header } from './components/Header';
 import { MenuSection } from './components/MenuSection';
 import { TodaysSpecial } from './components/TodaysSpecial';
 import { EventsSection } from './components/EventsSection';
-import { menuSections, todaysSpecial, upcomingEvents } from './data/menuData';
+import { useSheetsData } from './lib/useSheets';
 
 function App() {
+  const { menuSections, todaysSpecial, upcomingEvents, loading, error, refresh, lastFetchedAt, lastFetchedRaw } = useSheetsData();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-orange-50">
       <div className="flex items-center justify-center p-4 py-8">
@@ -25,6 +27,32 @@ function App() {
               ))}
 
               <EventsSection events={upcomingEvents} />
+
+              {loading && (
+                <p className="text-center text-sm text-gray-500">Refreshing menu from Google Sheets...</p>
+              )}
+
+              {/* Debug panel - visible to help diagnose sheet issues */}
+              <div className="mt-6 p-3 bg-gray-50 rounded text-xs text-gray-700">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-medium">Sheets Debug</div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => refresh()} className="text-sm underline text-blue-600">Refresh now</button>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                    <div>Last fetch: <strong>{lastFetchedAt ?? 'never'}</strong></div>
+                    <div>Error: <strong className="text-red-600">{error ?? 'none'}</strong></div>
+                    <div>Menu sections: <strong>{menuSections.length}</strong></div>
+                    <div>Events: <strong>{upcomingEvents.length}</strong></div>
+                    <div>Configured sheetId: <strong>{lastFetchedAt ? (lastFetchedAt && '' ) : (import.meta.env.VITE_SHEET_ID ?? 'not set')}</strong></div>
+                    <div>Using API key: <strong>{String(import.meta.env.VITE_SHEETS_API_KEY ? true : false)}</strong></div>
+                  <details className="mt-2 text-left">
+                    <summary className="cursor-pointer">Preview fetched rows (first few)</summary>
+                    <pre className="mt-2 max-h-40 overflow-auto text-xs bg-white p-2 rounded border">{JSON.stringify(lastFetchedRaw, null, 2)}</pre>
+                  </details>
+                </div>
+              </div>
             </div>
 
             <div className="bg-gradient-to-r from-orange-50 to-amber-50 px-4 sm:px-10 py-6 text-center border-t border-orange-100">

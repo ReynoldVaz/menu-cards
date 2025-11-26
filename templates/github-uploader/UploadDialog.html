@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: Arial, sans-serif; padding: 12px; }
+      input[type=file] { display:block; margin-bottom: 8px; }
+      button { padding: 6px 10px; }
+    </style>
+  </head>
+  <body>
+    <input id="fileInput" type="file" accept="image/*" />
+    <div>
+      <button id="uploadBtn">Upload</button>
+      <span id="status"></span>
+    </div>
+
+    <script>
+      const fileInput = document.getElementById('fileInput');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const status = document.getElementById('status');
+
+      uploadBtn.addEventListener('click', () => {
+        const file = fileInput.files[0];
+        if (!file) { status.textContent = 'Pick a file first'; return; }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const base64 = e.target.result;
+          status.textContent = 'Uploading...';
+          google.script.run.withSuccessHandler((url) => {
+            status.innerHTML = 'Uploaded: <a href="' + url + '" target="_blank">' + url + '</a>';
+          }).withFailureHandler((err) => {
+            status.textContent = 'Upload failed: ' + err.message;
+          }).uploadImageToGitHub(base64, file.name);
+        };
+        reader.readAsDataURL(file);
+      });
+    </script>
+  </body>
+</html>

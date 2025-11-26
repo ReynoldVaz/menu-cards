@@ -52,7 +52,44 @@ export function MenuSection({ title, items }: MenuSectionProps) {
               className="flex-shrink-0 rounded overflow-hidden border-2 border-orange-100 hover:border-orange-300"
               aria-label={`Open ${item.name}`}
             >
-              <img src={item.image ?? thumbnailFor(item.name)} alt={item.name} className="w-20 h-16 object-cover" />
+              <img
+                src={item.image ?? thumbnailFor(item.name)}
+                alt={item.name}
+                className="w-20 h-16 object-cover"
+                onError={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  // eslint-disable-next-line no-console
+                  console.error('[MenuSection] image failed to load for', item.name, img.src);
+
+                  // avoid infinite retry loops
+                  const retries = Number(img.dataset.retryCount || '0');
+                  if (retries >= 3) {
+                    img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="120"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="12">image unavailable</text></svg>';
+                    return;
+                  }
+
+                  img.dataset.retryCount = String(retries + 1);
+
+                  // if this looks like a Google Drive view link, try alternate Drive endpoints
+                  const driveMatch = img.src.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+                  if (driveMatch) {
+                    const id = driveMatch[1];
+                    const alternatives = [
+                      `https://drive.google.com/uc?export=view&id=${id}`,
+                      `https://drive.google.com/uc?export=download&id=${id}`,
+                      `https://drive.google.com/thumbnail?id=${id}`,
+                    ];
+                    const next = alternatives[retries] || alternatives[alternatives.length - 1];
+                    img.src = next;
+                    return;
+                  }
+
+                  // fallback: use a Picsum thumbnail based on item name (more reliable)
+                  // eslint-disable-next-line no-console
+                  console.log('[MenuSection] using picsum fallback for', item.name);
+                  img.src = `https://picsum.photos/seed/${encodeURIComponent(item.name)}/160/120`;
+                }}
+              />
             </button>
 
             <div className="flex-1">
@@ -70,6 +107,16 @@ export function MenuSection({ title, items }: MenuSectionProps) {
               <p className="text-gray-500 text-sm font-light leading-relaxed">
                 {item.description}
               </p>
+              {/* debug: show resolved image URL so owner can open it directly */}
+              <div className="text-xs text-gray-400 mt-2 break-all">
+                Image URL: {item.image ? (
+                  <a href={item.image} target="_blank" rel="noreferrer" className="underline">
+                    open
+                  </a>
+                ) : (
+                  <span className="italic">(none)</span>
+                )}
+              </div>
             </div>
           </div>
         ))}
