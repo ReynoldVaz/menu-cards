@@ -1,12 +1,12 @@
-import { useState } from 'react';
 import { MenuItem } from '../data/menuData';
-import { ItemModal } from './ItemModal';
 import { SmartImage } from './SmartImage';
 
 interface MenuSectionProps {
   id?: string;
   title: string;
   items: MenuItem[];
+  // optional callback used when opening the item modal from a parent
+  onOpen?: (item: MenuItem, images: string[]) => void;
 }
 
 function thumbnailFor(name: string) {
@@ -22,15 +22,11 @@ function modalImagesFor(name: string) {
   ];
 }
 
-export function MenuSection({ id, title, items }: MenuSectionProps) {
-  const [selected, setSelected] = useState<MenuItem | null>(null);
-  const [images, setImages] = useState<string[]>([]);
-
+export function MenuSection({ id, title, items, onOpen }: MenuSectionProps) {
+  // when a parent provides onOpen, defer opening the modal to the parent
   function openModal(item: MenuItem) {
-    setSelected(item);
-    // prefer explicit images on the item if present, otherwise generate
-    if (item.images && item.images.length > 0) setImages(item.images);
-    else setImages(modalImagesFor(item.name));
+    const imgs = item.images && item.images.length > 0 ? item.images : modalImagesFor(item.name);
+    if (onOpen) onOpen(item, imgs);
   }
 
   return (
@@ -47,14 +43,14 @@ export function MenuSection({ id, title, items }: MenuSectionProps) {
         {items.map((item) => (
           <div
             key={item.name}
-            className="group hover:bg-orange-50 p-3 sm:p-4 rounded-lg transition-colors duration-200 flex items-start gap-4"
+            className="group hover:bg-orange-50 p-3 sm:p-4 rounded-lg transition-colors duration-200 flex items-center gap-4"
           >
             <button
               onClick={() => openModal(item)}
               className="flex-shrink-0 rounded overflow-hidden border-2 border-orange-100 hover:border-orange-300"
               aria-label={`Open ${item.name}`}
             >
-              <div style={{ width: 80, height: 64 }}>
+              <div className="w-20 h-16 overflow-hidden">
                 <SmartImage
                   src={item.image ?? thumbnailFor(item.name)}
                   alt={item.name}
@@ -63,17 +59,21 @@ export function MenuSection({ id, title, items }: MenuSectionProps) {
               </div>
             </button>
 
-            <div className="flex-1">
-              <div className="flex justify-between items-start gap-4 mb-1">
-                <button onClick={() => openModal(item)} className="text-left">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 group-hover:text-orange-700 transition-colors">
-                    {item.name}
-                  </h3>
-                </button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start gap-4 mb-1">
+                <div className="flex-1 min-w-0">
+                  <button onClick={() => openModal(item)} className="text-left w-full">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800 group-hover:text-orange-700 transition-colors break-words whitespace-normal">
+                      {item.name}
+                    </h3>
+                  </button>
+                </div>
 
-                <span className="font-bold text-orange-600 text-base sm:text-lg whitespace-nowrap ml-2">
-                  {item.price}
-                </span>
+                <div className="flex-none ml-2">
+                  <span className="font-bold text-orange-600 text-base sm:text-lg whitespace-nowrap">
+                    {item.price}
+                  </span>
+                </div>
               </div>
               <p className="text-gray-500 text-sm font-light leading-relaxed">
                 {item.description}
@@ -93,13 +93,7 @@ export function MenuSection({ id, title, items }: MenuSectionProps) {
         ))}
       </div>
 
-      {selected && (
-        <ItemModal
-          item={selected}
-          images={images}
-          onClose={() => setSelected(null)}
-        />
-      )}
+      {/* modal is lifted to parent (App) when using search or global selection */}
     </div>
   );
 }

@@ -53,14 +53,14 @@ export function VideoPlayer({ src, poster, className = '' }: VideoPlayerProps) {
     };
   }, [src]);
 
-  if (isYouTube(src)) {
+    if (isYouTube(src)) {
     const embed = youTubeEmbed(src);
     return (
       <div className={`w-full ${className}`}>
         <iframe
           title="video"
           src={embed}
-          className="w-full h-64 sm:h-80"
+          className="w-full h-56 sm:h-80"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
@@ -75,7 +75,7 @@ export function VideoPlayer({ src, poster, className = '' }: VideoPlayerProps) {
       playsInline
       preload="metadata"
       poster={poster}
-      className={`w-full h-64 sm:h-80 bg-black ${className}`}
+      className={`w-full h-56 sm:h-80 bg-black ${className}`}
     />
   );
 }

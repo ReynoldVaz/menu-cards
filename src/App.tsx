@@ -7,10 +7,14 @@ import { SideDrawer } from './components/SideDrawer';
 import { useSheetsData } from './lib/useSheets';
 import { useState } from 'react';
 import { MenuFab } from './components/MenuFab';
+import { SearchBar } from './components/SearchBar';
+import { ItemModal } from './components/ItemModal';
 
 function App() {
   const { menuSections, todaysSpecial, upcomingEvents, loading, error, refresh, lastFetchedAt, lastFetchedRaw } = useSheetsData();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<null | any>(null);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-orange-50">
@@ -45,13 +49,42 @@ function App() {
             <MenuFab onClick={() => setDrawerOpen(true)} />
 
             <div className="p-6 sm:p-10 space-y-12">
+              <SearchBar
+                sections={menuSections}
+                onSelectItem={(it) => {
+                  // open modal with item
+                  const imgs = it.images && it.images.length > 0 ? it.images : (it.image ? [it.image] : []);
+                  setSelectedImages(imgs.length > 0 ? imgs : []);
+                  setSelectedItem(it);
+                }}
+                onSelectSection={(id) => {
+                  const el = document.getElementById(id);
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+              />
+
+              {selectedItem && (
+                <ItemModal
+                  item={selectedItem}
+                  images={selectedImages}
+                  onClose={() => setSelectedItem(null)}
+                />
+              )}
               <div id="todays-special">
                 <TodaysSpecial item={todaysSpecial} />
               </div>
 
               {menuSections.map((section, idx) => (
                 <div key={section.id}>
-                  <MenuSection id={section.id} title={section.title} items={section.items} />
+                  <MenuSection
+                    id={section.id}
+                    title={section.title}
+                    items={section.items}
+                    onOpen={(it, imgs) => {
+                      setSelectedItem(it);
+                      setSelectedImages(imgs || []);
+                    }}
+                  />
                   {idx < menuSections.length - 1 && (
                     <div className="border-b border-orange-100 mt-12"></div>
                   )}

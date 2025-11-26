@@ -12,23 +12,27 @@ interface ItemModalProps {
 
 export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
   const [index, setIndex] = useState(0);
+  const [tab, setTab] = useState<'description' | 'ingredients' | 'price'>('description');
 
   useEffect(() => {
     setIndex(0);
+    setTab('description');
   }, [item]);
 
   if (!item) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative max-w-3xl w-full mx-4 sm:mx-0 bg-white rounded-lg shadow-2xl overflow-hidden">
+      <div className="relative max-w-3xl w-full mx-0 sm:mx-0 bg-white rounded-lg shadow-2xl overflow-hidden max-h-[calc(100vh-4rem)]">
         <div className="flex justify-between items-start p-4 border-b">
-          <div>
-            <h3 className="text-lg font-bold text-gray-800">{item.name}</h3>
-            <p className="text-sm text-orange-600 font-semibold">{item.price}</p>
-          </div>
+          <div className="min-w-0 flex-1">
+  <h3 className="text-lg font-bold text-gray-800 break-words">
+    {item.name}
+  </h3>
+  <p className="text-sm text-orange-600 font-semibold">{item.price}</p>
+</div>
           <button
             onClick={onClose}
             aria-label="Close"
@@ -38,7 +42,7 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
           </button>
         </div>
 
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 overflow-auto" style={{ maxHeight: 'calc(100vh - 160px)' }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <div className="relative bg-gray-50 rounded">
@@ -62,7 +66,7 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
 
                   return (
                     <>
-                      <div className="w-full h-64 sm:h-80 rounded overflow-hidden">
+                      <div className="w-full h-56 sm:h-80 rounded overflow-hidden">
                         <div className="w-full h-full">
                           {active.type === 'video' ? (
                             <VideoPlayer src={active.src} poster={item.image ?? images[0]} />
@@ -116,28 +120,63 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-gray-800">Description</h4>
-                <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+            <div >
+              <div className="flex gap-2 flex-wrap" role="tablist" aria-label="Item details tabs">
+                <button
+                  role="tab"
+                  aria-selected={tab === 'description'}
+                  onClick={() => setTab('description')}
+                  className={`px-3 py-1 rounded-md text-sm ${tab === 'description' ? 'bg-orange-100 text-orange-800 font-semibold' : 'bg-white text-gray-700 border border-gray-100'}`}
+                >
+                  Description
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={tab === 'ingredients'}
+                  onClick={() => setTab('ingredients')}
+                  className={`px-3 py-1 rounded-md text-sm ${tab === 'ingredients' ? 'bg-orange-100 text-orange-800 font-semibold' : 'bg-white text-gray-700 border border-gray-100'}`}
+                >
+                  Ingredients
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={tab === 'price'}
+                  onClick={() => setTab('price')}
+                  className={`px-3 py-1 rounded-md text-sm ${tab === 'price' ? 'bg-orange-100 text-orange-800 font-semibold' : 'bg-white text-gray-700 border border-gray-100'}`}
+                >
+                  Price
+                </button>
               </div>
 
-              <div>
-                <h4 className="font-semibold text-gray-800">Ingredients</h4>
-                {item.ingredients && item.ingredients.length > 0 ? (
-                  <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
-                    {item.ingredients.map((ing, idx) => (
-                      <li key={idx}>{ing}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-gray-500 mt-1">Ingredients not available.</p>
+              <div className="mt-4">
+                {tab === 'description' && (
+                  <div>
+                    <h4 className="font-semibold text-gray-800">Description</h4>
+                    <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                  </div>
                 )}
-              </div>
 
-              <div>
-                <h4 className="font-semibold text-gray-800">Price</h4>
-                <p className="text-sm text-gray-600 mt-1">{item.price}</p>
+                {tab === 'ingredients' && (
+                  <div>
+                    <h4 className="font-semibold text-gray-800">Ingredients</h4>
+                    {item.ingredients && item.ingredients.length > 0 ? (
+                      <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
+                        {item.ingredients.map((ing, idx) => (
+                          <li key={idx}>{ing}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-500 mt-1">Ingredients not available.</p>
+                    )}
+                  </div>
+                )}
+
+                {tab === 'price' && (
+                  <div>
+                    <h4 className="font-semibold text-gray-800">Price</h4>
+                    <p className="text-sm text-gray-600 mt-1">{item.price}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
