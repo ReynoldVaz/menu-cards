@@ -35,6 +35,11 @@ function normalizeImageUrl(raw?: string) {
   if (!raw) return undefined;
   const s = String(raw).trim();
   if (!s) return undefined;
+  // If the cell contains a Sheets IMAGE() formula like =IMAGE("https://...") or =IMAGE('https://...'), extract the URL
+  const imageFormulaMatch = s.match(/=IMAGE\((?:"|')?(https?:\/\/[^"')]+)(?:"|')?\)/i);
+  if (imageFormulaMatch) {
+    return imageFormulaMatch[1];
+  }
   // Drive shared file link formats:
   // https://drive.google.com/file/d/FILE_ID/view?usp=sharing
   // https://drive.google.com/open?id=FILE_ID
@@ -46,7 +51,17 @@ function normalizeImageUrl(raw?: string) {
   }
 
   // direct export links (already good)
-  if (s.startsWith('http')) return s;
+  if (s.startsWith('http')) {
+    // cloudinary: inject basic automatic transformations for better delivery
+    const cloudMatch = s.match(/(https?:\/\/res\.cloudinary\.com\/[^\/]+\/image\/upload\/)(.*)/i);
+    if (cloudMatch) {
+      const prefix = cloudMatch[1];
+      const rest = cloudMatch[2];
+      // add automatic format/quality and a sensible width
+      return `${prefix}f_auto,q_auto,w_800/${rest}`;
+    }
+    return s;
+  }
 
   return s;
 }
@@ -172,8 +187,8 @@ export function useSheetsData(): SheetsHook {
           description: specialRow.description || '',
           price: specialRow.price || '',
           ingredients: specialRow.ingredients ? specialRow.ingredients.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
-          image: specialRow.image || undefined,
-          images: specialRow.images ? specialRow.images.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
+          image: normalizeImageUrl(specialRow.image) || undefined,
+          images: specialRow.images ? String(specialRow.images).split(',').map((s) => normalizeImageUrl(s)).filter(Boolean) : undefined,
         }
       : undefined;
 

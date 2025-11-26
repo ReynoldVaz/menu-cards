@@ -33,6 +33,8 @@ export const menuSections: MenuSection[] = [
         description: 'Crispy pastries with potato & peas',
         price: '₹150',
         ingredients: ['Potatoes', 'Peas', 'Flour', 'Spices', 'Oil'],
+        // local image - place the attached image at `menu-cards/images/samosa.jpg`
+        image: '/images/samosa_copy.png',
       },
       {
         name: 'Paneer Tikka',

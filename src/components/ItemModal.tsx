@@ -69,7 +69,7 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
                         // fallback to picsum
                         // eslint-disable-next-line no-console
                         console.log('[ItemModal] using picsum fallback for', item.name);
-                        img.src = `https://picsum.photos/seed/${encodeURIComponent(item.name)}/800/600`;
+                        // img.src = `https://picsum.photos/seed/${encodeURIComponent(item.name)}/800/600`;
                       }}
                     />
 

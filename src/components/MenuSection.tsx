@@ -87,7 +87,7 @@ export function MenuSection({ title, items }: MenuSectionProps) {
                   // fallback: use a Picsum thumbnail based on item name (more reliable)
                   // eslint-disable-next-line no-console
                   console.log('[MenuSection] using picsum fallback for', item.name);
-                  img.src = `https://picsum.photos/seed/${encodeURIComponent(item.name)}/160/120`;
+                  // img.src = `https://picsum.photos/seed/${encodeURIComponent(item.name)}/160/120`;
                 }}
               />
             </button>
