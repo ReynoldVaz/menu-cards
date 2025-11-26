@@ -6,6 +6,8 @@ export interface MenuItem {
   ingredients?: string[];
   image?: string;
   images?: string[];
+  video?: string;
+  videos?: string[];
 }
 
 export interface MenuSection {

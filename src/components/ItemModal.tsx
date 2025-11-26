@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { MenuItem } from '../data/menuData';
+import { SmartImage } from './SmartImage';
+import { ParallaxImage } from './ParallaxImage';
+import { VideoPlayer } from './VideoPlayer';
 
 interface ItemModalProps {
   item: MenuItem | null;
@@ -39,84 +42,77 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <div className="relative bg-gray-50 rounded">
-                {images.length > 0 ? (
-                  <>
-                    <img
-                      src={images[index]}
-                      alt={`${item.name} image ${index + 1}`}
-                      className="w-full h-64 sm:h-80 object-cover rounded"
-                      onError={(e) => {
-                        const img = e.target as HTMLImageElement;
-                        // eslint-disable-next-line no-console
-                        console.error('[ItemModal] image failed to load', img.src);
-                        const retries = Number(img.dataset.retryCount || '0');
-                        if (retries >= 3) {
-                          img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="20">image unavailable</text></svg>';
-                          return;
-                        }
-                        img.dataset.retryCount = String(retries + 1);
-                        const driveMatch = img.src.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-                        if (driveMatch) {
-                          const id = driveMatch[1];
-                          const alternatives = [
-                            `https://drive.google.com/uc?export=view&id=${id}`,
-                            `https://drive.google.com/uc?export=download&id=${id}`,
-                            `https://drive.google.com/thumbnail?id=${id}`,
-                          ];
-                          img.src = alternatives[retries] || alternatives[alternatives.length - 1];
-                          return;
-                        }
-                        // fallback to picsum
-                        // eslint-disable-next-line no-console
-                        console.log('[ItemModal] using picsum fallback for', item.name);
-                        // img.src = `https://picsum.photos/seed/${encodeURIComponent(item.name)}/800/600`;
-                      }}
-                    />
+                {/* merge videos (if any) and images into a single media array */}
+                {(() => {
+                  const videos = item.videos && item.videos.length > 0 ? item.videos : (item.video ? [item.video] : []);
+                  const media = [
+                    ...videos.map((v) => ({ type: 'video' as const, src: v })),
+                    ...images.map((s) => ({ type: 'image' as const, src: s })),
+                  ];
 
-                    {images.length > 1 && (
-                      <div className="absolute inset-x-0 top-1/2 flex justify-between px-2 -translate-y-1/2">
-                        <button
-                          className="bg-white/80 rounded-full p-1 shadow"
-                          onClick={() => setIndex((i) => (i - 1 + images.length) % images.length)}
-                          aria-label="Previous image"
-                        >
-                          ‹
-                        </button>
-                        <button
-                          className="bg-white/80 rounded-full p-1 shadow"
-                          onClick={() => setIndex((i) => (i + 1) % images.length)}
-                          aria-label="Next image"
-                        >
-                          ›
-                        </button>
+                  if (media.length === 0) {
+                    return (
+                      <div className="w-full h-64 sm:h-80 bg-gray-100 flex items-center justify-center rounded">
+                        <span className="text-gray-400">No media available</span>
                       </div>
-                    )}
+                    );
+                  }
 
-                    <div className="flex gap-2 mt-2 overflow-x-auto">
-                      {images.map((src, i) => (
-                        <button
-                          key={src}
-                          onClick={() => setIndex(i)}
-                          className={`flex-shrink-0 rounded overflow-hidden border ${i === index ? 'ring-2 ring-orange-400' : 'border-transparent'}`}
-                        >
-                          <img src={src} alt={`${item.name} thumb ${i + 1}`} className="w-20 h-14 object-cover" onError={(e)=>{
-                            const img = e.target as HTMLImageElement;
-                            const retries = Number(img.dataset.retryCount || '0');
-                            if (retries >= 2) { img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="56"><rect width="100%" height="100%" fill="%23f3f4f6"/></svg>'; return; }
-                            img.dataset.retryCount = String(retries + 1);
-                            const m = img.src.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-                            if (m) { const id = m[1]; img.src = `https://drive.google.com/uc?export=view&id=${id}`; return; }
-                            img.src = `https://source.unsplash.com/160x120/?${encodeURIComponent(item.name)}`;
-                          }} />
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="w-full h-64 sm:h-80 bg-gray-100 flex items-center justify-center rounded">
-                    <span className="text-gray-400">No images available</span>
-                  </div>
-                )}
+                  const active = media[index];
+
+                  return (
+                    <>
+                      <div className="w-full h-64 sm:h-80 rounded overflow-hidden">
+                        <div className="w-full h-full">
+                          {active.type === 'video' ? (
+                            <VideoPlayer src={active.src} poster={item.image ?? images[0]} />
+                          ) : (
+                            <ParallaxImage src={active.src} alt={`${item.name} image ${index + 1}`} />
+                          )}
+                        </div>
+                      </div>
+
+                      {media.length > 1 && (
+                        <div className="absolute inset-x-0 top-1/2 flex justify-between px-2 -translate-y-1/2">
+                          <button
+                            className="bg-white/80 rounded-full p-1 shadow"
+                            onClick={() => setIndex((i) => (i - 1 + media.length) % media.length)}
+                            aria-label="Previous media"
+                          >
+                            ‹
+                          </button>
+                          <button
+                            className="bg-white/80 rounded-full p-1 shadow"
+                            onClick={() => setIndex((i) => (i + 1) % media.length)}
+                            aria-label="Next media"
+                          >
+                            ›
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 mt-2 overflow-x-auto">
+                        {media.map((m, i) => (
+                          <button
+                            key={`${m.type}:${m.src}`}
+                            onClick={() => setIndex(i)}
+                            className={`flex-shrink-0 rounded overflow-hidden border ${i === index ? 'ring-2 ring-orange-400' : 'border-transparent'}`}
+                          >
+                            <div className="w-20 h-14 overflow-hidden rounded bg-gray-50 flex items-center justify-center">
+                              {m.type === 'image' ? (
+                                <SmartImage src={m.src} alt={`${item.name} thumb ${i + 1}`} />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-600">
+                                  <span className="text-sm">▶︎ Video</span>
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 

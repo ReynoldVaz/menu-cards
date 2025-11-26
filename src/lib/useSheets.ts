@@ -153,15 +153,19 @@ export function useSheetsData(): SheetsHook {
     const objs = rowsToObjects(rows);
     // expected columns: id, section, name, description, price, ingredients, image, images, is_todays_special
     const items: MenuItem[] = objs.map((o) => {
-      const imgs = o.images ? String(o.images).split(',').map((s) => normalizeImageUrl(s)).filter(Boolean) : undefined;
-      const thumb = normalizeImageUrl(o.image);
+        const imgs = o.images ? String(o.images).split(',').map((s) => normalizeImageUrl(s)).filter(Boolean) : undefined;
+        const thumb = normalizeImageUrl(o.image);
+        const vid = o.video ? normalizeImageUrl(o.video) : undefined;
+        const vids = o.videos ? String(o.videos).split(',').map((s) => normalizeImageUrl(s)).filter(Boolean) : undefined;
       return {
         name: o.name || 'Unnamed',
         description: o.description || '',
         price: o.price || '',
         ingredients: o.ingredients ? String(o.ingredients).split(',').map((s) => s.trim()).filter(Boolean) : undefined,
-        image: thumb || (imgs && imgs.length > 0 ? imgs[0] : undefined),
-        images: imgs,
+          image: thumb || (imgs && imgs.length > 0 ? imgs[0] : undefined),
+          images: imgs,
+          video: vid,
+          videos: vids,
       } as MenuItem;
     });
 
