@@ -64,9 +64,30 @@ export function MenuSection({ id, title, items, onOpen }: MenuSectionProps) {
                 <div className="flex-1 min-w-0">
                   <button onClick={() => openModal(item)} className="text-left w-full">
                     <h3 className="text-base sm:text-lg font-semibold text-gray-800 group-hover:text-orange-700 transition-colors break-words whitespace-normal">
+  <>{console.log("item -", item)}</>
                       {item.name}
                     </h3>
                   </button>
+                  <div className="flex items-center gap-2 mt-1">
+  {/* Spice rating */}
+  {item.spice && item.spice > 0 && (
+    <div className="flex items-center text-red-500 text-sm">
+      {Array.from({ length: item.spice }).map((_, i) => (
+        <span key={i}>🌶️</span>
+      ))}
+    </div>
+  )}
+
+  {/* Sweet rating */}
+  {item.sweet && item.sweet > 0 && (
+    <div className="flex items-center text-amber-600 text-sm">
+      {Array.from({ length: item.sweet }).map((_, i) => (
+        <span key={i}>🍯</span>
+      ))}
+    </div>
+  )}
+</div>
+
                 </div>
 
                 <div className="flex-none ml-2">

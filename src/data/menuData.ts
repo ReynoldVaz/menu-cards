@@ -8,6 +8,9 @@ export interface MenuItem {
   images?: string[];
   video?: string;
   videos?: string[];
+  spice?: number;
+sweet?: number;
+
 }
 
 export interface MenuSection {
