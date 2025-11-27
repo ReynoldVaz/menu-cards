@@ -120,9 +120,30 @@
 // }
 
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getRelevantImage } from "../utils/getRelevantImage";
+
 import { MenuItem } from "../data/menuData";
 import { SmartImage } from "./SmartImage";
+
+
+
+
+// at top of file (or wherever you handle imports)
+function unsplashThumbnail(name: string) {
+  const q = encodeURIComponent(name + " food");
+  return `https://source.unsplash.com/160x120/?${q}`;
+}
+
+function unsplashModalImage(name: string) {
+  const q = encodeURIComponent(name + " food");
+  return `https://source.unsplash.com/800x600/?${q}`;
+}
+
+function fallbackImage(name: string) {
+  const q = encodeURIComponent(name + " food");
+  return `https://loremflickr.com/640/480/${q}`;
+}
 
 interface MenuSectionProps {
   id?: string;
@@ -147,14 +168,69 @@ function modalImagesFor(name: string) {
 
 export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSectionProps) {
   const [open, setOpen] = useState(false);
+  
 
   function openModal(item: MenuItem) {
-    const imgs =
-      item.images && item.images.length > 0
+    // const imgs =
+      // item.images && item.images.length > 0
+       // Prefer provided images, else fallback to one unsplash result
+    const imgs = (item.images && item.images.length > 0 && item.images[0])
         ? item.images
-        : modalImagesFor(item.name);
+        // : modalImagesFor(item.name);
+          // : [unsplashModalImage(item.name)];
+          // : [fallbackImage(item.name)];
+          // : [resolvedImages[item.name]] ;
+          : [] ;
     if (onOpen) onOpen(item, imgs);
   }
+
+  
+  const [resolvedImages, setResolvedImages] = useState<Record<string, string>>({});
+
+
+//   useEffect(() => {
+//   items.forEach(async (item) => {
+//     // If item has direct image, use it
+//     if (item.image) {
+//       setResolvedImages(prev => ({
+//         ...prev,
+//         [item.name]: item.image
+//       }));
+//       return;
+//     }
+
+//     // Else fetch relevant image
+//     const url = await getRelevantImage(item.name);
+
+//     setResolvedImages(prev => ({
+//       ...prev,
+//       [item.name]: url
+//     }));
+//   });
+// }, [items]);
+
+
+// useEffect(() => {
+//   items.forEach(async (item) => {
+//     // Ensure item.image is a string, else fallback
+//     const imageToUse = item.image ?? `https://dummyimage.com/600x400/000/fff&text=${encodeURIComponent(item.name)}`;
+
+//     setResolvedImages(prev => ({
+//       ...prev,
+//       [item.name]: imageToUse
+//     }));
+
+//     // Only fetch from getRelevantImage if item.image is missing
+//     if (!item.image) {
+//       const url = await getRelevantImage(item.name);
+//       setResolvedImages(prev => ({
+//         ...prev,
+//         [item.name]: url
+//       }));
+//     }
+//   });
+// }, [items]);
+
 
   return (
     <div id={id} className="mb-6">
@@ -187,9 +263,14 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                 className="flex-shrink-0 rounded overflow-hidden border-2 border-orange-100 hover:border-orange-300"
               >
                 <div className="w-20 h-16 overflow-hidden">
+                  {/* <img src={ `https://dummyimage.com/600x400/000/fff&text=${encodeURIComponent(item.name)}` }/> */}
                   <SmartImage
-                    src={item.image ?? thumbnailFor(item.name)}
-                    alt={item.name}
+                    // src={item.image ?? thumbnailFor(item.name)}
+                    // src={ item.image ? item.image : unsplashThumbnail(item.name) }
+                    // src={ item.image  ?? resolvedImages[item.name]  }
+                    // src={ `https://dummyimage.com/600x400/000/fff&text=${encodeURIComponent(item.name)}` }
+                    // alt={item.name}
+                    src={ item.image  ?? ""  }
                     className="w-20 h-16 rounded"
                   />
                 </div>

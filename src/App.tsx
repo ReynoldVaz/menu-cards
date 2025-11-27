@@ -224,10 +224,10 @@ function MobileAwareCallButton() {
       className="inline-block bg-white text-black mt-4 px-5 py-2 rounded-full text-sm font-medium 
                  shadow-md border border-orange-500 hover:bg-orange-50 transition-all"
     >
-      📞 +91 9233456789
+      📞 +918698248506
     </a>
   ) : (
-    <p className="text-gray-800 text-sm mt-3">📞 <span className="font-semibold">+91 9233456789</span></p>
+    <p className="text-gray-800 text-sm mt-3">📞 <span className="font-semibold">+918698248506</span></p>
   );
 }
 
@@ -356,7 +356,7 @@ style={{ backgroundColor: 'rgba(249, 115, 22, 0.55)' }}
                 <EventsSection events={upcomingEvents} />
               </div>
 
-              {loading && <p className="text-center text-sm text-gray-500">Refreshing menu...</p>}
+              {/* {loading && <p className="text-center text-sm text-gray-500">Refreshing menu...</p>}
 
               <div className="mt-6 p-3 bg-gray-50 rounded text-xs text-gray-700">
                 <div className="flex items-center justify-between mb-2">
@@ -368,7 +368,8 @@ style={{ backgroundColor: 'rgba(249, 115, 22, 0.55)' }}
                   <div>Error: <strong className="text-red-600">{error ?? 'none'}</strong></div>
                   <div>Sections: <strong>{menuSections.length}</strong></div>
                 </div>
-              </div>
+              </div> */}
+              
             </div>
 
             <div className="backdrop-blur-md bg-white/70 py-8 px-6 sm:px-12 text-center border-t border-orange-200 shadow-lg">
