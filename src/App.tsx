@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { MenuFab } from './components/MenuFab';
 import { SearchBar } from './components/SearchBar';
 import { ItemModal } from './components/ItemModal';
+import  ChatBot  from './components/ChatBot';
 // import { MobileAwareCallButton } from './components/MobileAwareCallButton';
 
 function MobileAwareCallButton() {
@@ -154,33 +155,40 @@ function App() {
               </div>
             </div>
 
-<div className="backdrop-blur-md bg-white/70 py-8 px-6 sm:px-12 text-center border-t border-orange-200 shadow-lg">
-  <h3 className="text-xl font-bold text-orange-700">
-    Digital Solutions
-  </h3>
+            <div className="backdrop-blur-md bg-white/70 py-8 px-6 sm:px-12 text-center border-t border-orange-200 shadow-lg">
+              <h3 className="text-xl font-bold text-orange-700">
+                Digital Solutions
+              </h3>
 
-  <p className="text-gray-700 text-sm mt-1">
-    Crafted by <span className="font-semibold">Reynold</span> & <span className="font-semibold">Savio Vaz</span>
-  </p>
+              <p className="text-gray-700 text-sm mt-1">
+                Crafted by <span className="font-semibold">Reynold</span> & <span className="font-semibold">Savio Vaz</span>
+              </p>
 
-  <p className="text-gray-600 text-sm mt-2">
-    Powering <span className="text-orange-600 font-semibold">50+ restaurants</span> • 
-    Fast • Modern • Fully Customized
-  </p>
+              <p className="text-gray-600 text-sm mt-2">
+                Powering <span className="text-orange-600 font-semibold">50+ restaurants</span> • 
+                Fast • Modern • Fully Customized
+              </p>
 
-  {/* <p className="text-gray-800 text-sm mt-3">
-    📞 <span className="font-semibold">+91 9233456789</span>
-  </p> */}
+              {/* <p className="text-gray-800 text-sm mt-3">
+                📞 <span className="font-semibold">+91 9233456789</span>
+              </p> */}
 
-  {/* <button className="mt-4 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg text-sm shadow-md transition-all">
-    Digitize Your Menu Today
-  </button> */}
-  <MobileAwareCallButton />
-</div>
+              {/* <button className="mt-4 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg text-sm shadow-md transition-all">
+                Digitize Your Menu Today
+              </button> */}
+              <MobileAwareCallButton />
+            </div>
 
+
+<ChatBot 
+  menuSections={menuSections} 
+  todaysSpecial={todaysSpecial}
+  events={upcomingEvents}
+/>
 
 
           </div>
+
         </div>
       </div>
     </div>
