@@ -225,6 +225,14 @@ export function useSheetsData(): SheetsHook {
 
     setLoading(true);
     setError(undefined);
+
+    // ✨ NEW: Clear menuSections only if they exist, to ensure shimmer logic fires correctly 
+    // and prevent brief display of old data before new data arrives.
+    if (menuSections.length > 0) {
+      setMenuSections([]);
+      setTodaysSpecial({} as MenuItem); // Clear special as well
+    }
+
     try {
       // fetch menu and events in parallel
   // eslint-disable-next-line no-console

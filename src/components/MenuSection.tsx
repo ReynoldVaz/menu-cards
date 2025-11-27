@@ -129,6 +129,7 @@ interface MenuSectionProps {
   title: string;
   items: MenuItem[];
   onOpen?: (item: MenuItem, images: string[]) => void;
+  isLoading?: boolean; // ✨ NEW PROP
 }
 
 function thumbnailFor(name: string) {
@@ -144,7 +145,7 @@ function modalImagesFor(name: string) {
   ];
 }
 
-export function MenuSection({ id, title, items, onOpen }: MenuSectionProps) {
+export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSectionProps) {
   const [open, setOpen] = useState(false);
 
   function openModal(item: MenuItem) {
@@ -255,11 +256,23 @@ export function MenuSection({ id, title, items, onOpen }: MenuSectionProps) {
                   </div>
 
                   {/* PRICE */}
-                  <div className="flex-none ml-2">
+                  {/* <div className="flex-none ml-2">
                     <span className="font-bold text-orange-600 text-base sm:text-lg whitespace-nowrap">
                       {item.price}
                     </span>
-                  </div>
+                  </div> */}
+                  <>{console.log("item - ",item)}</>
+                  <div className="flex-none ml-2">
+                    {isLoading ? ( // ✨ Conditional rendering based on loading state
+                      <div className="h-5 w-12 bg-gray-200 animate-pulse rounded"></div>
+                    ) : (
+                      <span className="font-bold text-orange-600 text-base sm:text-lg whitespace-nowrap">
+                        {item.price}
+                      </span>
+                    )}
+                  </div>
+
+
                 </div>
 
                 {/* DESCRIPTION */}

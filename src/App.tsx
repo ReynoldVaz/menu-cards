@@ -344,6 +344,9 @@ style={{ backgroundColor: 'rgba(249, 115, 22, 0.55)' }}
                       setSelectedItem(it);
                       setSelectedImages(imgs || []);
                     }}
+                    isLoading={loading} // ✨ PASSING THE LOADING STATE
+
+
                   />
                   {idx < menuSections.length - 1 && <div className="border-b border-orange-100 mt-12"></div>}
                 </div>
