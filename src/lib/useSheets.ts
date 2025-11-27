@@ -139,7 +139,7 @@ export function useSheetsData(): SheetsHook {
   const apiKey = (import.meta.env.VITE_SHEETS_API_KEY as string) || '';
   const menuSheet = (import.meta.env.VITE_MENU_SHEET_NAME as string) || 'menu_items';
   const eventsSheet = (import.meta.env.VITE_EVENTS_SHEET_NAME as string) || 'events';
-  const pollMs = Number(import.meta.env.VITE_SHEETS_POLL_INTERVAL_MS || '30000');
+  const pollMs = Number(import.meta.env.VITE_SHEETS_POLL_INTERVAL_MS || '300000000');
 
   const [menuSections, setMenuSections] = useState<MenuSection[]>(localMenuSections);
   const [todaysSpecial, setTodaysSpecial] = useState<MenuItem>(localTodaysSpecial);
@@ -166,6 +166,9 @@ export function useSheetsData(): SheetsHook {
           images: imgs,
           video: vid,
           videos: vids,
+              /** 🔥 NEW FIELDS */
+    spice: o.spice ? Number(o.spice) : "",
+    sweet: o.sweet ? Number(o.sweet) : "",
       } as MenuItem;
     });
 
@@ -222,6 +225,14 @@ export function useSheetsData(): SheetsHook {
 
     setLoading(true);
     setError(undefined);
+
+    // ✨ NEW: Clear menuSections only if they exist, to ensure shimmer logic fires correctly 
+    // and prevent brief display of old data before new data arrives.
+    if (menuSections.length > 0) {
+      setMenuSections([]);
+      setTodaysSpecial({} as MenuItem); // Clear special as well
+    }
+
     try {
       // fetch menu and events in parallel
   // eslint-disable-next-line no-console
