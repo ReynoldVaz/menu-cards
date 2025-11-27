@@ -281,7 +281,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                 </p>
 
                 {/* IMAGE URL FOR DEBUG */}
-                <div className="text-xs text-gray-400 mt-2 break-all">
+                {/* <div className="text-xs text-gray-400 mt-2 break-all">
                   {item.image ? (
                     <a
                       href={item.image}
@@ -294,7 +294,9 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                   ) : (
                     <span className="italic">(no image)</span>
                   )}
-                </div>
+                </div> */}
+
+
               </div>
             </div>
           ))}

@@ -38,6 +38,9 @@
 //   );
 // }
 
+
+import { useEffect } from "react"; // 👈 ADDED: Import useEffect
+
 export function SideDrawer({
   open,
   onClose,
@@ -47,6 +50,23 @@ export function SideDrawer({
   onClose: () => void;
   sections: { id: string; title: string; icon?: string }[];
 }) {
+
+  // ✨ NEW: Effect to prevent background scrolling when the drawer is open
+  useEffect(() => {
+    if (open) {
+      // Prevent body scroll
+      document.body.style.overflow = "hidden";
+    } else {
+      // Re-enable body scroll
+      document.body.style.overflow = "";
+    }
+
+    // Cleanup function: runs when the component unmounts or before the next effect runs
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]); // Re-run effect whenever 'open' changes
+
   if (!open) return <div aria-hidden />;
 
   function goTo(id: string) {
