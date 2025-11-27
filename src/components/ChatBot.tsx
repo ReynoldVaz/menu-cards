@@ -79,7 +79,10 @@ Now respond ONLY using the menu information.
       {/* Floating Chat Button */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 right-4 bg-orange-600 text-white p-3 rounded-full shadow-lg hover:bg-orange-700 transition z-50"
+        // className="fixed bottom-20 right-4 bg-orange-600 text-white p-3 rounded-full shadow-lg hover:bg-orange-700 transition z-50"
+        className="fixed bottom-20 right-4 text-white p-3 rounded-full shadow-lg hover:bg-orange-700 transition z-50"
+        // style={{ backgroundColor: 'rgba(249, 115, 22, 0.55)' }}
+        style={{ backgroundColor: 'rgba(247, 107, 7, 0.81)' }}
       >
         💬
       </button>
