@@ -182,10 +182,13 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
           // : [fallbackImage(item.name)];
           // : [resolvedImages[item.name]] ;
           : [] ;
+
+          // Track the click in GA
+  trackEvent("Menu", "Click Item", item.name);
+  
     if (onOpen) onOpen(item, imgs);
 
-      // Track the click in GA
-  trackEvent("Menu", "Click Item", item.name);
+
   }
 
   
