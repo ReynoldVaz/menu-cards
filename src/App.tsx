@@ -209,18 +209,20 @@ import { TodaysSpecial } from './components/TodaysSpecial';
 import { EventsSection } from './components/EventsSection';
 import { SideDrawer } from './components/SideDrawer';
 import { useSheetsData } from './lib/useSheets';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MenuFab } from './components/MenuFab';
 import { SearchBar } from './components/SearchBar';
 import { ItemModal } from './components/ItemModal';
 import ChatBot from './components/ChatBot';
+import { trackPageview } from "./lib/ga";
+
 
 function MobileAwareCallButton() {
   const [isMobile, setIsMobile] = useState(() => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
 
   return isMobile ? (
     <a
-      href="tel:+919233456789"
+      href="tel:+918698248506"
       className="inline-block bg-white text-black mt-4 px-5 py-2 rounded-full text-sm font-medium 
                  shadow-md border border-orange-500 hover:bg-orange-50 transition-all"
     >
@@ -240,6 +242,16 @@ function App() {
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
   const searchBarRef = useRef<HTMLInputElement | null>(null);
+
+    useEffect(() => {
+    // Track initial load
+    trackPageview(window.location.pathname);
+
+    // Optional: track hash or URL changes if you have routing logic
+    const handlePopState = () => trackPageview(window.location.pathname);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   return (
     <div className="min-h-screen overflow-y-scroll scroll-smooth bg-gradient-to-b from-amber-50 via-white to-orange-50">
