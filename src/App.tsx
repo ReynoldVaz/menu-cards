@@ -280,6 +280,8 @@ style={{ backgroundColor: 'rgba(249, 115, 22, 0.55)' }}
             </button>
             <Header onMenuClick={() => setDrawerOpen(true)} />
 
+
+{/* 
               <div className="backdrop-blur-md bg-white/70 py-8 px-6 sm:px-12 text-center border-t border-orange-200 shadow-lg">
               <h3 className="text-xl font-bold text-orange-700">
                 Digital Solutions
@@ -294,15 +296,12 @@ style={{ backgroundColor: 'rgba(249, 115, 22, 0.55)' }}
                 Fast • Modern • Fully Customized
               </p>
 
-              {/* <p className="text-gray-800 text-sm mt-3">
-                📞 <span className="font-semibold">+91 9233456789</span>
-              </p> */}
-
-              {/* <button className="mt-4 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg text-sm shadow-md transition-all">
-                Digitize Your Menu Today
-              </button> */}
               <MobileAwareCallButton />
             </div>
+
+
+
+             */}
 
             <div className="hidden md:block">
               <TopTabs

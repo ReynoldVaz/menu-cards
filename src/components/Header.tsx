@@ -21,7 +21,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       <div className="flex justify-center mb-4">
         <Flame className="w-8 h-8 sm:w-10 sm:h-10" strokeWidth={1.5} />
       </div>
-      <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-2">Cota Cozinha</h1>
+      <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-2">Resturant Name</h1>
       <p className="text-orange-100 font-light text-xs sm:text-sm tracking-wide">
         AUTHENTIC INDIAN CUISINE
       </p>
