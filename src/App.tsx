@@ -253,9 +253,27 @@ function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+
+
+    const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/analytics")
+      .then(res => res.json())
+      .then(setData)
+      .catch(console.error);
+  }, []);
+
+
   return (
     <div className="min-h-screen overflow-y-scroll scroll-smooth bg-gradient-to-b from-amber-50 via-white to-orange-50">
       <div className="flex items-center justify-center p-4 py-8">
+
+
+
+
+
+
         <div className="max-w-4xl w-full">
           <div className="bg-white rounded-lg shadow-xl overflow-hidden border border-orange-100 relative">
 
@@ -279,6 +297,17 @@ style={{ backgroundColor: 'rgba(249, 115, 22, 0.55)' }}
               🔍
             </button>
             <Header onMenuClick={() => setDrawerOpen(true)} />
+                  <div>
+                    <>{console.log("Analytics data:", data)}</>
+      <h2>Popularrrrrr Items</h2>
+      <ul>
+        {data?.rows?.map((row: any) => (
+          <li key={row.dimensionValues[0].value}>
+            {row.dimensionValues[0].value}: {row.metricValues[0].value} clicks
+          </li>
+        ))}
+      </ul>
+    </div>
 
               <div className="backdrop-blur-md bg-white/70 py-8 px-6 sm:px-12 text-center border-t border-orange-200 shadow-lg">
               <h3 className="text-xl font-bold text-orange-700">
