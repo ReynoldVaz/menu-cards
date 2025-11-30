@@ -10,6 +10,7 @@ export interface MenuItem {
   videos?: string[];
   spice?: number;
 sweet?: number;
+clicks?:number;
 
 }
 

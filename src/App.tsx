@@ -236,6 +236,7 @@ function MobileAwareCallButton() {
 function App() {
   const { menuSections, todaysSpecial, upcomingEvents, loading, error, refresh, lastFetchedAt, lastFetchedRaw } =
     useSheetsData();
+    console.log("Menu Sections:", menuSections);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<null | any>(null);
@@ -255,14 +256,14 @@ function App() {
 
 
 
-    const [data, setData] = useState<any>(null);
+  //   const [data, setData] = useState<any>(null);
 
-  useEffect(() => {
-    fetch("/api/analytics")
-      .then(res => res.json())
-      .then(setData)
-      .catch(console.error);
-  }, []);
+  // useEffect(() => {
+  //   fetch("/api/analytics")
+  //     .then(res => res.json())
+  //     .then(setData)
+  //     .catch(console.error);
+  // }, []);
 
 
   return (
@@ -298,15 +299,15 @@ style={{ backgroundColor: 'rgba(249, 115, 22, 0.55)' }}
             </button>
             <Header onMenuClick={() => setDrawerOpen(true)} />
                   <div>
-                    <>{console.log("Analytics data:", data)}</>
-      <h2>Popularrrrrr Items</h2>
+                    {/* <>{console.log("Analytics data:", data)}</> */}
+      {/* <h2>Popularrrrrr Items</h2>
       <ul>
         {data?.rows?.map((row: any) => (
           <li key={row.dimensionValues[0].value}>
             {row.dimensionValues[0].value}: {row.metricValues[0].value} clicks
           </li>
         ))}
-      </ul>
+      </ul> */}
     </div>
 
               <div className="backdrop-blur-md bg-white/70 py-8 px-6 sm:px-12 text-center border-t border-orange-200 shadow-lg">

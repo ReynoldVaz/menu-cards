@@ -250,6 +250,28 @@ export function useSheetsData(): SheetsHook {
   console.log('[useSheets] fetched rows', { menuRowsLength: menuRows?.length, eventsRowsLength: eventsRows?.length });
 
   const { sections, special } = parseMenu(menuRows);
+
+// --------------- GA4 CLICK MERGE -----------------
+// let gaClicks: Record<string, number> = {};
+
+// try {
+//   const analyticsRes = await fetch('/api/analytics');
+//   if (analyticsRes.ok) {
+//     gaClicks = await analyticsRes.json();
+//   }
+// } catch (e) {
+//   console.error("[useSheets] GA4 fetch failed", e);
+// }
+
+// sections.forEach((section) => {
+//   section.items = section.items.map((item) => ({
+//     ...item,
+//     clicks: gaClicks[item.name] || 0,
+//   }));
+// });
+// -------------------------------------------------
+
+
   const evts = parseEvents(eventsRows);
 
   // store debug info

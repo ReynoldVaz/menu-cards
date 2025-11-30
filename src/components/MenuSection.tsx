@@ -185,7 +185,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
 
           // Track the click in GA
   trackEvent("Menu", "Click Item", item.name);
-  
+
     if (onOpen) onOpen(item, imgs);
 
 
@@ -314,7 +314,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                       {item.price}
                     </span>
                   </div> */}
-                  <>{console.log("item - ",item)}</>
+                  {/* <>{console.log("item - ",item)}</> */}
                   <div className="flex-none ml-2">
                     {isLoading ? ( // ✨ Conditional rendering based on loading state
                       <div className="h-5 w-12 bg-gray-200 animate-pulse rounded"></div>

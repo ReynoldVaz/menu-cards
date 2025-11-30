@@ -47,6 +47,8 @@
 
 
 // api/analytics.js
+
+
 import { google } from "googleapis";
 
 console.log("GA4_PROPERTY_ID:", process.env.GA4_PROPERTY_ID);
@@ -71,14 +73,16 @@ export default async function handler(req, res) {
     });
 
     const response = await analyticsDataClient.properties.runReport({
+    // const response = await analyticsDataClient.properties.runRealtimeReport({
       property: `properties/${propertyId}`,
       requestBody: {
         // dimensions: [{ name: "eventName" }], // grouping by event name
         dimensions: [
           { name: "eventName" },    // Top-level event
-        //   { name: "customEvent:event_label" },   // Nested parameter, e.g., menu item name
-        //   { name: "menu_item" },   // Nested parameter, e.g., menu item name
-         { name: "customEvent:menu_item" }  // API name from GA4 Custom Dimension
+            // { name: "menu_item" },   // Nested parameter, e.g., menu item name
+          //  { name: "customEvent:menu_item" }  // API name from GA4 Custom Dimension
+          { name: "customEvent:event_label" },   // Nested parameter, e.g., menu item name
+        // { name: "eventParameter:event_label" }
         ],
         metrics: [
             { name: "eventCount" },
@@ -89,9 +93,30 @@ export default async function handler(req, res) {
       },
     });
 
-    res.status(200).json(response.data);
+    // return res.status(200).json(response.data);
+
+    // ⭐ Convert GA4 rows -> { itemName: clicks }
+    const rows = response.data.rows || [];
+
+    const itemClicks = {};
+
+    rows.forEach((row) => {
+      const eventName = row.dimensionValues[0]?.value || "";
+      const itemName = row.dimensionValues[1]?.value || "";
+      const count = Number(row.metricValues[0]?.value || 0);
+
+      if (eventName === "Click Item" && itemName) {
+        if (!itemClicks[itemName]) itemClicks[itemName] = 0;
+        itemClicks[itemName] += count;
+      }
+    });
+
+    return res.status(200).json(itemClicks);
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to fetch analytics data", details: err });
+    // res.status(500).json({ error: "Failed to fetch analytics data", details: err });
+
+     return res.status(500).json({ error: "Failed to fetch analytics", details: err });
   }
 }
