@@ -32,6 +32,32 @@ export default async function handler(req, res) {
       events
     }).slice(0, 15000); // limit prompt size
 
+
+    // const query = message.toLowerCase();
+
+    // // Filter relevant sections
+    // const filteredSections = menuSections.filter(section => {
+    //   if (!section.title) return false; // skip if title missing
+    //   return query.includes(section.title.toLowerCase());
+    // });
+
+    // const sectionsToSend = filteredSections.length ? filteredSections : menuSections;
+
+    // // Shrink the menu
+    // const compressedMenu = JSON.stringify({
+    //   specials: todaysSpecial,
+    //   sections: sectionsToSend.map(s => ({
+    //     title: s.title,
+    //     items: s.items?.map(i => ({
+    //       name: i.name,
+    //       price: i.price,
+    //       desc: i.description
+    //     }))
+    //   })),
+    //   events
+    // }).slice(0, 15000); // limit prompt size
+
+
     const prompt = `
 You are an AI restaurant assistant. Follow formatting rules strictly.
 
