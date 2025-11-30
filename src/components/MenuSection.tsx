@@ -125,6 +125,7 @@ import { getRelevantImage } from "../utils/getRelevantImage";
 
 import { MenuItem } from "../data/menuData";
 import { SmartImage } from "./SmartImage";
+import { trackEvent } from "../lib/ga";
 
 
 
@@ -182,61 +183,29 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
           // : [resolvedImages[item.name]] ;
           : [] ;
     if (onOpen) onOpen(item, imgs);
+
+      // Track the click in GA
+  trackEvent("Menu", "Click Item", item.name);
   }
 
   
   const [resolvedImages, setResolvedImages] = useState<Record<string, string>>({});
 
+  const handleToggle = () => {
+  const action = open ? "Collapse Section" : "Expand Section";
 
-//   useEffect(() => {
-//   items.forEach(async (item) => {
-//     // If item has direct image, use it
-//     if (item.image) {
-//       setResolvedImages(prev => ({
-//         ...prev,
-//         [item.name]: item.image
-//       }));
-//       return;
-//     }
+  trackEvent("Menu Section", action, title);
 
-//     // Else fetch relevant image
-//     const url = await getRelevantImage(item.name);
-
-//     setResolvedImages(prev => ({
-//       ...prev,
-//       [item.name]: url
-//     }));
-//   });
-// }, [items]);
-
-
-// useEffect(() => {
-//   items.forEach(async (item) => {
-//     // Ensure item.image is a string, else fallback
-//     const imageToUse = item.image ?? `https://dummyimage.com/600x400/000/fff&text=${encodeURIComponent(item.name)}`;
-
-//     setResolvedImages(prev => ({
-//       ...prev,
-//       [item.name]: imageToUse
-//     }));
-
-//     // Only fetch from getRelevantImage if item.image is missing
-//     if (!item.image) {
-//       const url = await getRelevantImage(item.name);
-//       setResolvedImages(prev => ({
-//         ...prev,
-//         [item.name]: url
-//       }));
-//     }
-//   });
-// }, [items]);
+  setOpen(!open);
+};
 
 
   return (
     <div id={id} className="mb-6">
       {/* HEADER — Collapsible */}
       <button
-        onClick={() => setOpen(!open)}
+        // onClick={() => setOpen(!open)}
+        onClick={handleToggle}
         className="w-full flex items-center justify-between px-4 py-3 bg-orange-100 rounded-lg shadow-sm hover:bg-orange-200 transition"
       >
         <h2 className="text-lg font-semibold text-orange-800">{title}</h2>
