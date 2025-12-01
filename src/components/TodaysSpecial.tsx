@@ -4,7 +4,7 @@ import { MenuItem } from '../data/menuData';
 import { ItemModal } from './ItemModal';
 
 interface TodaysSpecialProps {
-  item: MenuItem;
+  item: MenuItem | null;
 }
 
 function modalImagesFor(name: string) {
@@ -17,6 +17,10 @@ function modalImagesFor(name: string) {
 }
 
 export function TodaysSpecial({ item }: TodaysSpecialProps) {
+  if (!item) {
+    return null;
+  }
+
   const [open, setOpen] = useState(false);
   const images = item.images && item.images.length > 0 ? item.images : modalImagesFor(item.name);
 

@@ -208,7 +208,7 @@ import { MenuSection } from './components/MenuSection';
 import { TodaysSpecial } from './components/TodaysSpecial';
 import { EventsSection } from './components/EventsSection';
 import { SideDrawer } from './components/SideDrawer';
-import { useSheetsData } from './lib/useSheets';
+import { useRestaurant } from './context/useRestaurant';
 import { useState, useRef, useEffect } from 'react';
 import { MenuFab } from './components/MenuFab';
 import { SearchBar } from './components/SearchBar';
@@ -218,7 +218,7 @@ import { trackPageview } from "./lib/ga";
 
 
 function MobileAwareCallButton() {
-  const [isMobile, setIsMobile] = useState(() => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   return isMobile ? (
     <a
@@ -234,9 +234,8 @@ function MobileAwareCallButton() {
 }
 
 function App() {
-  const { menuSections, todaysSpecial, upcomingEvents, loading, error, refresh, lastFetchedAt, lastFetchedRaw } =
-    useSheetsData();
-    console.log("Menu Sections:", menuSections);
+  const { menuSections, todaysSpecial, upcomingEvents, loading } = useRestaurant();
+  console.log("Menu Sections:", menuSections);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<null | any>(null);
