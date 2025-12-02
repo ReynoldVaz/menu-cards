@@ -16,6 +16,7 @@ export const MODERN_TEMPLATE: Partial<Theme> = {
       letterSpacing: '-0.5px',
       textTransform: 'uppercase',
     },
+    
     sectionHeader: {
       fontSize: '1.5rem',
       fontWeight: 'bold',
