@@ -7,6 +7,7 @@ import type { Restaurant } from '../hooks/useFirebaseRestaurant';
 import { MenuItemForm, type MenuItemFormData } from '../components/MenuItemForm';
 import { EventForm, type EventFormData } from '../components/EventForm';
 import { ThemePreview } from '../components/ThemePreview';
+import { TEMPLATES, TEMPLATE_NAMES, TEMPLATE_DESCRIPTIONS, getTemplateColors, type TemplateType } from '../utils/templateStyles';
 
 interface AdminDashboardTab {
   id: 'restaurants' | 'menu' | 'events' | 'settings';
@@ -504,16 +505,12 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [secondaryColor, setSecondaryColor] = useState(restaurant.theme?.secondaryColor || '#FB923C');
   const [accentColor, setAccentColor] = useState(restaurant.theme?.accentColor || '#FED7AA');
   const [backgroundColor, setBackgroundColor] = useState(restaurant.theme?.backgroundColor || '#FFFFFF');
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>(
+    (restaurant.theme?.template as TemplateType) || 'modern'
+  );
   const [saving, setSaving] = useState(false);
 
-  const presetThemes = [
-    { name: 'Orange', primary: '#EA580C', secondary: '#FB923C', accent: '#FED7AA', background: '#FFFFFF' },
-    { name: 'Blue', primary: '#1E40AF', secondary: '#3B82F6', accent: '#BFDBFE', background: '#FFFFFF' },
-    { name: 'Green', primary: '#15803D', secondary: '#22C55E', accent: '#BBFB70', background: '#FFFFFF' },
-    { name: 'Purple', primary: '#6D28D9', secondary: '#A855F7', accent: '#E9D5FF', background: '#FFFFFF' },
-    { name: 'Red', primary: '#991B1B', secondary: '#EF4444', accent: '#FCA5A5', background: '#FFFFFF' },
-    { name: 'Dark', primary: '#1F2937', secondary: '#374151', accent: '#D1D5DB', background: '#FFFFFF' },
-  ];
+  const templateColors = getTemplateColors(selectedTemplate);
 
   const currentTheme = {
     mode: themeMode as 'light' | 'dark' | 'custom',
@@ -521,6 +518,8 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
     secondaryColor,
     accentColor,
     backgroundColor,
+    template: selectedTemplate,
+    ...TEMPLATES[selectedTemplate],
   };
 
   async function handleSave() {
@@ -540,11 +539,11 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
     }
   }
 
-  function applyPreset(preset: typeof presetThemes[0]) {
-    setPrimaryColor(preset.primary);
-    setSecondaryColor(preset.secondary);
-    setAccentColor(preset.accent);
-    setBackgroundColor(preset.background);
+  function applyColorCombination(combination: ReturnType<typeof getTemplateColors>[0]) {
+    setPrimaryColor(combination.primary);
+    setSecondaryColor(combination.secondary);
+    setAccentColor(combination.accent);
+    setBackgroundColor(combination.background);
     setThemeMode('custom');
   }
 
@@ -587,25 +586,74 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         {/* Theme Settings */}
         <div className="pt-8">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">🎨 Theme Customization</h3>
-          <p className="text-sm text-gray-600 mb-4">Choose from presets or create a custom theme. Changes update instantly in the preview below.</p>
+          <p className="text-sm text-gray-600 mb-6">Choose a template style and customize colors. Changes update instantly in the preview below.</p>
           
-          {/* Preset Themes */}
+          {/* Templates Selection */}
           <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-700 mb-3">Preset Themes</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {presetThemes.map((preset) => (
+            <label className="block text-sm font-medium text-gray-700 mb-3">📱 Design Templates</label>
+            <p className="text-xs text-gray-600 mb-4">Each template has different typography, button styles, and icon designs</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {(Object.keys(TEMPLATES) as TemplateType[]).map((templateKey) => (
                 <button
-                  key={preset.name}
-                  onClick={() => applyPreset(preset)}
-                  className="p-3 rounded-lg border-2"
-                  style={{ borderColor: preset.primary }}
+                  key={templateKey}
+                  onClick={() => setSelectedTemplate(templateKey)}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    selectedTemplate === templateKey
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-300 hover:border-blue-300'
+                  }`}
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.primary }}></div>
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.secondary }}></div>
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.accent }}></div>
+                  <div className="text-lg font-semibold text-gray-800">
+                    {TEMPLATE_NAMES[templateKey]}
                   </div>
-                  <div className="text-xs font-medium text-gray-700">{preset.name}</div>
+                  <div className="text-xs text-gray-600 mt-2">
+                    {TEMPLATE_DESCRIPTIONS[templateKey]}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Template Color Combinations */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-3">🎨 Color Combinations for {TEMPLATE_NAMES[selectedTemplate]}</label>
+            <p className="text-xs text-gray-600 mb-4">Click any color combination to apply all 4 colors instantly</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {templateColors.map((combo) => (
+                <button
+                  key={combo.name}
+                  onClick={() => applyColorCombination(combo)}
+                  className="p-4 rounded-lg border-2 border-gray-300 hover:border-blue-400 transition-all hover:shadow-md"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">{combo.emoji}</span>
+                    <div className="text-left">
+                      <div className="font-semibold text-gray-800">{combo.name}</div>
+                      <div className="text-xs text-gray-600">Color combination preset</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <div
+                      className="flex-1 h-10 rounded"
+                      style={{ backgroundColor: combo.primary }}
+                      title={`Primary: ${combo.primary}`}
+                    ></div>
+                    <div
+                      className="flex-1 h-10 rounded"
+                      style={{ backgroundColor: combo.secondary }}
+                      title={`Secondary: ${combo.secondary}`}
+                    ></div>
+                    <div
+                      className="flex-1 h-10 rounded"
+                      style={{ backgroundColor: combo.accent }}
+                      title={`Accent: ${combo.accent}`}
+                    ></div>
+                    <div
+                      className="flex-1 h-10 rounded border border-gray-300"
+                      style={{ backgroundColor: combo.background }}
+                      title={`Background: ${combo.background}`}
+                    ></div>
+                  </div>
                 </button>
               ))}
             </div>

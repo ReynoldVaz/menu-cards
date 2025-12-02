@@ -1,4 +1,4 @@
-
+﻿
 
 
 import { Header } from './components/Header';
@@ -11,6 +11,7 @@ import { useRestaurant } from './context/useRestaurant';
 import { useState, useRef, useEffect } from 'react';
 import { MenuFab } from './components/MenuFab';
 import { SearchBar } from './components/SearchBar';
+import { SearchIconButton } from './components/SearchIconButton';
 import { ItemModal } from './components/ItemModal';
 import ChatBot from './components/ChatBot';
 import { trackPageview } from "./lib/ga";
@@ -28,10 +29,10 @@ function MobileAwareCallButton({ themeColor }: { themeColor?: string }) {
                  shadow-md hover:bg-opacity-90 transition-all"
       style={{ borderColor: color, borderWidth: '2px' }}
     >
-      📞 +918698248506
+      ☎️ +918698248506
     </a>
   ) : (
-    <p className="text-gray-800 text-sm mt-3">📞 <span className="font-semibold">+918698248506</span></p>
+    <p className="text-gray-800 text-sm mt-3">☎️ <span className="font-semibold">+918698248506</span></p>
   );
 }
 
@@ -84,14 +85,7 @@ function App() {
         <div className="max-w-4xl w-full">
           <div className="rounded-lg shadow-xl overflow-hidden relative" style={{ backgroundColor: themeStyles.backgroundColor, borderColor: themeStyles.borderColor, borderWidth: '1px' }}>
 
-            {/* SEARCH ICON - Fixed to the bottom right (Highest Z-index) */}
-            <button
-              onClick={() => searchBarRef.current?.focus()}
-              className="fixed right-4 bottom-36 text-white p-3 rounded-full shadow z-[40]"
-              style={{ backgroundColor: hexToRgba(themeStyles.backgroundColor, 0.55) }}
-            >
-              🔍
-            </button>
+             <SearchIconButton searchBarRef={searchBarRef} />
             <Header onMenuClick={() => setDrawerOpen(true)} />
                   <div>
                     {/* <>{console.log("Analytics data:", data)}</> */}
@@ -114,11 +108,11 @@ function App() {
                   Digital Solutions
                 </h3>
 
-                <p className="text-gray-700 text-sm mt-1">
+                <p className="text-sm mt-1" style={{ color: themeStyles.textColor }}>
                   Crafted by <span className="font-semibold">Reynold</span> & <span className="font-semibold">Savio Vaz</span>
                 </p>
 
-                <p className="text-gray-600 text-sm mt-2">
+                <p className="text-sm mt-2" style={{ color: themeStyles.textColor }}>
                   Powering <span className="font-semibold" style={{ color: themeStyles.primaryButtonBg }}>50+ restaurants</span> • 
                   Fast • Modern • Fully Customized
                 </p>
@@ -182,7 +176,12 @@ function App() {
 
 
                   />
-                  {idx < menuSections.length - 1 && <div className="border-b mt-12" style={{ borderColor: `${themeStyles.borderColor}20` }}></div>}
+                  {idx < menuSections.length - 1 && (
+                    <div 
+                      className="border-b mt-12"
+                      style={{ borderColor: themeStyles.borderColor + '20' }}
+                    ></div>
+                  )}
                 </div>
               ))}
 
@@ -206,7 +205,13 @@ function App() {
               
             </div>
 
-            <div className="backdrop-blur-md py-8 px-6 sm:px-12 text-center shadow-lg" style={{ backgroundColor: themeStyles.backgroundColor, borderTop: `1px solid ${themeStyles.borderColor}` }}>
+            <div 
+              className="backdrop-blur-md py-8 px-6 sm:px-12 text-center shadow-lg"
+              style={{ 
+                backgroundColor: themeStyles.backgroundColor,
+                borderTop: '1px solid ' + themeStyles.borderColor
+              }}
+            >
               <h3 className="text-xl font-bold" style={{ color: themeStyles.primaryButtonBg }}>
                 Digital Solutions
               </h3>
@@ -221,7 +226,7 @@ function App() {
               </p>
 
               {/* <p className="text-gray-800 text-sm mt-3">
-                📞 <span className="font-semibold">+91 9233456789</span>
+                ðŸ“ž <span className="font-semibold">+91 9233456789</span>
               </p> */}
 
               {/* <button className="mt-4 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg text-sm shadow-md transition-all">
@@ -240,3 +245,4 @@ function App() {
 }
 
 export default App;
+

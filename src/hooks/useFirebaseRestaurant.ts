@@ -8,12 +8,54 @@ import {
 } from 'firebase/firestore';
 import type { MenuItem, MenuSection, Event } from '../data/menuData';
 
+export interface TypographyStyle {
+  fontSize: string;
+  fontWeight: 'normal' | 'medium' | 'semibold' | 'bold';
+  fontFamily?: string;
+  letterSpacing?: string;
+  textTransform?: 'uppercase' | 'lowercase' | 'capitalize' | 'none';
+}
+
+export interface ButtonStyle {
+  borderRadius: 'rounded' | 'rounded-full' | 'rounded-lg' | 'rounded-md' | 'rounded-sm' | 'rounded-none';
+  shadow: 'shadow-none' | 'shadow-sm' | 'shadow-md' | 'shadow-lg' | 'shadow-xl';
+  fontSize: string;
+  padding: string;
+}
+
+export interface IconStyle {
+  size: 'sm' | 'md' | 'lg' | 'xl';
+  shape: 'circle' | 'square' | 'rounded-square';
+  backgroundColor?: string;
+  animated?: boolean;
+  shadow?: 'shadow-none' | 'shadow-sm' | 'shadow-md' | 'shadow-lg' | 'shadow-xl';
+}
+
 export interface Theme {
   mode: 'light' | 'dark' | 'custom';
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
   backgroundColor: string;
+  template?: 'modern' | 'classic' | 'minimal' | 'vibrant' | 'custom';
+  typography?: {
+    restaurantName?: TypographyStyle;
+    sectionHeader?: TypographyStyle;
+    itemName?: TypographyStyle;
+    itemDescription?: TypographyStyle;
+    price?: TypographyStyle;
+  };
+  buttons?: {
+    primary?: ButtonStyle;
+    secondary?: ButtonStyle;
+    icon?: ButtonStyle;
+  };
+  icons?: {
+    fab?: IconStyle;
+    search?: IconStyle;
+    chat?: IconStyle;
+    menu?: IconStyle;
+  };
 }
 
 export interface Restaurant {

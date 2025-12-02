@@ -1,6 +1,6 @@
 import { Flame } from 'lucide-react';
 import { useRestaurant } from '../context/useRestaurant';
-import { hexToRgba } from '../utils/themeUtils';
+import { hexToRgba, getTemplateComponentStyles, getTypographyStyle } from '../utils/themeUtils';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -11,6 +11,9 @@ export function Header({ onMenuClick }: HeaderProps) {
   const primaryColor = theme?.primaryColor || '#EA580C';
   const secondaryColor = theme?.secondaryColor || '#FB923C';
   const accentColor = theme?.accentColor || '#FED7AA';
+  
+  const templateStyles = getTemplateComponentStyles(theme || null);
+  const restaurantNameStyle = getTypographyStyle(templateStyles.typography.restaurantName);
 
   return (
     <div 
@@ -34,7 +37,10 @@ export function Header({ onMenuClick }: HeaderProps) {
       <div className="flex justify-center mb-4">
         <Flame className="w-8 h-8 sm:w-10 sm:h-10" strokeWidth={1.5} />
       </div>
-      <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-2">
+      <h1 
+        className="tracking-tight mb-2"
+        style={restaurantNameStyle}
+      >
         {restaurant?.name || 'Restaurant Menu'}
       </h1>
       <p 
