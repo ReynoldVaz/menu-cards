@@ -171,9 +171,12 @@ useEffect(() => {
                 {tab === 'ingredients' && (
                   <div>
                     <h4 className="font-semibold text-gray-800">Ingredients</h4>
-                    {item.ingredients?.length ? (
+                    {item.ingredients ? (
                       <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
-                        {item.ingredients.map((ing, idx) => (
+                        {(typeof item.ingredients === 'string' 
+                          ? item.ingredients.split(',').map(ing => ing.trim())
+                          : item.ingredients
+                        ).map((ing, idx) => (
                           <li key={idx}>{ing}</li>
                         ))}
                       </ul>
