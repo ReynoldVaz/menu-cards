@@ -7,11 +7,12 @@ export interface MenuItemFormData {
   price: number;
   section: string;
   ingredients: string;
-  image?: string;
-  video?: string;
+  image?: string | null;
+  video?: string | null;
+  dietType?: 'veg' | 'non-veg' | 'vegan';
   is_todays_special: boolean;
   spice_level?: number;
-  is_vegetarian: boolean;
+  sweet_level?: number;
 }
 
 interface MenuItemFormProps {
@@ -20,9 +21,16 @@ interface MenuItemFormProps {
   onCancel: () => void;
   initialData?: MenuItemFormData;
   isLoading?: boolean;
+  availableSections?: string[];
+  onSectionsUpdate?: (sections: string[]) => void;
 }
 
-const SECTIONS = ['Appetizers', 'Main Course', 'Desserts', 'Beverages', 'Salads', 'Soups', 'Breads'];
+const DEFAULT_SECTIONS = ['Appetizers', 'Main Course', 'Desserts', 'Beverages', 'Salads', 'Soups', 'Breads'];
+const DIET_TYPES = [
+  { value: 'veg', label: '🥬 Vegetarian', color: 'bg-green-100 text-green-800' },
+  { value: 'non-veg', label: '🍗 Non-Vegetarian', color: 'bg-orange-100 text-orange-800' },
+  { value: 'vegan', label: '🌱 Vegan', color: 'bg-blue-100 text-blue-800' },
+];
 
 export function MenuItemForm({
   restaurantCode,
@@ -30,18 +38,29 @@ export function MenuItemForm({
   onCancel,
   initialData,
   isLoading = false,
+  availableSections = DEFAULT_SECTIONS,
+  onSectionsUpdate,
 }: MenuItemFormProps) {
   const [formData, setFormData] = useState<MenuItemFormData>(
-    initialData || {
-      name: '',
-      description: '',
-      price: 0,
-      section: SECTIONS[0],
-      ingredients: '',
-      is_todays_special: false,
-      is_vegetarian: false,
-    }
+    initialData 
+      ? {
+          ...initialData,
+          dietType: initialData.dietType,
+          section: initialData.section || availableSections[0] || DEFAULT_SECTIONS[0],
+        }
+      : {
+          name: '',
+          description: '',
+          price: 0,
+          section: availableSections[0] || DEFAULT_SECTIONS[0],
+          ingredients: '',
+          is_todays_special: false,
+        }
   );
+
+  const [sections, setSections] = useState<string[]>(availableSections);
+  const [newSection, setNewSection] = useState('');
+  const [showNewSectionInput, setShowNewSectionInput] = useState(false);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -140,11 +159,23 @@ export function MenuItemForm({
         return;
       }
 
-      await onSubmit({
-        ...formData,
-        image: imageUrl,
-        video: videoUrl,
-      });
+      const submitData: any = {
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        section: formData.section,
+        ingredients: formData.ingredients,
+        is_todays_special: formData.is_todays_special,
+      };
+
+      // Only include optional fields if they have values
+      if (formData.dietType) submitData.dietType = formData.dietType;
+      if (imageUrl) submitData.image = imageUrl;
+      if (videoUrl) submitData.video = videoUrl;
+      if (formData.spice_level) submitData.spice_level = formData.spice_level;
+      if (formData.sweet_level) submitData.sweet_level = formData.sweet_level;
+
+      await onSubmit(submitData as MenuItemFormData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save menu item');
       setUploadingImage(false);
@@ -199,37 +230,98 @@ export function MenuItemForm({
             className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isLoading}
           >
-            {SECTIONS.map((s) => (
+            {availableSections.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            onClick={() => setShowNewSectionInput(!showNewSectionInput)}
+            className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded font-medium whitespace-nowrap"
+            disabled={isLoading}
+          >
+            + New Section
+          </button>
         </div>
 
-        <div className="flex items-end gap-4">
-          <label className="flex items-center gap-2">
+        {showNewSectionInput && (
+          <div className="flex gap-2">
             <input
-              type="checkbox"
-              checked={formData.is_vegetarian}
-              onChange={(e) => setFormData({ ...formData, is_vegetarian: e.target.checked })}
-              className="w-4 h-4"
+              type="text"
+              value={newSection}
+              onChange={(e) => setNewSection(e.target.value)}
+              placeholder="e.g., Breakfast, Combos"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isLoading}
             />
-            <span className="text-sm font-medium text-gray-700">Vegetarian</span>
-          </label>
+            <button
+              type="button"
+              onClick={() => {
+                if (newSection.trim() && !sections.includes(newSection)) {
+                  const updatedSections = [...sections, newSection];
+                  setSections(updatedSections);
+                  setFormData({ ...formData, section: newSection });
+                  setNewSection('');
+                  setShowNewSectionInput(false);
+                  onSectionsUpdate?.(updatedSections);
+                }
+              }}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium"
+              disabled={isLoading || !newSection.trim()}
+            >
+              Add
+            </button>
+          </div>
+        )}
+      </div>
 
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={formData.is_todays_special}
-              onChange={(e) => setFormData({ ...formData, is_todays_special: e.target.checked })}
-              className="w-4 h-4"
+      {/* Diet Type Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Diet Type <span className="text-gray-400">(Optional)</span></label>
+        <div className="grid grid-cols-3 gap-3">
+          {DIET_TYPES.map((diet) => (
+            <button
+              key={diet.value}
+              type="button"
+              onClick={() => setFormData({ ...formData, dietType: diet.value as any })}
+              className={`px-3 py-2 rounded font-medium transition-all ${
+                formData.dietType === diet.value
+                  ? `${diet.color} ring-2 ring-offset-1 ring-blue-500`
+                  : `${diet.color} opacity-50 hover:opacity-75`
+              }`}
               disabled={isLoading}
-            />
-            <span className="text-sm font-medium text-gray-700">Today's Special</span>
-          </label>
+            >
+              {diet.label}
+            </button>
+          ))}
+          {/* Clear Diet Type Button */}
+          {formData.dietType && (
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, dietType: undefined })}
+              className="px-3 py-2 rounded font-medium transition-all bg-gray-200 hover:bg-gray-300 text-gray-700"
+              disabled={isLoading}
+            >
+              ✕ Clear
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* Today's Special */}
+      <div>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={formData.is_todays_special}
+            onChange={(e) => setFormData({ ...formData, is_todays_special: e.target.checked })}
+            className="w-4 h-4"
+            disabled={isLoading}
+          />
+          <span className="text-sm font-medium text-gray-700">⭐ Mark as Today's Special</span>
+        </label>
       </div>
 
       {/* Description */}
@@ -258,22 +350,72 @@ export function MenuItemForm({
         />
       </div>
 
-      {/* Spice Level */}
+      {/* Spice & Sweet Levels */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Spice Level (1-5)</label>
-        <input
-          type="range"
-          min="1"
-          max="5"
-          value={formData.spice_level || 2}
-          onChange={(e) => setFormData({ ...formData, spice_level: parseInt(e.target.value) })}
-          className="w-full"
-          disabled={isLoading}
-        />
-        <div className="text-xs text-gray-600 mt-1">
-          Level: {formData.spice_level || 2} {['🌶️', '🌶️🌶️', '🌶️🌶️🌶️', '🌶️🌶️🌶️🌶️', '🌶️🌶️🌶️🌶️🌶️'][
-            (formData.spice_level || 2) - 1
-          ]}
+        <label className="block text-sm font-medium text-gray-700 mb-3">Flavor Profile (Combined max 5)</label>
+        <div className="space-y-4">
+          {/* Spice Level */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-600">🌶️ Spice</span>
+              <span className="text-sm font-semibold text-red-600">{formData.spice_level || 0}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="5"
+              value={formData.spice_level || 0}
+              onChange={(e) => {
+                const newSpice = parseInt(e.target.value);
+                const currentSweet = formData.sweet_level || 0;
+                // Allow spice level but cap total at 5
+                const maxSpice = Math.min(newSpice, 5 - currentSweet);
+                setFormData({ ...formData, spice_level: maxSpice });
+              }}
+              className="w-full"
+              disabled={isLoading}
+            />
+            <div className="text-xs text-red-500 mt-1">
+              {Array.from({ length: formData.spice_level || 0 }).map((_, i) => (
+                <span key={i}>🌶️</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Sweet Level */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-600">🍯 Sweet</span>
+              <span className="text-sm font-semibold text-amber-600">{formData.sweet_level || 0}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="5"
+              value={formData.sweet_level || 0}
+              onChange={(e) => {
+                const newSweet = parseInt(e.target.value);
+                const currentSpice = formData.spice_level || 0;
+                // Allow sweet level but cap total at 5
+                const maxSweet = Math.min(newSweet, 5 - currentSpice);
+                setFormData({ ...formData, sweet_level: maxSweet });
+              }}
+              className="w-full"
+              disabled={isLoading}
+            />
+            <div className="text-xs text-amber-600 mt-1">
+              {Array.from({ length: formData.sweet_level || 0 }).map((_, i) => (
+                <span key={i}>🍯</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Combined Total */}
+          <div className="bg-blue-50 border border-blue-200 rounded p-2">
+            <span className="text-xs text-blue-700 font-medium">
+              Total: {(formData.spice_level || 0) + (formData.sweet_level || 0)} / 5
+            </span>
+          </div>
         </div>
       </div>
 

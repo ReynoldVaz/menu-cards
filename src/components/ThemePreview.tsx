@@ -16,9 +16,10 @@ interface ThemePreviewProps {
     backgroundColor: string;
   };
   restaurantName?: string;
+  logoUrl?: string;
 }
 
-export function ThemePreview({ theme, restaurantName = 'Flames' }: ThemePreviewProps) {
+export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: ThemePreviewProps) {
   const themeStyles = getThemeStyles(theme);
   const templateStyles = getTemplateComponentStyles(theme);
 
@@ -29,47 +30,63 @@ export function ThemePreview({ theme, restaurantName = 'Flames' }: ThemePreviewP
     }}>
       {/* HEADER - Top Bar with gradient */}
       <div
-        className="relative px-6 py-6 sm:px-8 sm:py-8 text-center"
+        className="relative px-6 py-6 sm:px-8 sm:py-8 text-center flex items-center justify-center"
         style={{
           background: `linear-gradient(to right, ${theme.primaryColor}, ${theme.secondaryColor})`,
+          minHeight: logoUrl ? '250px' : 'auto',
         }}
       >
-        {/* Logo Icon */}
-        <div className="flex justify-center mb-4">
-          <div 
-            className="flex items-center justify-center rounded-full"
+        {logoUrl ? (
+          /* Logo fills entire header */
+          <img 
+            src={logoUrl} 
+            alt="Restaurant Logo" 
+            className="w-full h-full object-cover"
             style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              fontSize: '28px',
+              filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
             }}
-          >
-            🔥
+          />
+        ) : (
+          /* Original content when no logo */
+          <div className="w-full">
+            {/* Logo Icon */}
+            <div className="flex justify-center mb-4">
+              <div 
+                className="flex items-center justify-center rounded-full"
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  fontSize: '28px',
+                }}
+              >
+                🔥
+              </div>
+            </div>
+            
+            {/* Restaurant Name - using template typography if available */}
+            <h1 
+              className="tracking-tight mb-2"
+              style={{
+                color: '#FFFFFF',
+                fontSize: templateStyles.typography.restaurantName?.fontSize || '2.5rem',
+                fontWeight: templateStyles.typography.restaurantName?.fontWeight || 'bold',
+                fontFamily: templateStyles.typography.restaurantName?.fontFamily || 'sans-serif',
+                letterSpacing: templateStyles.typography.restaurantName?.letterSpacing || '0px',
+              }}
+            >
+              {restaurantName}
+            </h1>
+            
+            {/* Subtitle */}
+            <p
+              className="font-light text-xs sm:text-sm tracking-wide"
+              style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+            >
+              AUTHENTIC CUISINE
+            </p>
           </div>
-        </div>
-        
-        {/* Restaurant Name - using template typography if available */}
-        <h1 
-          className="tracking-tight mb-2"
-          style={{
-            color: '#FFFFFF',
-            fontSize: templateStyles.typography.restaurantName?.fontSize || '2.5rem',
-            fontWeight: templateStyles.typography.restaurantName?.fontWeight || 'bold',
-            fontFamily: templateStyles.typography.restaurantName?.fontFamily || 'sans-serif',
-            letterSpacing: templateStyles.typography.restaurantName?.letterSpacing || '0px',
-          }}
-        >
-          {restaurantName}
-        </h1>
-        
-        {/* Subtitle */}
-        <p
-          className="font-light text-xs sm:text-sm tracking-wide"
-          style={{ color: 'rgba(255, 255, 255, 0.9)' }}
-        >
-          AUTHENTIC CUISINE
-        </p>
+        )}
       </div>
 
       {/* Digital Solutions Section - Top info */}

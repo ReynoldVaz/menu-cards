@@ -15,7 +15,7 @@ import { SearchIconButton } from './components/SearchIconButton';
 import { ItemModal } from './components/ItemModal';
 import ChatBot from './components/ChatBot';
 import { trackPageview } from "./lib/ga";
-import { getThemeStyles, hexToRgba } from './utils/themeUtils';
+import { getThemeStyles } from './utils/themeUtils';
 
 
 function MobileAwareCallButton({ themeColor }: { themeColor?: string }) {
@@ -43,6 +43,9 @@ function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<null | any>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedDiets, setSelectedDiets] = useState<Set<'veg' | 'non-veg' | 'vegan'>>(
+    new Set(['veg', 'non-veg', 'vegan'])
+  );
 
   const searchBarRef = useRef<HTMLInputElement | null>(null);
 
@@ -75,17 +78,9 @@ function App() {
         background: themeStyles.gradientBg,
       }}
     >
-      <div className="flex items-center justify-center p-4 py-8">
-
-
-
-
-
-
-        <div className="max-w-4xl w-full">
-          <div className="rounded-lg shadow-xl overflow-hidden relative" style={{ backgroundColor: themeStyles.backgroundColor, borderColor: themeStyles.borderColor, borderWidth: '1px' }}>
-
-             <SearchIconButton searchBarRef={searchBarRef} />
+      <div className="w-full">
+        <div className="w-full">
+          <div className="rounded-lg shadow-xl overflow-hidden relative" style={{ backgroundColor: themeStyles.backgroundColor, borderColor: themeStyles.borderColor, borderWidth: '1px' }}>             <SearchIconButton searchBarRef={searchBarRef} />
             <Header onMenuClick={() => setDrawerOpen(true)} />
                   <div>
                     {/* <>{console.log("Analytics data:", data)}</> */}
@@ -99,7 +94,7 @@ function App() {
       </ul> */}
     </div>
 
-              <div className="backdrop-blur-md py-8 px-6 sm:px-12 text-center shadow-lg" style={{ 
+              {/* <div className="backdrop-blur-md py-8 px-6 sm:px-12 text-center shadow-lg" style={{ 
                 backgroundColor: 'rgba(255, 255, 255, 0.7)',
                 borderTopColor: themeStyles.borderColor,
                 borderTopWidth: '1px'
@@ -118,22 +113,36 @@ function App() {
                 </p>
 
                 <MobileAwareCallButton themeColor={themeStyles.primaryButtonBg} />
-              </div>
+              </div> */}
 
             <div className="hidden md:block">
               <TopTabs
-                sections={[{ id: 'todays-special', title: "Today's Special", icon: '⭐' },
+                sections={[
+                  ...(todaysSpecial ? [{ id: 'todays-special', title: "Today's Special", icon: '⭐' }] : []),
                   ...menuSections.map((s) => ({ id: s.id, title: s.title })),
-                  { id: 'events', title: 'Events', icon: '🎉' },]}
+                  { id: 'events', title: 'Events', icon: '🎉' },
+                ]}
               />
             </div>
 
             <SideDrawer
               open={drawerOpen}
               onClose={() => setDrawerOpen(false)}
-              sections={[{ id: 'todays-special', title: "Today's Special", icon: '⭐' },
+              sections={[
+                ...(todaysSpecial ? [{ id: 'todays-special', title: "Today's Special", icon: '⭐' }] : []),
                 ...menuSections.map((s) => ({ id: s.id, title: s.title })),
-                { id: 'events', title: 'Events', icon: '🎉' },]}
+                { id: 'events', title: 'Events', icon: '🎉' },
+              ]}
+              selectedDiets={selectedDiets}
+              onDietChange={(diet) => {
+                const newDiets = new Set(selectedDiets);
+                if (newDiets.has(diet)) {
+                  newDiets.delete(diet);
+                } else {
+                  newDiets.add(diet);
+                }
+                setSelectedDiets(newDiets);
+              }}
             />
 
             <MenuFab onClick={() => setDrawerOpen(true)} />
@@ -162,28 +171,40 @@ function App() {
                 <TodaysSpecial item={todaysSpecial} />
               </div>
 
-              {menuSections.map((section, idx) => (
-                <div key={section.id}>
-                  <MenuSection
-                    id={section.id}
-                    title={section.title}
-                    items={section.items}
-                    onOpen={(it, imgs) => {
-                      setSelectedItem(it);
-                      setSelectedImages(imgs || []);
-                    }}
-                    isLoading={loading} // ✨ PASSING THE LOADING STATE
+              {menuSections.map((section, idx) => {
+                // Filter items based on selected diets
+                const filteredItems = section.items.filter((item) => {
+                  const dietType = (item as any).dietType;
+                  // Show items without dietType (drinks, etc) always
+                  if (!dietType) return true;
+                  // Show items with dietType if selected
+                  return selectedDiets.has(dietType);
+                });
 
+                // Don't render section if no items match filter
+                if (filteredItems.length === 0) return null;
 
-                  />
-                  {idx < menuSections.length - 1 && (
-                    <div 
-                      className="border-b mt-12"
-                      style={{ borderColor: themeStyles.borderColor + '20' }}
-                    ></div>
-                  )}
-                </div>
-              ))}
+                return (
+                  <div key={section.id}>
+                    <MenuSection
+                      id={section.id}
+                      title={section.title}
+                      items={filteredItems}
+                      onOpen={(it, imgs) => {
+                        setSelectedItem(it);
+                        setSelectedImages(imgs || []);
+                      }}
+                      isLoading={loading} // ✨ PASSING THE LOADING STATE
+                    />
+                    {idx < menuSections.length - 1 && (
+                      <div 
+                        className="border-b mt-12"
+                        style={{ borderColor: themeStyles.borderColor + '20' }}
+                      ></div>
+                    )}
+                  </div>
+                );
+              })}
 
               <div id="events">
                 <EventsSection events={upcomingEvents} />

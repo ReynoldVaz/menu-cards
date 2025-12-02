@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth, db } from '../firebase.config';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 type AuthMode = 'welcome' | 'login' | 'signup';
 
@@ -23,15 +23,39 @@ export function AdminAuthPage() {
       const userCredential = await signInWithPopup(auth, provider);
       console.log('✅ Google auth successful:', userCredential.user.uid);
       
-      // Check if user has a restaurant
-      const userSnapshot = await getDocs(
-        query(collection(db, 'users'), where('__name__', '==', userCredential.user.uid))
-      );
+      // Check user's role and approval status
+      const userRef = doc(db, 'users', userCredential.user.uid);
+      const userDoc = await getDoc(userRef);
       
-      if (!userSnapshot.empty) {
-        const userData = userSnapshot.docs[0].data() as { restaurantCode?: string };
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const role = userData.role || 'restaurant-owner';
+        
+        // If master admin, go to master dashboard
+        if (role === 'master-admin') {
+          navigate('/admin/master-dashboard');
+          return;
+        }
+        
+        // If restaurant owner
         if (userData.restaurantCode) {
-          // User has a restaurant, go to dashboard
+          // Check approval status
+          const approvalStatus = userData.approvalStatus || 'approved';
+          
+          if (approvalStatus === 'pending') {
+            // Show pending approval page
+            navigate('/admin/pending-approval', {
+              state: { restaurantCode: userData.restaurantCode, userId: userCredential.user.uid },
+            });
+            return;
+          }
+          
+          if (approvalStatus === 'rejected') {
+            setError('Your registration was rejected. Please contact support.');
+            return;
+          }
+          
+          // If approved, go to regular dashboard
           navigate('/admin/dashboard');
           return;
         }
@@ -98,15 +122,39 @@ export function AdminAuthPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log('✅ Login successful:', userCredential.user.uid);
       
-      // Check if user has a restaurant
-      const userSnapshot = await getDocs(
-        query(collection(db, 'users'), where('__name__', '==', userCredential.user.uid))
-      );
+      // Check user's role and approval status
+      const userRef = doc(db, 'users', userCredential.user.uid);
+      const userDoc = await getDoc(userRef);
       
-      if (!userSnapshot.empty) {
-        const userData = userSnapshot.docs[0].data() as { restaurantCode?: string };
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const role = userData.role || 'restaurant-owner';
+        
+        // If master admin, go to master dashboard
+        if (role === 'master-admin') {
+          navigate('/admin/master-dashboard');
+          return;
+        }
+        
+        // If restaurant owner
         if (userData.restaurantCode) {
-          // User has a restaurant, go to dashboard
+          // Check approval status
+          const approvalStatus = userData.approvalStatus || 'approved';
+          
+          if (approvalStatus === 'pending') {
+            // Show pending approval page
+            navigate('/admin/pending-approval', {
+              state: { restaurantCode: userData.restaurantCode, userId: userCredential.user.uid },
+            });
+            return;
+          }
+          
+          if (approvalStatus === 'rejected') {
+            setError('Your registration was rejected. Please contact support.');
+            return;
+          }
+          
+          // If approved, go to regular dashboard
           navigate('/admin/dashboard');
           return;
         }

@@ -7,6 +7,8 @@ import { AdminAuthPage } from './pages/AdminAuthPage';
 import { RestaurantRegistrationPage } from './pages/RestaurantRegistrationPage';
 import { ThemeSelectionPage } from './pages/ThemeSelectionPage';
 import { LogoUploadPage } from './pages/LogoUploadPage';
+import { MasterAdminDashboard } from './pages/MasterAdminDashboard';
+import { PendingApprovalPage } from './pages/PendingApprovalPage';
 
 export function AppRouter() {
   return (
@@ -19,9 +21,11 @@ export function AppRouter() {
         {/* Admin Routes */}
         <Route path="/admin/auth" element={<AdminAuthPage />} />
         <Route path="/admin/register-restaurant" element={<RestaurantRegistrationPage />} />
+        <Route path="/admin/pending-approval" element={<PendingApprovalPage />} />
         <Route path="/admin/theme-selection" element={<ThemeSelectionPage />} />
         <Route path="/admin/logo-upload" element={<LogoUploadPage />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/master-dashboard" element={<MasterAdminDashboard />} />
         <Route path="/admin" element={<Navigate to="/admin/auth" replace />} />
         
         <Route path="*" element={<Navigate to="/" replace />} />

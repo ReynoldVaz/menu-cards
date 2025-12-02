@@ -9,11 +9,15 @@ interface EventCardProps {
 export function EventCard({ event }: EventCardProps) {
   const themeStyles = useThemeStyles();
   return (
-    <div className="rounded-lg p-4 sm:p-6" style={{ backgroundColor: themeStyles.backgroundColor, borderColor: themeStyles.borderColor, borderWidth: '1px' }} onMouseEnter={(e) => {
-      e.currentTarget.style.borderColor = themeStyles.backgroundColor;
-    }} onMouseLeave={(e) => {
-      e.currentTarget.style.borderColor = themeStyles.borderColor;
-    }}>
+    <div 
+      className="rounded-lg p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow duration-300" 
+      style={{ 
+        backgroundColor: themeStyles.backgroundColor, 
+        borderColor: themeStyles.borderColor, 
+        borderWidth: '1px',
+        borderRadius: '12px'
+      }}
+    >
       <div className="flex items-start gap-3 mb-3">
         <Music className="w-5 h-5 mt-1 flex-shrink-0" style={{ color: themeStyles.primaryButtonBg }} />
         <div>

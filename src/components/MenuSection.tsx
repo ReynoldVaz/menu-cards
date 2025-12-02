@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MenuItem } from "../data/menuData";
 import { SmartImage } from "./SmartImage";
+import { DietBadge } from "./DietBadge";
 import { trackEvent } from "../lib/ga";
 import { useThemeStyles } from "../context/useThemeStyles";
 
@@ -87,25 +88,26 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                 </div>
               </button>
 
-              {/* DETAILS */}
+                {/* DETAILS */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-4 mb-1">
                   <div className="flex-1 min-w-0">
-                    <button
-                      onClick={() => openModal(item)}
-                      className="text-left w-full"
-                    >
-                      <h3 
-                        className="text-base sm:text-lg font-semibold text-gray-800 break-words whitespace-normal leading-snug"
-                        style={{
-                          color: 'inherit',
-                        }}
+                    <div className="flex items-center gap-2 mb-1">
+                      <button
+                        onClick={() => openModal(item)}
+                        className="text-left flex-1"
                       >
-                        {item.name}
-                      </h3>
-                    </button>
-
-                    {/* Spice / Sweet Icons */}
+                        <h3 
+                          className="text-base sm:text-lg font-semibold text-gray-800 break-words whitespace-normal leading-snug"
+                          style={{
+                            color: 'inherit',
+                          }}
+                        >
+                          {item.name}
+                        </h3>
+                      </button>
+                      {(item as any).dietType && <DietBadge dietType={(item as any).dietType} size="sm" />}
+                    </div>                    {/* Spice / Sweet Icons */}
                     <div className="flex items-center gap-2 mt-1">
 
                       {/* {item.spice > 0 && (
@@ -158,9 +160,9 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                 </div>
 
                 {/* DESCRIPTION */}
-                <p className="text-gray-500 text-sm leading-relaxed">
+                {/* <p className="text-gray-500 text-sm leading-relaxed">
                   {item.description}
-                </p>
+                </p> */}
 
                 {/* IMAGE URL FOR DEBUG */}
                 {/* <div className="text-xs text-gray-400 mt-2 break-all">

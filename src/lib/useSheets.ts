@@ -162,13 +162,14 @@ export function useSheetsData(): SheetsHook {
         description: o.description || '',
         price: o.price || '',
         ingredients: o.ingredients ? String(o.ingredients).split(',').map((s) => s.trim()).filter(Boolean) : undefined,
-          image: thumb || (imgs && imgs.length > 0 ? imgs[0] : undefined),
-          images: imgs,
-          video: vid,
-          videos: vids,
-              /** 🔥 NEW FIELDS */
-    spice: o.spice ? Number(o.spice) : "",
-    sweet: o.sweet ? Number(o.sweet) : "",
+        image: thumb || (imgs && imgs.length > 0 ? imgs[0] : undefined),
+        images: imgs,
+        video: vid,
+        videos: vids,
+        dietType: o.dietType || 'veg',
+        is_todays_special: o.is_todays_special && String(o.is_todays_special).toLowerCase() === 'true',
+        spice: o.spice ? Number(o.spice) : undefined,
+        sweet: o.sweet ? Number(o.sweet) : undefined,
       } as MenuItem;
     });
 

@@ -72,6 +72,7 @@ export interface Restaurant {
   theme?: Theme;
   restaurantCode?: string;
   ownerId?: string;
+  menuSectionNames?: string[];
 }
 
 export interface UseFirebaseRestaurantResult {

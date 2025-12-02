@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { db } from '../firebase.config';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
 import {
   isRestaurantCodeTaken,
   generateSlug,
@@ -99,32 +99,23 @@ export function RestaurantRegistrationPage() {
     try {
       setLoading(true);
 
-      // Use restaurant code as document ID
-      const restaurantId = restaurantCode;
-
-      // Create restaurant document
-      const restaurantDocRef = doc(db, 'restaurants', restaurantId);
-      await setDoc(restaurantDocRef, {
-        name: restaurantName,
-        restaurantCode: restaurantCode,
+      // Create approval request instead of directly creating restaurant
+      const approvalRequestRef = collection(db, 'approval_requests');
+      await addDoc(approvalRequestRef, {
         ownerId: state?.userId,
+        ownerEmail: state?.email,
+        restaurantCode: restaurantCode,
+        restaurantName: restaurantName,
         phone,
         email,
         address,
         description,
-        logo: null, // Will be uploaded in next step
-        theme: {
-          mode: 'light',
-          primaryColor: '#EA580C',
-          secondaryColor: '#FB923C',
-          accentColor: '#FED7AA',
-        },
-        isActive: true,
+        status: 'pending', // pending, approved, rejected
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
 
-      // Create user document linking to restaurant
+      // Create user document with pending status
       const userDocRef = doc(db, 'users', state?.userId);
       await setDoc(
         userDocRef,
@@ -132,20 +123,21 @@ export function RestaurantRegistrationPage() {
           email: state?.email,
           displayName: restaurantName,
           restaurantCode,
+          approvalStatus: 'pending',
           createdAt: new Date().toISOString(),
         },
         { merge: true }
       );
 
-      console.log('✅ Restaurant created:', restaurantId);
+      console.log('✅ Approval request created for:', restaurantCode);
 
-      // Navigate to theme selection
-      navigate('/admin/theme-selection', {
-        state: { restaurantId, userId: state?.userId },
+      // Navigate to pending page
+      navigate('/admin/pending-approval', {
+        state: { restaurantCode, userId: state?.userId },
       });
     } catch (err: any) {
       console.error('Error:', err);
-      setError(err.message || 'Failed to create restaurant');
+      setError(err.message || 'Failed to submit registration');
     } finally {
       setLoading(false);
     }

@@ -39,7 +39,7 @@
 // }
 
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useThemeStyles } from '../context/useThemeStyles';
 import { hexToRgba } from '../utils/themeUtils';
 
@@ -47,12 +47,17 @@ export function SideDrawer({
   open,
   onClose,
   sections,
+  selectedDiets,
+  onDietChange,
 }: {
   open: boolean;
   onClose: () => void;
   sections: { id: string; title: string; icon?: string }[];
+  selectedDiets?: Set<'veg' | 'non-veg' | 'vegan'>;
+  onDietChange?: (diet: 'veg' | 'non-veg' | 'vegan') => void;
 }) {
   const themeStyles = useThemeStyles();
+  const [dietFilterOpen, setDietFilterOpen] = useState(true);
 
   // ✨ NEW: Effect to prevent background scrolling when the drawer is open
   useEffect(() => {
@@ -111,6 +116,64 @@ export function SideDrawer({
             ✕
           </button>
         </div>
+
+        {/* Diet Filter Section */}
+        {selectedDiets && onDietChange && (
+          <div className="mb-6 rounded-lg" style={{ borderColor: themeStyles.borderColor, borderWidth: '1px' }}>
+            {/* Header - Collapsable */}
+            <button
+              onClick={() => setDietFilterOpen(!dietFilterOpen)}
+              className="w-full p-4 flex items-center justify-between rounded-lg transition-all"
+              style={{ backgroundColor: hexToRgba(themeStyles.accentBg, 0.1) }}
+            >
+              <div className="text-sm font-semibold" style={{ color: themeStyles.primaryButtonBg }}>🥗 Filter by Diet</div>
+              <span style={{ color: themeStyles.primaryButtonBg, transform: dietFilterOpen ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.3s' }}>
+                ▼
+              </span>
+            </button>
+
+            {/* Diet Options - Collapsable Content */}
+            {dietFilterOpen && (
+              <div className="p-4 space-y-2 border-t" style={{ borderColor: themeStyles.borderColor }}>
+                {/* Veg */}
+                <button
+                  onClick={() => onDietChange('veg')}
+                  className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                  style={{
+                    backgroundColor: selectedDiets.has('veg') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.1),
+                    color: selectedDiets.has('veg') ? 'white' : themeStyles.primaryButtonBg,
+                  }}
+                >
+                  <span>🥬</span> Vegetarian
+                </button>
+
+                {/* Non-Veg */}
+                <button
+                  onClick={() => onDietChange('non-veg')}
+                  className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                  style={{
+                    backgroundColor: selectedDiets.has('non-veg') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.1),
+                    color: selectedDiets.has('non-veg') ? 'white' : themeStyles.primaryButtonBg,
+                  }}
+                >
+                  <span>🍗</span> Non-Veg
+                </button>
+
+                {/* Vegan */}
+                <button
+                  onClick={() => onDietChange('vegan')}
+                  className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                  style={{
+                    backgroundColor: selectedDiets.has('vegan') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.1),
+                    color: selectedDiets.has('vegan') ? 'white' : themeStyles.primaryButtonBg,
+                  }}
+                >
+                  <span>🌱</span> Vegan
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* List */}
         <div className="flex flex-col space-y-3">

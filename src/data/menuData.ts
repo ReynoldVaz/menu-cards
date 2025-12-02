@@ -4,6 +4,7 @@ export interface MenuItem {
   description: string;
   price: string;
   section?: string;
+  dietType?: 'veg' | 'non-veg' | 'vegan';
   is_todays_special?: boolean;
   // optional additional metadata used by the modal
   ingredients?: string[];

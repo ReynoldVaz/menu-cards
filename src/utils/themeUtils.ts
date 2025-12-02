@@ -49,7 +49,8 @@ export const DEFAULT_THEME: Theme = {
 /**
  * Convert hex color to rgba
  */
-export function hexToRgba(hex: string, alpha: number): string {
+export function hexToRgba(hex: string | undefined, alpha: number): string {
+  if (!hex) return 'rgba(255, 255, 255, 0)';
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
@@ -59,7 +60,8 @@ export function hexToRgba(hex: string, alpha: number): string {
 /**
  * Helper to determine if a hex color is dark or light
  */
-function isColorDark(hexColor: string): boolean {
+function isColorDark(hexColor: string | undefined): boolean {
+  if (!hexColor) return false;
   const hex = hexColor.replace('#', '');
   const r = parseInt(hex.substr(0, 2), 16);
   const g = parseInt(hex.substr(2, 2), 16);
@@ -74,17 +76,18 @@ function isColorDark(hexColor: string): boolean {
 export function getThemeStyles(theme: Theme | null): ThemeStyles {
   const t = theme || DEFAULT_THEME;
   // Determine text color based on background brightness
-  const isDarkBg = isColorDark(t.backgroundColor);
+  const bgColor = t.backgroundColor || DEFAULT_THEME.backgroundColor;
+  const isDarkBg = isColorDark(bgColor);
   const textColor = isDarkBg ? '#FFFFFF' : '#374151';
 
   return {
-    backgroundColor: t.backgroundColor,
+    backgroundColor: bgColor,
     textColor: textColor,
-    primaryButtonBg: t.primaryColor,
-    primaryButtonBgHover: t.secondaryColor,
-    borderColor: t.accentColor,
-    accentBg: t.accentColor,
-    gradientBg: `linear-gradient(to bottom, ${hexToRgba(t.accentColor, 0.5)}, ${t.backgroundColor}, ${hexToRgba(t.primaryColor, 0.1)})`,
+    primaryButtonBg: t.primaryColor || DEFAULT_THEME.primaryColor,
+    primaryButtonBgHover: t.secondaryColor || DEFAULT_THEME.secondaryColor,
+    borderColor: t.accentColor || DEFAULT_THEME.accentColor,
+    accentBg: t.accentColor || DEFAULT_THEME.accentColor,
+    gradientBg: `linear-gradient(to bottom, ${hexToRgba(t.accentColor || DEFAULT_THEME.accentColor, 0.5)}, ${bgColor}, ${hexToRgba(t.primaryColor || DEFAULT_THEME.primaryColor, 0.1)})`,
   };
 }
 
@@ -224,8 +227,8 @@ export function getThemeInlineStyles(theme: Theme | null) {
   const t = theme || DEFAULT_THEME;
 
   return {
-    '--primary-color': t.primaryColor,
-    '--secondary-color': t.secondaryColor,
-    '--accent-color': t.accentColor,
+    '--primary-color': t.primaryColor || DEFAULT_THEME.primaryColor,
+    '--secondary-color': t.secondaryColor || DEFAULT_THEME.secondaryColor,
+    '--accent-color': t.accentColor || DEFAULT_THEME.accentColor,
   } as React.CSSProperties & Record<string, string>;
 }
