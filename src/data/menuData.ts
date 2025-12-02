@@ -1,7 +1,11 @@
 export interface MenuItem {
+  id?: string;
   name: string;
   description: string;
   price: string;
+  section?: string;
+  dietType?: 'veg' | 'non-veg' | 'vegan';
+  is_todays_special?: boolean;
   // optional additional metadata used by the modal
   ingredients?: string[];
   image?: string;
@@ -9,8 +13,8 @@ export interface MenuItem {
   video?: string;
   videos?: string[];
   spice?: number;
-sweet?: number;
-
+  sweet?: number;
+  clicks?: number;
 }
 
 export interface MenuSection {

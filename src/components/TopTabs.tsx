@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useThemeStyles } from '../context/useThemeStyles';
 
 interface SectionTab {
   id: string;
@@ -9,6 +10,7 @@ interface SectionTab {
 export function TopTabs({ sections }: { sections: SectionTab[] }) {
   const [active, setActive] = useState<string | null>(sections?.[0]?.id ?? null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const themeStyles = useThemeStyles();
 
   useEffect(() => {
     if (!sections || sections.length === 0) return;
@@ -48,7 +50,15 @@ export function TopTabs({ sections }: { sections: SectionTab[] }) {
   if (!sections || sections.length === 0) return null;
 
   return (
-    <div ref={containerRef} className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-orange-100">
+    <div 
+      ref={containerRef} 
+      className="sticky top-0 z-30 backdrop-blur-sm"
+      style={{ 
+        backgroundColor: themeStyles.backgroundColor,
+        borderBottomColor: themeStyles.borderColor,
+        borderBottomWidth: '1px'
+      }}
+    >
       <div className="max-w-4xl mx-auto px-4 sm:px-10">
         <div className="overflow-x-auto no-scrollbar">
           <div className="flex gap-3 py-3">
@@ -56,9 +66,19 @@ export function TopTabs({ sections }: { sections: SectionTab[] }) {
               <button
                 key={s.id}
                 onClick={() => goTo(s.id)}
-                className={`flex items-center gap-2 whitespace-nowrap px-3 py-1 rounded-md transition-colors text-sm ${
-                  active === s.id ? 'bg-orange-100 text-orange-800 font-semibold' : 'text-gray-600 hover:bg-gray-100'
+                className={`flex items-center gap-2 whitespace-nowrap px-3 py-1 rounded-md text-sm ${
+                  active === s.id ? 'font-semibold' : ''
                 }`}
+                style={
+                  active === s.id
+                    ? {
+                        backgroundColor: themeStyles.accentBg,
+                        color: themeStyles.primaryButtonBg,
+                      }
+                    : {
+                        color: themeStyles.textColor,
+                      }
+                }
               >
                 {s.icon ? <span className="text-lg">{s.icon}</span> : null}
                 <span>{s.title}</span>

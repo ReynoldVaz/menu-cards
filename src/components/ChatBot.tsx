@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef  } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import ReactMarkdown from 'react-markdown'; // <-- ADD THIS
+import ReactMarkdown from 'react-markdown';
+import { useThemeStyles } from '../context/useThemeStyles';
+import { useRestaurant } from '../context/useRestaurant';
+import { hexToRgba, getTemplateComponentStyles, getIconSize } from '../utils/themeUtils';
 
 interface ChatBotProps {
   menuSections: any[];
@@ -13,8 +15,17 @@ export default function ChatBot({ menuSections, todaysSpecial, events }: ChatBot
   const [messages, setMessages] = useState<{ from: "user" | "bot"; text: string }[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  // const messagesEndRef = useRef(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const themeStyles = useThemeStyles();
+  const { theme } = useRestaurant();
+  const templateStyles = getTemplateComponentStyles(theme || null);
+  const chatIcon = templateStyles.icons.chat;
+  
+  // Use consistent size 'lg' (36px) for all floating buttons
+  const iconSize = getIconSize('lg');
+  const borderRadiusClass = chatIcon?.shape === 'circle' ? 'rounded-full' : chatIcon?.shape === 'rounded-square' ? 'rounded-lg' : 'rounded-none';
+  const shadowClass = chatIcon?.shadow || 'shadow-lg';
+  const animationClass = chatIcon?.animated ? 'hover:scale-110 transition-transform' : '';
 
 
   const scrollToBottom = () => {
@@ -48,66 +59,6 @@ useEffect(() => {
       document.body.style.overflow = "auto";
     };
   }, [open]);
-
-  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-
-  async function sendMessagex() {
-    if (!input.trim()) return;
-
-    const userMsg = input;
-    setMessages((prev) => [...prev, { from: "user", text: userMsg }]);
-    setInput("");
-    setLoading(true);
-
-    try {
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-      const prompt = `
-You are an AI restaurant assistant.
-
-FORMAT RULES (IMPORTANT):
-• ALWAYS respond using clean restaurant-style formatting.
-• Group items by category using an emoji heading (e.g., 🥤 Mocktails).
-• Use bullet points (•).
-• Dish names MUST be bold.
-• Prices MUST be bold (e.g., **₹150**).
-• Include descriptions when available.
-• Leave a blank line between sections.
-• Do NOT write long paragraphs.
-• Do NOT dump JSON.
-• Be short, neat, and beautifully organized.
-
-Here is the restaurant menu:
-
-Today's Special:
-${JSON.stringify(todaysSpecial)}
-
-Menu Sections:
-${JSON.stringify(menuSections)}
-
-Events:
-${JSON.stringify(events)}
-
-User asked: "${userMsg}"
-
-Now respond ONLY using the menu information.
-      `;
-
-      const result = await model.generateContent(prompt);
-
-      setMessages((prev) => [
-        ...prev,
-        { from: "bot", text: result.response.text() }
-      ]);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { from: "bot", text: "Sorry, something went wrong. Try again." }
-      ]);
-    }
-
-    setLoading(false);
-  }
 
 async function sendMessage() {
   if (!input.trim()) return;
@@ -153,22 +104,27 @@ async function sendMessage() {
       {/* Floating Chat Button */}
       <button
         onClick={() => setOpen(true)}
-        // className="fixed bottom-20 right-4 bg-orange-600 text-white p-3 rounded-full shadow-lg hover:bg-orange-700 transition z-50"
-        className="fixed bottom-20 right-4 text-white p-3 rounded-full shadow-lg hover:bg-orange-700 transition z-50"
-        // style={{ backgroundColor: 'rgba(249, 115, 22, 0.55)' }}
-        style={{ backgroundColor: 'rgba(247, 107, 7, 0.81)' }}
+        className={`fixed bottom-20 right-4 text-white ${borderRadiusClass} ${shadowClass} ${animationClass} z-50`}
+        style={{ 
+          backgroundColor: hexToRgba(themeStyles.primaryButtonBg, 0.9),
+          padding: `${iconSize / 8}px`
+        }}
+        aria-label="Open chat"
+        title="Chat with AI"
       >
-        💬
+        <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 8.5-8.5 8.38 8.38 0 0 1 3.8.9 8.5 8.5 0 0 1 4.7 7.6z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </button>
 
       {/* Chat Popup */}
       {open && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end justify-end z-50">
-          <div className="bg-white w-full sm:w-96 h-[70vh] rounded-t-2xl shadow-xl flex flex-col">
+          <div className="w-full sm:w-96 h-[70vh] rounded-t-2xl shadow-xl flex flex-col" style={{ backgroundColor: themeStyles.backgroundColor }}>
 
             {/* Header */}
-            <div className="p-4 border-b flex justify-between items-center bg-orange-50">
-              <h2 className="text-lg font-semibold text-orange-700">AI Assistant</h2>
+            <div className="p-4 border-b flex justify-between items-center" style={{ backgroundColor: hexToRgba(themeStyles.accentBg, 0.2), borderBottomColor: themeStyles.borderColor }}>
+              <h2 className="text-lg font-semibold" style={{ color: themeStyles.primaryButtonBg }}>AI Assistant</h2>
               <button onClick={() => setOpen(false)} className="text-gray-600 text-xl">✕</button>
             </div>
 
@@ -177,11 +133,12 @@ async function sendMessage() {
               {messages.map((msg, i) => (
                 <div
                   key={i}
-                  className={`p-2 rounded-lg max-w-[80%] whitespace-pre-line break-words ${
-                    msg.from === "user" ? "bg-orange-100 ml-auto" : "bg-gray-100"
-                  }`}
+                  className="p-2 rounded-lg max-w-[80%] whitespace-pre-line break-words"
+                  style={{
+                    backgroundColor: msg.from === "user" ? hexToRgba(themeStyles.accentBg, 0.5) : '#f3f4f6',
+                    marginLeft: msg.from === "user" ? 'auto' : '0',
+                  }}
                 >
-                  {/* {msg.text} */}
                   <ReactMarkdown>{msg.text}</ReactMarkdown>
                 </div>
               ))}
@@ -193,13 +150,24 @@ async function sendMessage() {
             </div>
 
 
+
 {showPrompts && (
-  <div className="flex flex-wrap gap-2 p-2 border-t bg-orange-50">
+  <div className="flex flex-wrap gap-2 p-2 border-t" style={{ backgroundColor: hexToRgba(themeStyles.accentBg, 0.15), borderTopColor: themeStyles.borderColor }}>
     {suggestionPrompts.map((prompt, idx) => (
       <button
         key={idx}
         onClick={() => setInput(prompt)}
-        className="bg-orange-100 hover:bg-orange-200 text-sm px-3 py-1 rounded-full"
+        className="text-sm px-3 py-1 rounded-full"
+        style={{
+          backgroundColor: hexToRgba(themeStyles.accentBg, 0.3),
+          color: themeStyles.primaryButtonBg,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = hexToRgba(themeStyles.accentBg, 0.5);
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = hexToRgba(themeStyles.accentBg, 0.3);
+        }}
       >
         {prompt}
       </button>
@@ -210,17 +178,19 @@ async function sendMessage() {
 
 
             {/* Input Area */}
-            <div className="p-3 border-t flex gap-2 bg-orange-50">
+            <div className="p-3 border-t flex gap-2" style={{ backgroundColor: hexToRgba(themeStyles.accentBg, 0.15), borderTopColor: themeStyles.borderColor }}>
               <input
                 className="flex-1 border rounded-lg px-3 py-2 text-sm"
                 placeholder="Ask about dishes..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                style={{ borderColor: themeStyles.borderColor }}
               />
               <button
                 onClick={sendMessage}
-                className="bg-orange-600 text-white px-4 py-2 rounded-lg"
+                className="text-white px-4 py-2 rounded-lg"
+                style={{ backgroundColor: themeStyles.backgroundColor }}
               >
                 ➤
               </button>

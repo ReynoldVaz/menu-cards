@@ -1,14 +1,16 @@
 import { Event } from '../data/menuData';
 import { EventCard } from './EventCard';
+import { useThemeStyles } from '../context/useThemeStyles';
 
 interface EventsSectionProps {
   events: Event[];
 }
 
 export function EventsSection({ events }: EventsSectionProps) {
+  const themeStyles = useThemeStyles();
   return (
-    <div className="mt-12 pt-8 border-t border-orange-100">
-      <h2 className="text-2xl sm:text-3xl font-bold text-orange-900 mb-8 text-center">
+    <div className="mt-12 pt-8" style={{ borderTop: `1px solid ${themeStyles.borderColor}` }}>
+      <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-center" style={{ color: themeStyles.primaryButtonBg }}>
         Upcoming Events
       </h2>
 
