@@ -94,7 +94,8 @@ function App() {
       </ul> */}
     </div>
 
-              {/* <div className="backdrop-blur-md py-8 px-6 sm:px-12 text-center shadow-lg" style={{ 
+              {/*
+               <div className="backdrop-blur-md py-8 px-6 sm:px-12 text-center shadow-lg" style={{ 
                 backgroundColor: 'rgba(255, 255, 255, 0.7)',
                 borderTopColor: themeStyles.borderColor,
                 borderTopWidth: '1px'
