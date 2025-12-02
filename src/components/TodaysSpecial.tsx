@@ -2,6 +2,8 @@ import { Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { MenuItem } from '../data/menuData';
 import { ItemModal } from './ItemModal';
+import { useThemeStyles } from '../context/useThemeStyles';
+import { hexToRgba } from '../utils/themeUtils';
 
 interface TodaysSpecialProps {
   item: MenuItem | null;
@@ -23,12 +25,20 @@ export function TodaysSpecial({ item }: TodaysSpecialProps) {
 
   const [open, setOpen] = useState(false);
   const images = item.images && item.images.length > 0 ? item.images : modalImagesFor(item.name);
+  const themeStyles = useThemeStyles();
 
   return (
-    <div className="mb-12 bg-gradient-to-r from-orange-50 to-amber-50 p-4 sm:p-6 rounded-lg border-2 border-orange-300">
+    <div 
+      className="mb-12 p-4 sm:p-6 rounded-lg"
+      style={{
+        background: `linear-gradient(to right, ${hexToRgba(themeStyles.accentBg, 0.5)}, ${hexToRgba(themeStyles.accentBg, 0.3)})`,
+        borderColor: themeStyles.borderColor,
+        borderWidth: '2px',
+      }}
+    >
       <div className="flex items-center gap-2 mb-4">
-        <Sparkles className="w-5 h-5 text-orange-600" />
-        <h2 className="text-xl sm:text-2xl font-bold text-orange-900">Today's Special</h2>
+        <Sparkles className="w-5 h-5" style={{ color: themeStyles.primaryButtonBg }} />
+        <h2 className="text-xl sm:text-2xl font-bold" style={{ color: themeStyles.primaryButtonBg }}>Today's Special</h2>
       </div>
 
       <div className="group">
@@ -38,7 +48,7 @@ export function TodaysSpecial({ item }: TodaysSpecialProps) {
               {item.name}
             </h3>
           </button>
-          <span className="font-bold text-orange-600 text-lg sm:text-xl whitespace-nowrap">
+          <span className="font-bold text-lg sm:text-xl whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
             {item.price}
           </span>
         </div>

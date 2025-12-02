@@ -1,5 +1,6 @@
 import { QRCodeSVG } from 'qrcode.react';
 import { useRef } from 'react';
+import { useThemeStyles } from '../context/useThemeStyles';
 
 interface QRCodeGeneratorProps {
   restaurantId: string;
@@ -10,6 +11,7 @@ export function QRCodeGenerator({
   restaurantId,
   restaurantName,
 }: QRCodeGeneratorProps) {
+  const themeStyles = useThemeStyles();
   const qrRef = useRef<HTMLDivElement>(null);
 
   const qrUrl = `${import.meta.env.VITE_APP_URL || 'https://menu-cards.vercel.app'}/r/${restaurantId}`;
@@ -69,7 +71,7 @@ export function QRCodeGenerator({
   };
 
   return (
-    <div className="flex flex-col items-center gap-6 p-6 bg-white rounded-lg shadow-lg">
+    <div className="flex flex-col items-center gap-6 p-6 rounded-lg shadow-lg" style={{ backgroundColor: themeStyles.backgroundColor }}>
       <div>
         <h3 className="text-2xl font-bold text-gray-800 mb-2">
           {restaurantName}
@@ -80,7 +82,8 @@ export function QRCodeGenerator({
       <div
         ref={qrRef}
         id="qr-code"
-        className="p-6 bg-white border-2 border-orange-200 rounded"
+        className="p-6 border-2 rounded"
+        style={{ backgroundColor: themeStyles.backgroundColor, borderColor: themeStyles.accentBg }}
       >
         <QRCodeSVG
           value={qrUrl}

@@ -39,7 +39,9 @@
 // }
 
 
-import { useEffect } from "react"; // 👈 ADDED: Import useEffect
+import { useEffect } from "react";
+import { useThemeStyles } from '../context/useThemeStyles';
+import { hexToRgba } from '../utils/themeUtils';
 
 export function SideDrawer({
   open,
@@ -50,6 +52,7 @@ export function SideDrawer({
   onClose: () => void;
   sections: { id: string; title: string; icon?: string }[];
 }) {
+  const themeStyles = useThemeStyles();
 
   // ✨ NEW: Effect to prevent background scrolling when the drawer is open
   useEffect(() => {
@@ -84,20 +87,20 @@ export function SideDrawer({
     <div className="fixed inset-0 z-[60]">
       {/* Blurred transparent background */}
       <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Drawer */}
       <aside
-        className="absolute left-0 top-0 h-full w-72 bg-white shadow-2xl 
+        className="absolute left-0 top-0 h-full w-72 shadow-2xl 
                    rounded-r-2xl p-5 overflow-y-auto 
-                   border-r border-gray-200
-                   animate-slideRightSoft"
+                   border-r animate-slideRightSoft"
+        style={{ backgroundColor: themeStyles.backgroundColor, borderColor: themeStyles.borderColor }}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <div className="text-xl font-semibold text-orange-600 tracking-wide">
+          <div className="text-xl font-semibold tracking-wide" style={{ color: themeStyles.primaryButtonBg }}>
             Menu Sections
           </div>
           <button
@@ -115,15 +118,24 @@ export function SideDrawer({
             <button
               key={s.id}
               onClick={() => goTo(s.id)}
-              className="w-full px-4 py-3 rounded-xl bg-gray-50
-                         hover:bg-orange-50 hover:border-orange-300
-                         border border-gray-200 transition-all
-                         flex items-center gap-3 shadow-sm"
+              className="w-full px-4 py-3 rounded-xl border flex items-center gap-3 shadow-sm"
+              style={{
+                backgroundColor: hexToRgba(themeStyles.backgroundColor, 0.05),
+                borderColor: themeStyles.borderColor,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = hexToRgba(themeStyles.accentBg, 0.1);
+                e.currentTarget.style.borderColor = themeStyles.accentBg;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = hexToRgba(themeStyles.backgroundColor, 0.05);
+                e.currentTarget.style.borderColor = themeStyles.borderColor;
+              }}
             >
               {/* Premium Icon */}
-              <span className="text-lg text-orange-500">★</span>
+              <span className="text-lg" style={{ color: themeStyles.primaryButtonBg }}>★</span>
 
-              <span className="font-medium text-gray-700">{s.title}</span>
+              <span className="font-medium" style={{ color: '#374151' }}>{s.title}</span>
             </button>
           ))}
         </div>

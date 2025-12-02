@@ -71,6 +71,7 @@ function RestaurantMenuInner({ restaurantId }: RestaurantMenuInnerProps) {
     <RestaurantProvider
       value={{
         restaurant,
+        theme: restaurant?.theme || null,
         menuSections,
         todaysSpecial,
         upcomingEvents,

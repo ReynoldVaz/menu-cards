@@ -1,12 +1,14 @@
+import { useThemeStyles } from '../context/useThemeStyles';
+import { hexToRgba } from '../utils/themeUtils';
+
 export function MenuFab({ onClick }: { onClick: () => void }) {
+  const themeStyles = useThemeStyles();
   return (
     <button
       onClick={onClick}
       aria-label="Open menu"
-      // className="fixed right-4 bottom-6 z-40 bg-orange-600 text-white p-3 rounded-full shadow-lg hover:bg-orange-700"
-      className="fixed right-4 bottom-6 z-40 text-white p-3 rounded-full shadow-lg hover:bg-orange-700"
-      // style={{ backgroundColor: 'rgba(247, 107, 7, 0.81)' }}
-      style={{ backgroundColor: 'rgba(247, 107, 7, 0.81)' }}
+      className="fixed right-4 bottom-6 z-40 text-white p-3 rounded-full shadow-lg"
+      style={{ backgroundColor: hexToRgba(themeStyles.backgroundColor, 0.8) }}
       title="Open navigation"
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

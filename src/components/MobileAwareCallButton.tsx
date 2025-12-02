@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useThemeStyles } from '../context/useThemeStyles';
 
 function MobileAwareCallButton() {
   const [isMobile, setIsMobile] = useState(false);
+  const themeStyles = useThemeStyles();
 
   useEffect(() => {
     const mobileCheck = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -11,7 +13,8 @@ function MobileAwareCallButton() {
   return isMobile ? (
     <a
       href="tel:+919233456789"
-      className="inline-block bg-orange-600 text-white mt-4 px-5 py-2 rounded-full text-sm font-medium shadow-md hover:bg-orange-700 transition-all"
+      className="inline-block text-white mt-4 px-5 py-2 rounded-full text-sm font-medium shadow-md transition-all"
+      style={{ backgroundColor: themeStyles.backgroundColor }}
     >
       📞 +91 9233456789
     </a>
@@ -24,3 +27,5 @@ function MobileAwareCallButton() {
     </button>
   );
 }
+
+export default MobileAwareCallButton;

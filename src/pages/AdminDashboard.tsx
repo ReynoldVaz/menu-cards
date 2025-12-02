@@ -6,6 +6,7 @@ import type { MenuItem, Event } from '../data/menuData';
 import type { Restaurant } from '../hooks/useFirebaseRestaurant';
 import { MenuItemForm, type MenuItemFormData } from '../components/MenuItemForm';
 import { EventForm, type EventFormData } from '../components/EventForm';
+import { ThemePreview } from '../components/ThemePreview';
 
 interface AdminDashboardTab {
   id: 'restaurants' | 'menu' | 'events' | 'settings';
@@ -498,7 +499,29 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [name, setName] = useState(restaurant.name);
   const [description, setDescription] = useState(restaurant.description || '');
   const [phone, setPhone] = useState(restaurant.phone || '');
+  const [themeMode, setThemeMode] = useState(restaurant.theme?.mode || 'custom');
+  const [primaryColor, setPrimaryColor] = useState(restaurant.theme?.primaryColor || '#EA580C');
+  const [secondaryColor, setSecondaryColor] = useState(restaurant.theme?.secondaryColor || '#FB923C');
+  const [accentColor, setAccentColor] = useState(restaurant.theme?.accentColor || '#FED7AA');
+  const [backgroundColor, setBackgroundColor] = useState(restaurant.theme?.backgroundColor || '#FFFFFF');
   const [saving, setSaving] = useState(false);
+
+  const presetThemes = [
+    { name: 'Orange', primary: '#EA580C', secondary: '#FB923C', accent: '#FED7AA', background: '#FFFFFF' },
+    { name: 'Blue', primary: '#1E40AF', secondary: '#3B82F6', accent: '#BFDBFE', background: '#FFFFFF' },
+    { name: 'Green', primary: '#15803D', secondary: '#22C55E', accent: '#BBFB70', background: '#FFFFFF' },
+    { name: 'Purple', primary: '#6D28D9', secondary: '#A855F7', accent: '#E9D5FF', background: '#FFFFFF' },
+    { name: 'Red', primary: '#991B1B', secondary: '#EF4444', accent: '#FCA5A5', background: '#FFFFFF' },
+    { name: 'Dark', primary: '#1F2937', secondary: '#374151', accent: '#D1D5DB', background: '#FFFFFF' },
+  ];
+
+  const currentTheme = {
+    mode: themeMode as 'light' | 'dark' | 'custom',
+    primaryColor,
+    secondaryColor,
+    accentColor,
+    backgroundColor,
+  };
 
   async function handleSave() {
     try {
@@ -507,6 +530,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         name,
         description,
         phone,
+        theme: currentTheme,
       });
       onUpdate();
     } catch (err) {
@@ -516,44 +540,169 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
     }
   }
 
+  function applyPreset(preset: typeof presetThemes[0]) {
+    setPrimaryColor(preset.primary);
+    setSecondaryColor(preset.secondary);
+    setAccentColor(preset.accent);
+    setBackgroundColor(preset.background);
+    setThemeMode('custom');
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Settings</h2>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
+    <div className="bg-white rounded-lg shadow p-6 space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">Settings</h2>
+        
+        {/* Restaurant Details */}
+        <div className="space-y-4 pb-8 border-b">
+          <h3 className="text-lg font-semibold text-gray-700">Restaurant Details</h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-24"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-32"
-          />
+
+        {/* Theme Settings */}
+        <div className="pt-8">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">🎨 Theme Customization</h3>
+          <p className="text-sm text-gray-600 mb-4">Choose from presets or create a custom theme. Changes update instantly in the preview below.</p>
+          
+          {/* Preset Themes */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-3">Preset Themes</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {presetThemes.map((preset) => (
+                <button
+                  key={preset.name}
+                  onClick={() => applyPreset(preset)}
+                  className="p-3 rounded-lg border-2"
+                  style={{ borderColor: preset.primary }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.primary }}></div>
+                    <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.secondary }}></div>
+                    <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.accent }}></div>
+                  </div>
+                  <div className="text-xs font-medium text-gray-700">{preset.name}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Colors */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-4">Custom Colors</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Primary Color</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="w-16 h-10 rounded cursor-pointer border border-gray-300"
+                  />
+                  <input
+                    type="text"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Secondary Color</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={secondaryColor}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    className="w-16 h-10 rounded cursor-pointer border border-gray-300"
+                  />
+                  <input
+                    type="text"
+                    value={secondaryColor}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Accent Color</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={accentColor}
+                    onChange={(e) => setAccentColor(e.target.value)}
+                    className="w-16 h-10 rounded cursor-pointer border border-gray-300"
+                  />
+                  <input
+                    type="text"
+                    value={accentColor}
+                    onChange={(e) => setAccentColor(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Background Color</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                    className="w-16 h-10 rounded cursor-pointer border border-gray-300"
+                  />
+                  <input
+                    type="text"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Live Preview - Now shows actual UI */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">📱 Live Preview</label>
+            <p className="text-xs text-gray-600 mb-3">This shows exactly how your menu will look to customers</p>
+            <ThemePreview theme={currentTheme} restaurantName={name || 'Your Restaurant'} />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
-        </button>
       </div>
+
+      {/* Save Button */}
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+      >
+        {saving ? 'Saving...' : 'Save All Changes'}
+      </button>
     </div>
   );
 }

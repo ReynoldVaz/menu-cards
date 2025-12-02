@@ -1,9 +1,10 @@
 import { createContext, ReactNode } from 'react';
 import type { MenuItem, MenuSection, Event } from '../data/menuData';
-import type { Restaurant } from '../hooks/useFirebaseRestaurant';
+import type { Restaurant, Theme } from '../hooks/useFirebaseRestaurant';
 
 export interface RestaurantContextType {
   restaurant: Restaurant | null;
+  theme: Theme | null;
   menuSections: MenuSection[];
   todaysSpecial: MenuItem | null;
   upcomingEvents: Event[];

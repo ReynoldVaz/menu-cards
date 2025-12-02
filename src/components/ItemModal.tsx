@@ -3,6 +3,7 @@ import type { MenuItem } from '../data/menuData';
 import { SmartImage } from './SmartImage';
 import { ParallaxImage } from './ParallaxImage';
 import { VideoPlayer } from './VideoPlayer';
+import { useThemeStyles } from '../context/useThemeStyles';
 
 interface ItemModalProps {
   item: MenuItem | null;
@@ -13,6 +14,7 @@ interface ItemModalProps {
 export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
   const [index, setIndex] = useState(0);
   const [tab, setTab] = useState<'description' | 'ingredients' | 'price'>('description');
+  const themeStyles = useThemeStyles();
 
   useEffect(() => {
     setIndex(0);
@@ -38,15 +40,15 @@ useEffect(() => {
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative max-w-3xl w-full mx-0 sm:mx-0 bg-white rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="relative max-w-3xl w-full mx-0 sm:mx-0 rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" style={{ backgroundColor: themeStyles.backgroundColor }}>
         
         {/* Header */}
-        <div className="flex justify-between items-start p-4 border-b bg-white flex-shrink-0">
+        <div className="flex justify-between items-start p-4 flex-shrink-0" style={{ backgroundColor: themeStyles.backgroundColor, borderBottomColor: themeStyles.borderColor, borderBottomWidth: '1px' }}>
           <div className="min-w-0 flex-1">
             <h3 className="text-lg font-bold text-gray-800 break-words">
               {item.name}
             </h3>
-            <p className="text-sm text-orange-600 font-semibold">{item.price}</p>
+            <p className="text-sm font-semibold" style={{ color: themeStyles.primaryButtonBg }}>{item.price}</p>
           </div>
           <button
             onClick={onClose}
@@ -120,9 +122,12 @@ useEffect(() => {
                           <button
                             key={`${m.type}:${m.src}`}
                             onClick={() => setIndex(i)}
-                            className={`flex-shrink-0 rounded overflow-hidden border ${
-                              i === index ? 'ring-2 ring-orange-400' : 'border-transparent'
-                            }`}
+                            className="flex-shrink-0 rounded overflow-hidden border"
+                            style={{
+                              borderWidth: i === index ? '2px' : '1px',
+                              borderColor: i === index ? themeStyles.accentBg : 'transparent',
+                              boxShadow: i === index ? `0 0 0 2px ${themeStyles.accentBg}40` : 'none',
+                            }}
                           >
                             <div className="w-20 h-14 overflow-hidden rounded bg-gray-50 flex items-center justify-center">
                               {m.type === 'image' ? (
@@ -149,11 +154,18 @@ useEffect(() => {
                   <button
                     key={t}
                     onClick={() => setTab(t as any)}
-                    className={`px-3 py-1 rounded-md text-sm ${
+                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors`}
+                    style={
                       tab === t
-                        ? 'bg-orange-100 text-orange-800 font-semibold'
-                        : 'bg-white text-gray-700 border border-gray-100'
-                    }`}
+                        ? {
+                            backgroundColor: themeStyles.accentBg,
+                            color: themeStyles.primaryButtonBg,
+                          }
+                        : {
+                            backgroundColor: '#f3f4f6',
+                            color: '#374151',
+                          }
+                    }
                   >
                     {t.charAt(0).toUpperCase() + t.slice(1)}
                   </button>
@@ -171,16 +183,16 @@ useEffect(() => {
                 {tab === 'ingredients' && (
                   <div>
                     <h4 className="font-semibold text-gray-800">Ingredients</h4>
-                    {item.ingredients ? (
+                    {item.ingredients && (
                       <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
                         {(typeof item.ingredients === 'string' 
-                          ? item.ingredients.split(',').map(ing => ing.trim())
-                          : item.ingredients
-                        ).map((ing, idx) => (
+                          ? (item.ingredients as string).split(',').map((ing: string) => ing.trim())
+                          : (item.ingredients as any)
+                        ).map((ing: string, idx: number) => (
                           <li key={idx}>{ing}</li>
                         ))}
                       </ul>
-                    ) : (
+                    ) || (
                       <p className="text-sm text-gray-500 mt-1">Ingredients not available.</p>
                     )}
                   </div>

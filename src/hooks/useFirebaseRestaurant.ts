@@ -8,6 +8,14 @@ import {
 } from 'firebase/firestore';
 import type { MenuItem, MenuSection, Event } from '../data/menuData';
 
+export interface Theme {
+  mode: 'light' | 'dark' | 'custom';
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+}
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -18,6 +26,10 @@ export interface Restaurant {
   image?: string;
   cuisine?: string[];
   isActive: boolean;
+  logo?: string;
+  theme?: Theme;
+  restaurantCode?: string;
+  ownerId?: string;
 }
 
 export interface UseFirebaseRestaurantResult {
