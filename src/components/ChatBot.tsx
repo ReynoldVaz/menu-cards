@@ -150,6 +150,7 @@ async function sendMessage() {
             </div>
 
 
+
 {showPrompts && (
   <div className="flex flex-wrap gap-2 p-2 border-t" style={{ backgroundColor: hexToRgba(themeStyles.accentBg, 0.15), borderTopColor: themeStyles.borderColor }}>
     {suggestionPrompts.map((prompt, idx) => (
