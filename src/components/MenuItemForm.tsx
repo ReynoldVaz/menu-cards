@@ -5,6 +5,7 @@ export interface MenuItemFormData {
   name: string;
   description: string;
   price: number;
+  currency?: 'INR' | 'USD' | 'EUR' | 'GBP';
   section: string;
   ingredients: string;
   image?: string | null;
@@ -45,6 +46,7 @@ export function MenuItemForm({
     initialData 
       ? {
           ...initialData,
+          currency: initialData.currency || 'INR',
           dietType: initialData.dietType,
           section: initialData.section || availableSections[0] || DEFAULT_SECTIONS[0],
         }
@@ -52,6 +54,7 @@ export function MenuItemForm({
           name: '',
           description: '',
           price: 0,
+          currency: 'INR',
           section: availableSections[0] || DEFAULT_SECTIONS[0],
           ingredients: '',
           is_todays_special: false,
@@ -163,6 +166,7 @@ export function MenuItemForm({
         name: formData.name,
         description: formData.description,
         price: formData.price,
+        currency: formData.currency || 'INR',
         section: formData.section,
         ingredients: formData.ingredients,
         is_todays_special: formData.is_todays_special,
@@ -207,16 +211,29 @@ export function MenuItemForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
-          <input
-            type="number"
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-            placeholder="0.00"
-            min="0"
-            step="0.01"
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
-          />
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLoading}
+            />
+            <select
+              value={formData.currency || 'INR'}
+              onChange={(e) => setFormData({ ...formData, currency: e.target.value as 'INR' | 'USD' | 'EUR' | 'GBP' })}
+              className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              disabled={isLoading}
+            >
+              <option value="INR">₹ INR</option>
+              <option value="USD">$ USD</option>
+              <option value="EUR">€ EUR</option>
+              <option value="GBP">£ GBP</option>
+            </select>
+          </div>
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import { SmartImage } from "./SmartImage";
 import { DietBadge } from "./DietBadge";
 import { trackEvent } from "../lib/ga";
 import { useThemeStyles } from "../context/useThemeStyles";
+import { formatPrice } from "../utils/formatPrice";
 
 
 
@@ -153,7 +154,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                       <div className="h-5 w-12 bg-gray-200 animate-pulse rounded"></div>
                     ) : (
                       <span className="font-bold text-base sm:text-lg whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
-                        {item.price}
+                        {formatPrice(item.price, (item as any).currency)}
                       </span>
                     )}
                   </div>

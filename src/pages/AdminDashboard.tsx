@@ -10,6 +10,7 @@ import { ThemePreview } from '../components/ThemePreview';
 import { BulkUploadMenu } from '../components/BulkUploadMenu';
 import { TEMPLATES, TEMPLATE_NAMES, TEMPLATE_DESCRIPTIONS, getTemplateColors, type TemplateType } from '../utils/templateStyles';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
+import { formatPrice } from '../utils/formatPrice';
 
 interface AdminDashboardTab {
   id: 'restaurants' | 'menu' | 'events' | 'settings';
@@ -500,7 +501,7 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
                     <tr key={item.id} className="border-t hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium">{item.name}</td>
                       <td className="px-4 py-3">{item.section}</td>
-                      <td className="px-4 py-3">₹{item.price}</td>
+                      <td className="px-4 py-3">{formatPrice(item.price, (item as any).currency)}</td>
                       <td className="px-4 py-3">{(item as any).is_vegetarian ? '🌱' : '-'}</td>
                       <td className="px-4 py-3">{item.is_todays_special ? '⭐' : '-'}</td>
                       <td className="px-4 py-3">

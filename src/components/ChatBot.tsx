@@ -51,11 +51,29 @@ export default function ChatBot({ menuSections, todaysSpecial, events }: ChatBot
   const [showPrompts, setShowPrompts] = useState(true);
 
   // Memoize menu data to prevent unnecessary re-renders
-  const menuData = useMemo(() => ({
-    sections: menuSections,
-    special: todaysSpecial,
-    events: events
-  }), [menuSections, todaysSpecial, events]);
+  const menuData = useMemo(() => {
+    // Detect primary currency from menu sections
+    let primaryCurrency = 'INR'; // Default
+    
+    if (menuSections && menuSections.length > 0) {
+      for (const section of menuSections) {
+        if (section.items && section.items.length > 0) {
+          const itemCurrency = (section.items[0].currency || 'INR').toUpperCase();
+          if (itemCurrency !== 'INR') {
+            primaryCurrency = itemCurrency;
+            break;
+          }
+        }
+      }
+    }
+
+    return {
+      sections: menuSections,
+      special: todaysSpecial,
+      events: events,
+      currency: primaryCurrency
+    };
+  }, [menuSections, todaysSpecial, events]);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -149,7 +167,8 @@ export default function ChatBot({ menuSections, todaysSpecial, events }: ChatBot
               message: userMsg,
               menuSections: menuData.sections,
               todaysSpecial: menuData.special,
-              events: menuData.events
+              events: menuData.events,
+              currency: menuData.currency
             }),
             signal: controller.signal,
           });

@@ -6,6 +6,7 @@
 
 import { getThemeStyles, getTemplateComponentStyles } from '../utils/themeUtils';
 import type { Theme } from '../hooks/useFirebaseRestaurant';
+import { formatPrice } from '../utils/formatPrice';
 
 interface ThemePreviewProps {
   theme: Theme & {
@@ -214,7 +215,7 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
                   fontSize: templateStyles.typography.price?.fontSize || '1.25rem',
                 }}
               >
-                ₹350
+                {formatPrice(350)}
               </span>
               <button
                 className="px-3 py-1 rounded text-xs font-semibold text-white"

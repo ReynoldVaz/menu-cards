@@ -4,6 +4,7 @@ import { SmartImage } from './SmartImage';
 import { ParallaxImage } from './ParallaxImage';
 import { VideoPlayer } from './VideoPlayer';
 import { useThemeStyles } from '../context/useThemeStyles';
+import { formatPrice } from '../utils/formatPrice';
 
 interface ItemModalProps {
   item: MenuItem | null;
@@ -48,7 +49,7 @@ useEffect(() => {
             <h3 className="text-lg font-bold text-gray-800 break-words">
               {item.name}
             </h3>
-            <p className="text-sm font-semibold" style={{ color: themeStyles.primaryButtonBg }}>{item.price}</p>
+            <p className="text-sm font-semibold" style={{ color: themeStyles.primaryButtonBg }}>{formatPrice(item.price, (item as any).currency)}</p>
           </div>
           <button
             onClick={onClose}
@@ -201,7 +202,7 @@ useEffect(() => {
                 {tab === 'price' && (
                   <div>
                     <h4 className="font-semibold text-gray-800">Price</h4>
-                    <p className="text-sm text-gray-600 mt-1">{item.price}</p>
+                    <p className="text-sm text-gray-600 mt-1">{formatPrice(item.price, (item as any).currency)}</p>
                   </div>
                 )}
               </div>

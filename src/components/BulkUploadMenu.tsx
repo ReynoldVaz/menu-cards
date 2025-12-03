@@ -1,22 +1,23 @@
 import { useState, useRef } from 'react';
 import Papa from 'papaparse';
 import { MenuItemFormData } from './MenuItemForm';
+import { formatPrice } from '../utils/formatPrice';
 
 interface BulkUploadMenuProps {
   onUpload: (items: MenuItemFormData[]) => Promise<void>;
   isLoading?: boolean;
 }
 
-const SAMPLE_CSV = `name,section,price,description,ingredients,dietType,spice_level,sweet_level,is_todays_special
-Paneer Tikka,Appetizers,250,Grilled cottage cheese with spices,Paneer - Yogurt - Spices,veg,3,,false
-Butter Chicken,Main Course,320,Creamy tomato-based curry with chicken,Chicken - Butter - Cream - Tomato,non-veg,2,,false
-Chocolate Cake,Desserts,150,Rich chocolate dessert,Chocolate - Flour - Sugar - Eggs,veg,,4,false
-Mango Lassi,Beverages,80,Yogurt-based mango drink,Yogurt - Mango - Sugar,veg,,3,false
-Caesar Salad,Salads,200,Fresh greens with Caesar dressing,Lettuce - Croutons - Parmesan,veg,1,,false`;
+const SAMPLE_CSV = `name,section,price,currency,description,ingredients,dietType,spice_level,sweet_level,is_todays_special
+Paneer Tikka,Appetizers,250,INR,Grilled cottage cheese with spices,Paneer - Yogurt - Spices,veg,3,,false
+Butter Chicken,Main Course,320,INR,Creamy tomato-based curry with chicken,Chicken - Butter - Cream - Tomato,non-veg,2,,false
+Chocolate Cake,Desserts,150,INR,Rich chocolate dessert,Chocolate - Flour - Sugar - Eggs,veg,,4,false
+Mango Lassi,Beverages,80,INR,Yogurt-based mango drink,Yogurt - Mango - Sugar,veg,,3,false
+Caesar Salad,Salads,200,INR,Fresh greens with Caesar dressing,Lettuce - Croutons - Parmesan,veg,1,,false`;
 
-const TEMPLATE_CSV = `name,section,price,description,ingredients,dietType,spice_level,sweet_level,is_todays_special
-[REQUIRED],,[REQUIRED],[optional],[optional],[optional: veg/non-veg/vegan],[optional: 1-5],[optional: 1-5],[optional: true/false]
-Example Item,Main Course,299,Brief description here,Ingredient1 - Ingredient2 - Ingredient3,veg,2,1,false`;
+const TEMPLATE_CSV = `name,section,price,currency,description,ingredients,dietType,spice_level,sweet_level,is_todays_special
+[REQUIRED],,[REQUIRED],[optional: INR/USD/EUR/GBP],[optional],[optional],[optional: veg/non-veg/vegan],[optional: 1-5],[optional: 1-5],[optional: true/false]
+Example Item,Main Course,299,INR,Brief description here,Ingredient1 - Ingredient2 - Ingredient3,veg,2,1,false`;
 
 export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuProps) {
   const [preview, setPreview] = useState<MenuItemFormData[]>([]);
@@ -98,11 +99,19 @@ export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuPr
 
           const isTodaysSpecial = row.is_todays_special?.trim().toLowerCase() === 'true';
 
+          // Validate currency if provided
+          const currency = row.currency?.trim().toUpperCase();
+          if (currency && !['INR', 'USD', 'EUR', 'GBP'].includes(currency)) {
+            newErrors.push(`Row ${lineNum}: "currency" must be INR, USD, EUR, or GBP`);
+            return;
+          }
+
           // Build item
           const item: MenuItemFormData = {
             name: row.name.trim(),
             section: row.section.trim(),
             price: parseFloat(row.price),
+            currency: (currency as 'INR' | 'USD' | 'EUR' | 'GBP' | undefined) || 'INR',
             description: row.description?.trim() || '',
             ingredients: row.ingredients?.trim() || '',
             dietType: (dietType as 'veg' | 'non-veg' | 'vegan' | undefined),
@@ -232,6 +241,7 @@ export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuPr
                   <th className="text-left px-4 py-2">Name</th>
                   <th className="text-left px-4 py-2">Section</th>
                   <th className="text-left px-4 py-2">Price</th>
+                  <th className="text-left px-4 py-2">Currency</th>
                   <th className="text-left px-4 py-2">Diet Type</th>
                   <th className="text-left px-4 py-2">Spice</th>
                   <th className="text-left px-4 py-2">Sweet</th>
@@ -242,7 +252,8 @@ export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuPr
                   <tr key={idx} className="border-b hover:bg-gray-50">
                     <td className="px-4 py-2 font-medium">{item.name}</td>
                     <td className="px-4 py-2">{item.section}</td>
-                    <td className="px-4 py-2">₹{item.price}</td>
+                    <td className="px-4 py-2">{formatPrice(item.price, item.currency)}</td>
+                    <td className="px-4 py-2">{item.currency || 'INR'}</td>
                     <td className="px-4 py-2">{item.dietType || '-'}</td>
                     <td className="px-4 py-2">{item.spice_level || '-'}</td>
                     <td className="px-4 py-2">{item.sweet_level || '-'}</td>
