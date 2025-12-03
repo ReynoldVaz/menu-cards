@@ -59,18 +59,6 @@ function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-
-
-  //   const [data, setData] = useState<any>(null);
-
-  // useEffect(() => {
-  //   fetch("/api/analytics")
-  //     .then(res => res.json())
-  //     .then(setData)
-  //     .catch(console.error);
-  // }, []);
-
-
   return (
     <div 
       className="min-h-screen overflow-y-scroll scroll-smooth"
@@ -82,39 +70,6 @@ function App() {
         <div className="w-full">
           <div className="rounded-lg shadow-xl overflow-hidden relative" style={{ backgroundColor: themeStyles.backgroundColor, borderColor: themeStyles.borderColor, borderWidth: '1px' }}>             <SearchIconButton searchBarRef={searchBarRef} />
             <Header onMenuClick={() => setDrawerOpen(true)} />
-                  <div>
-                    {/* <>{console.log("Analytics data:", data)}</> */}
-      {/* <h2>Popularrrrrr Items</h2>
-      <ul>
-        {data?.rows?.map((row: any) => (
-          <li key={row.dimensionValues[0].value}>
-            {row.dimensionValues[0].value}: {row.metricValues[0].value} clicks
-          </li>
-        ))}
-      </ul> */}
-    </div>
-
-            {/*
-               <div className="backdrop-blur-md py-8 px-6 sm:px-12 text-center shadow-lg" style={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                borderTopColor: themeStyles.borderColor,
-                borderTopWidth: '1px'
-              }}>
-                <h3 className="text-xl font-bold" style={{ color: themeStyles.primaryButtonBg }}>
-                  Digital Solutions
-                </h3>
-
-                <p className="text-sm mt-1" style={{ color: themeStyles.textColor }}>
-                  Crafted by <span className="font-semibold">Reynold</span> & <span className="font-semibold">Savio Vaz</span>
-                </p>
-
-                <p className="text-sm mt-2" style={{ color: themeStyles.textColor }}>
-                  Powering <span className="font-semibold" style={{ color: themeStyles.primaryButtonBg }}>50+ restaurants</span> • 
-                  Fast • Modern • Fully Customized
-                </p>
-
-                <MobileAwareCallButton themeColor={themeStyles.primaryButtonBg} />
-              </div> */}
 
 
 

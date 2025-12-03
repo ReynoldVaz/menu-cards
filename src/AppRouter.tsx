@@ -16,7 +16,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/r/:restaurantId" element={<RestaurantMenuPage />} />
-        <Route path="/upload" element={<QuickUploadPage />} />
+        {/* <Route path="/upload" element={<QuickUploadPage />} /> */}
         
         {/* Admin Routes */}
         <Route path="/admin/auth" element={<AdminAuthPage />} />
