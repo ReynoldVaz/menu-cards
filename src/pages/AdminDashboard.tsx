@@ -7,6 +7,7 @@ import type { Restaurant } from '../hooks/useFirebaseRestaurant';
 import { MenuItemForm, type MenuItemFormData } from '../components/MenuItemForm';
 import { EventForm, type EventFormData } from '../components/EventForm';
 import { ThemePreview } from '../components/ThemePreview';
+import { BulkUploadMenu } from '../components/BulkUploadMenu';
 import { TEMPLATES, TEMPLATE_NAMES, TEMPLATE_DESCRIPTIONS, getTemplateColors, type TemplateType } from '../utils/templateStyles';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 
@@ -406,10 +407,67 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
     }
   }
 
+  async function handleBulkUpload(bulkItems: MenuItemFormData[]) {
+    try {
+      setSavingItem(true);
+      const createdItems: MenuItem[] = [];
+
+      for (const formData of bulkItems) {
+        const menuItemData: any = {
+          ...formData,
+          price: String(formData.price),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Convert spice_level to spice and sweet_level to sweet
+        if ((formData as any).spice_level) {
+          menuItemData.spice = (formData as any).spice_level;
+          delete menuItemData.spice_level;
+        }
+        if ((formData as any).sweet_level) {
+          menuItemData.sweet = (formData as any).sweet_level;
+          delete menuItemData.sweet_level;
+        }
+
+        // Remove undefined values to prevent Firestore errors
+        Object.keys(menuItemData).forEach(key => {
+          if (menuItemData[key] === undefined) {
+            delete menuItemData[key];
+          }
+        });
+
+        const docRef = await addDoc(
+          collection(db, `restaurants/${restaurantId}/menu_items`),
+          menuItemData
+        );
+
+        createdItems.push({
+          id: docRef.id,
+          ...menuItemData,
+        } as unknown as MenuItem);
+      }
+
+      // Add all new items to local state
+      setItems([...items, ...createdItems]);
+      alert(`✅ Successfully imported ${createdItems.length} items!`);
+    } catch (err) {
+      console.error('Failed to bulk upload items:', err);
+      alert(`❌ Error importing items: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSavingItem(false);
+    }
+  }
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       {!showForm ? (
         <>
+          <BulkUploadMenu
+            onUpload={handleBulkUpload}
+            isLoading={savingItem}
+          />
+
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Menu Items ({items.length})</h2>
             <button
