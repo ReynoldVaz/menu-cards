@@ -1,10 +1,40 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signInWithPopup, 
+  GoogleAuthProvider
+} from 'firebase/auth';
 import { auth, db } from '../firebase.config';
 import { doc, getDoc } from 'firebase/firestore';
 
 type AuthMode = 'welcome' | 'login' | 'signup';
+
+// Email validation helper
+const isValidEmail = (email: string): boolean => {
+  // RFC 5322 simplified regex for email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+  if (!emailRegex.test(email)) {
+    return false;
+  }
+  
+  // Block common dummy/test emails
+  const dummyPatterns = [
+    /^test@/i,
+    /^demo@/i,
+    /^fake@/i,
+    /^dummy@/i,
+    /^sample@/i,
+    /example\.com$/i,
+    /test\.com$/i,
+    /localhost/i,
+    /^\d+@/i, // Just numbers
+  ];
+  
+  return !dummyPatterns.some(pattern => pattern.test(email));
+};
 
 export function AdminAuthPage() {
   const navigate = useNavigate();
@@ -21,10 +51,34 @@ export function AdminAuthPage() {
       setError('');
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      console.log('✅ Google auth successful:', userCredential.user.uid);
+      const googleEmail = userCredential.user.email || '';
       
-      // Check user's role and approval status
-      const userRef = doc(db, 'users', userCredential.user.uid);
+      console.log('✅ Google auth successful:', userCredential.user.uid, 'Email:', googleEmail);
+      
+      // Now route the user based on their status
+      await routeUserAfterAuth(userCredential.user.uid);
+      
+    } catch (err: any) {
+      console.error('❌ Google auth error:', err.code, err.message);
+      
+      // If account exists with different credential, try to prompt for email/password linking
+      if (err.code === 'auth/account-exists-with-different-credential') {
+        const pendingEmail = err.customData?.email;
+        setError(`An account already exists with email ${pendingEmail}. Please sign in with email/password first to link your Google account.`);
+        setMode('login');
+        setEmail(pendingEmail || '');
+      } else {
+        setError(err.message || 'Google sign-in failed');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to route user after successful authentication
+  const routeUserAfterAuth = async (uid: string) => {
+    try {
+      const userRef = doc(db, 'users', uid);
       const userDoc = await getDoc(userRef);
       
       if (userDoc.exists()) {
@@ -45,7 +99,7 @@ export function AdminAuthPage() {
           if (approvalStatus === 'pending') {
             // Show pending approval page
             navigate('/admin/pending-approval', {
-              state: { restaurantCode: userData.restaurantCode, userId: userCredential.user.uid },
+              state: { restaurantCode: userData.restaurantCode, userId: uid },
             });
             return;
           }
@@ -62,13 +116,13 @@ export function AdminAuthPage() {
       }
       
       // User doesn't have a restaurant, go to registration
+      const user = auth.currentUser;
       navigate('/admin/register-restaurant', {
-        state: { userId: userCredential.user.uid, email: userCredential.user.email },
+        state: { userId: uid, email: user?.email },
       });
-    } catch (err: any) {
-      setError(err.message || 'Google sign-in failed');
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error('Error routing user:', err);
+      setError('Error loading user profile. Please try again.');
     }
   };
 
@@ -79,6 +133,12 @@ export function AdminAuthPage() {
     // Validation
     if (!email || !password || !confirmPassword) {
       setError('Please fill in all fields');
+      return;
+    }
+
+    // Validate email format and prevent dummy emails
+    if (!isValidEmail(email)) {
+      setError('❌ Please enter a valid email address (e.g., your.email@company.com). Test/dummy emails are not allowed.');
       return;
     }
 
@@ -117,53 +177,19 @@ export function AdminAuthPage() {
       return;
     }
 
+    // Validate email format
+    if (!isValidEmail(email)) {
+      setError('❌ Please enter a valid email address');
+      return;
+    }
+
     try {
       setLoading(true);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log('✅ Login successful:', userCredential.user.uid);
       
-      // Check user's role and approval status
-      const userRef = doc(db, 'users', userCredential.user.uid);
-      const userDoc = await getDoc(userRef);
-      
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const role = userData.role || 'restaurant-owner';
-        
-        // If master admin, go to master dashboard
-        if (role === 'master-admin') {
-          navigate('/admin/master-dashboard');
-          return;
-        }
-        
-        // If restaurant owner
-        if (userData.restaurantCode) {
-          // Check approval status
-          const approvalStatus = userData.approvalStatus || 'approved';
-          
-          if (approvalStatus === 'pending') {
-            // Show pending approval page
-            navigate('/admin/pending-approval', {
-              state: { restaurantCode: userData.restaurantCode, userId: userCredential.user.uid },
-            });
-            return;
-          }
-          
-          if (approvalStatus === 'rejected') {
-            setError('Your registration was rejected. Please contact support.');
-            return;
-          }
-          
-          // If approved, go to regular dashboard
-          navigate('/admin/dashboard');
-          return;
-        }
-      }
-      
-      // User doesn't have a restaurant, go to registration
-      navigate('/admin/register-restaurant', {
-        state: { userId: userCredential.user.uid, email },
-      });
+      // Route user using the same function
+      await routeUserAfterAuth(userCredential.user.uid);
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
@@ -277,6 +303,10 @@ export function AdminAuthPage() {
                 </div>
               </div>
 
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+                💡 <strong>Tip:</strong> You can use either email/password or Google sign-in with the same Gmail account. They work interchangeably!
+              </div>
+
               <button
                 type="button"
                 onClick={handleGoogleAuth}
@@ -365,6 +395,10 @@ export function AdminAuthPage() {
                 <div className="relative flex justify-center text-sm">
                   <span className="px-2 bg-white text-gray-500">or</span>
                 </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+                💡 <strong>Tip:</strong> You can use either email/password or Google sign-in with the same Gmail account. They work interchangeably!
               </div>
 
               <button
