@@ -24,9 +24,9 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
   const themeStyles = useThemeStyles();
 
   function openModal(item: MenuItem) {
-    const imgs = (item.images && item.images.length > 0 && item.images[0])
-        ? item.images
-        : [];
+    const imgs = (item.images && item.images.length > 0)
+      ? item.images
+      : (item.image ? [item.image] : []);
 
     trackEvent("Menu", "Click Item", item.name);
     if (onOpen) onOpen(item, imgs);
@@ -69,23 +69,48 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
               className="group p-3 sm:p-4 rounded-lg flex items-center gap-4"
               style={{ backgroundColor: `${themeStyles.accentBg}20` }}
             >
-              {/* Thumbnail */}
+              {/* Thumbnail: prefer video preview if available */}
               <button
                 onClick={() => openModal(item)}
                 className="flex-shrink-0 rounded overflow-hidden border-2 hover:opacity-80"
                 style={{ borderColor: themeStyles.borderColor }}
               >
                 <div className="w-20 h-16 overflow-hidden">
-                  {/* <img src={ `https://dummyimage.com/600x400/000/fff&text=${encodeURIComponent(item.name)}` }/> */}
-                  <SmartImage
-                    // src={item.image ?? thumbnailFor(item.name)}
-                    // src={ item.image ? item.image : unsplashThumbnail(item.name) }
-                    // src={ item.image  ?? resolvedImages[item.name]  }
-                    // src={ `https://dummyimage.com/600x400/000/fff&text=${encodeURIComponent(item.name)}` }
-                    // alt={item.name}
-                    src={ item.image  ?? ""  }
-                    className="w-20 h-16 rounded"
-                  />
+                  {(() => {
+                    const videos = (item as any).videos && (item as any).videos.length > 0
+                      ? (item as any).videos
+                      : ((item as any).video ? [(item as any).video] : []);
+                    const images = item.images && item.images.length > 0
+                      ? item.images
+                      : (item.image ? [item.image] : []);
+                    // Prefer showing a video preview if available
+                    if (videos.length > 0) {
+                      return (
+                        <video
+                          src={videos[0]}
+                          className="w-20 h-16 object-cover rounded"
+                          muted
+                          loop
+                          playsInline
+                          autoPlay
+                        />
+                      );
+                    }
+                    if (images.length > 0) {
+                      return (
+                        <SmartImage
+                          src={images[0]}
+                          alt={item.name}
+                          className="w-20 h-16 rounded"
+                        />
+                      );
+                    }
+                    return (
+                      <div className="w-20 h-16 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                        No media
+                      </div>
+                    );
+                  })()}
                 </div>
               </button>
 

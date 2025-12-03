@@ -6,9 +6,11 @@ interface ParallaxImageProps {
   alt?: string;
   className?: string;
   intensity?: number; // px multiplier
+  fit?: 'cover' | 'contain';
+  backgroundClass?: string;
 }
 
-export function ParallaxImage({ src, alt = '', className = '', intensity = 18 }: ParallaxImageProps) {
+export function ParallaxImage({ src, alt = '', className = '', intensity = 18, fit = 'cover', backgroundClass }: ParallaxImageProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const animRef = useRef<number | null>(null);
@@ -77,12 +79,16 @@ export function ParallaxImage({ src, alt = '', className = '', intensity = 18 }:
   return (
     <div
       ref={wrapRef}
-      className={`relative perspective-800 ${className}`}
+      className={`relative w-full h-full overflow-hidden ${className}`}
       style={{ perspective: 900, transformStyle: 'preserve-3d' }}
     >
       {/* underlying SmartImage handles loading/placeholder */}
-      <div ref={imgRef as any} style={{ transform: 'translate3d(0,0,0)', transition: 'transform 300ms ease-out', willChange: 'transform' }}>
-        <SmartImage src={src} alt={alt} />
+      <div
+        ref={imgRef as any}
+        className="w-full h-full"
+        style={{ transform: 'translate3d(0,0,0)', transition: 'transform 300ms ease-out', willChange: 'transform' }}
+      >
+        <SmartImage src={src} alt={alt} className="w-full h-full" fit={fit} backgroundClass={backgroundClass ?? (fit === 'contain' ? 'bg-black' : 'bg-gray-100')} />
       </div>
     </div>
   );

@@ -25,7 +25,9 @@ export function TodaysSpecial({ item }: TodaysSpecialProps) {
   }
 
   const [open, setOpen] = useState(false);
-  const images = item.images && item.images.length > 0 ? item.images : modalImagesFor(item.name);
+  const images = item.images && item.images.length > 0
+    ? item.images
+    : (item.image ? [item.image] : modalImagesFor(item.name));
   const themeStyles = useThemeStyles();
 
   return (
