@@ -156,7 +156,7 @@ function App() {
                     />
                     {idx < menuSections.length - 1 && (
                       <div 
-                        className="border-b mt-12"
+                        className="border-b mt-3"
                         style={{ borderColor: themeStyles.borderColor + '20' }}
                       ></div>
                     )}

@@ -1,9 +1,9 @@
 
 
-import { useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { MenuItem } from "../data/menuData";
 import { SmartImage } from "./SmartImage";
-import { DietBadge } from "./DietBadge";
+// DietBadge no longer used; inline icons appended to dish name
 import { trackEvent } from "../lib/ga";
 import { useThemeStyles } from "../context/useThemeStyles";
 import { formatPrice } from "../utils/formatPrice";
@@ -22,6 +22,8 @@ interface MenuSectionProps {
 export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSectionProps) {
   const [open, setOpen] = useState(false);
   const themeStyles = useThemeStyles();
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [height, setHeight] = useState<string>("0px");
 
   function openModal(item: MenuItem) {
     const imgs = (item.images && item.images.length > 0)
@@ -35,12 +37,34 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
   const handleToggle = () => {
     const action = open ? "Collapse Section" : "Expand Section";
     trackEvent("Menu Section", action, title);
-    setOpen(!open);
+    setOpen((prev) => !prev);
   };
 
+  // Smooth height transition by measuring content
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    if (open) {
+      const full = el.scrollHeight;
+      setHeight(full + "px");
+    } else {
+      setHeight("0px");
+    }
+  }, [open, items.length]);
+
+  // Recalculate height on window resize (content width affects height)
+  useEffect(() => {
+    const onResize = () => {
+      if (!contentRef.current) return;
+      if (open) setHeight(contentRef.current.scrollHeight + "px");
+    };
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, [open]);
+  const containerSpacing = open ? 'mb-4' : 'mb-1';
 
   return (
-    <div id={id} className="mb-6">
+    <div id={id} className={containerSpacing}>
       {/* HEADER — Collapsible */}
       <button
         onClick={handleToggle}
@@ -58,11 +82,18 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
 
       {/* COLLAPSIBLE CONTENT */}
       <div
-        className={`overflow-hidden ${
-          open ? "max-h-[5000px] mt-4" : "max-h-0"
-        }`}
+        className={`overflow-hidden ${open ? "mt-4" : "mt-0"}`}
+        style={{ height, transition: "height 320ms cubic-bezier(0.22, 1, 0.36, 1)" }}
+        ref={contentRef}
       >
-        <div className="space-y-6 px-1 sm:px-2">
+        <div
+          className="space-y-6 px-1 sm:px-2"
+          style={{
+            opacity: open ? 1 : 0,
+            transform: open ? "translateY(0)" : "translateY(-6px)",
+            transition: "opacity 280ms ease-out, transform 320ms ease-out",
+          }}
+        >
           {items.map((item) => (
             <div
               key={item.name}
@@ -130,9 +161,22 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                           }}
                         >
                           {item.name}
+                          {(item as any).dietType && (
+                            <span className="ml-2 inline-flex items-center">
+                              {((item as any).dietType === 'veg') && (
+                                <span title="Veg" className="text-xs leading-none align-middle">🥬</span>
+                              )}
+                              {((item as any).dietType === 'non-veg') && (
+                                <span title="Non-Veg" className="text-xs leading-none align-middle">🍖</span>
+                              )}
+                              {((item as any).dietType === 'vegan') && (
+                                <span title="Vegan" className="text-xs leading-none align-middle">🌱</span>
+                              )}
+                            </span>
+                          )}
                         </h3>
                       </button>
-                      {(item as any).dietType && <DietBadge dietType={(item as any).dietType} size="sm" />}
+                      {/* Removed badge; icon appended inline to dish name */}
                     </div>                    {/* Spice / Sweet Icons */}
                     <div className="flex items-center gap-2 mt-1">
 

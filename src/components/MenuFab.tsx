@@ -10,7 +10,7 @@ export function MenuFab({ onClick }: { onClick: () => void }) {
   
   // Use consistent size 'lg' (36px) for all floating buttons
   const iconSize = getIconSize('lg');
-  const borderRadiusClass = fabIcon?.shape === 'circle' ? 'rounded-full' : fabIcon?.shape === 'rounded-square' ? 'rounded-lg' : 'rounded-none';
+  const borderRadiusClass = fabIcon?.shape === 'circle' ? 'rounded-full' : 'rounded-lg';
   const shadowClass = fabIcon?.shadow || 'shadow-lg';
   const animationClass = fabIcon?.animated ? 'hover:scale-110 transition-transform' : '';
 

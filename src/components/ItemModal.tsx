@@ -15,11 +15,13 @@ interface ItemModalProps {
 export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
   const [index, setIndex] = useState(0);
   const [tab, setTab] = useState<'description' | 'ingredients' | 'price'>('description');
+  const [mounted, setMounted] = useState(false);
   const themeStyles = useThemeStyles();
 
   useEffect(() => {
     setIndex(0);
     setTab('description');
+    setMounted(true);
   }, [item]);
 
   // Lock background scroll when modal is open
@@ -52,9 +54,17 @@ useEffect(() => {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      {/* Backdrop with fade-in */}
+      <div
+        className={`fixed inset-0 bg-black/50 transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}
+        onClick={onClose}
+      />
 
-      <div className="relative max-w-3xl w-full mx-0 sm:mx-0 rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" style={{ backgroundColor: themeStyles.backgroundColor }}>
+      {/* Modal card with scale/opacity entrance */}
+      <div
+        className={`relative max-w-3xl w-full mx-0 sm:mx-0 rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transform transition-all duration-300 ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        style={{ backgroundColor: themeStyles.backgroundColor }}
+      >
         
         {/* Header */}
         <div className="flex justify-between items-start p-4 flex-shrink-0" style={{ backgroundColor: themeStyles.backgroundColor, borderBottomColor: themeStyles.borderColor, borderBottomWidth: '1px' }}>
@@ -86,7 +96,7 @@ useEffect(() => {
               ) : (
                 <>
                   <div
-                    className="w-full h-[40vh] sm:h-[55vh] md:h-[60vh] rounded-lg overflow-hidden flex items-center justify-center shadow-md ring-1 ring-white/10 touch-pan-y"
+                    className="w-full h-[40vh] sm:h-[55vh] md:h-[60vh] rounded-lg overflow-hidden flex items-center justify-center shadow-md ring-1 ring-white/10 relative touch-pan-y"
                     style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.95))' }}
                     onPointerDown={(e) => {
                       const startX = e.clientX;
@@ -112,17 +122,24 @@ useEffect(() => {
                       target.addEventListener('pointerup', onUp as any);
                     }}
                   >
-                    {activeMedia?.type === 'video' ? (
-                      <VideoPlayer src={activeMedia.src} autoPlayPreview className="rounded object-contain" />
-                    ) : (
-                      <ParallaxImage
-                        src={activeMedia.src}
-                        alt={`${item.name} image ${index + 1}`}
-                        fit="contain"
-                        intensity={0}
-                        backgroundClass=""
-                      />
-                    )}
+                    {/* Crossfade for media */}
+                    <div className="w-full h-full flex items-center justify-center">
+                      {activeMedia?.type === 'video' ? (
+                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100">
+                          <VideoPlayer src={activeMedia.src} autoPlayPreview className="w-full h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100">
+                          <ParallaxImage
+                            src={activeMedia.src}
+                            alt={`${item.name} image ${index + 1}`}
+                            fit="contain"
+                            intensity={0}
+                            backgroundClass="bg-black"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
@@ -130,7 +147,7 @@ useEffect(() => {
                       <button
                         key={`${m.type}:${m.src}`}
                         onClick={() => setIndex(i)}
-                        className="flex-shrink-0 rounded-md overflow-hidden border bg-black/40"
+                        className="flex-shrink-0 rounded-md overflow-hidden border bg-black/40 hover:scale-[1.03] transition-transform duration-200"
                         style={{
                           borderWidth: i === index ? '2px' : '1px',
                           borderColor: i === index ? themeStyles.accentBg : themeStyles.borderColor + '40',

@@ -1,15 +1,16 @@
 interface DietBadgeProps {
   dietType?: 'veg' | 'non-veg' | 'vegan';
   size?: 'sm' | 'md';
+  showLabel?: boolean; // allow hiding textual label for premium icon-only
 }
 
 const DIET_INFO = {
   veg: { emoji: '🥬', label: 'Veg', color: '#10b981' },
-  'non-veg': { emoji: '🍗', label: 'Non-Veg', color: '#f97316' },
+  'non-veg': { emoji: '🍖', label: 'Non-Veg', color: '#f97316' },
   vegan: { emoji: '🌱', label: 'Vegan', color: '#06b6d4' },
 };
 
-export function DietBadge({ dietType = 'veg', size = 'md' }: DietBadgeProps) {
+export function DietBadge({ dietType = 'veg', size = 'md', showLabel = false }: DietBadgeProps) {
   const info = DIET_INFO[dietType];
   const sizeClass = size === 'sm' ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm';
 
@@ -22,8 +23,8 @@ export function DietBadge({ dietType = 'veg', size = 'md' }: DietBadgeProps) {
         border: `1px solid ${info.color}`,
       }}
     >
-      <span>{info.emoji}</span>
-      <span>{info.label}</span>
+      <span className={size === 'sm' ? 'text-sm' : 'text-base'}>{info.emoji}</span>
+      {showLabel && <span>{info.label}</span>}
     </div>
   );
 }
