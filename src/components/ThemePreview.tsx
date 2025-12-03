@@ -89,7 +89,7 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
       </div>
 
       {/* Digital Solutions Section - Top info */}
-      <div
+      {/* <div
         className="py-8 px-6 sm:px-12 text-center backdrop-blur-md shadow-lg"
         style={{
           backgroundColor: 'rgba(255, 255, 255, 0.7)',
@@ -126,7 +126,7 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
         >
           ☎️ Contact
         </button>
-      </div>
+      </div> */}
 
       {/* Search Bar */}
       <div
@@ -301,7 +301,7 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
       </div>
 
       {/* FOOTER - Digital Solutions Section at bottom */}
-      <div 
+      {/* <div 
         className="backdrop-blur-md py-8 px-6 sm:px-12 text-center shadow-lg border-t"
         style={{ 
           backgroundColor: theme.backgroundColor,
@@ -341,7 +341,7 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
         >
           ☎️ Contact Us
         </button>
-      </div>
+      </div> */}
 
       {/* Color Legend */}
       <div
