@@ -242,15 +242,15 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
         
         {/* Search Button */}
         <button
-          className="absolute right-6 bottom-36 text-white rounded-full shadow-md hover:scale-110 transition-transform z-[40]"
+          className="absolute right-6 bottom-32 sm:bottom-36 text-white rounded-full shadow-md hover:scale-110 transition-transform z-20"
           style={{
             backgroundColor: `rgba(${parseInt(theme.primaryColor.slice(1, 3), 16)}, ${parseInt(theme.primaryColor.slice(3, 5), 16)}, ${parseInt(theme.primaryColor.slice(5, 7), 16)}, 0.85)`,
-            padding: '4.5px',
+            padding: '3px',
           }}
           title="Search menu"
           aria-label="Search menu"
         >
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg className="w-7 h-7 sm:w-9 sm:h-9" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"></circle>
             <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"></path>
           </svg>
@@ -258,15 +258,15 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
 
         {/* Chat Button */}
         <button
-          className="absolute bottom-24 right-6 text-white rounded-full shadow-lg hover:scale-110 transition-transform z-50"
+          className="absolute bottom-20 sm:bottom-24 right-6 text-white rounded-full shadow-lg hover:scale-110 transition-transform z-20"
           aria-label="Open chat"
           title="Chat with AI"
           style={{
             backgroundColor: `rgba(${parseInt(theme.primaryColor.slice(1, 3), 16)}, ${parseInt(theme.primaryColor.slice(3, 5), 16)}, ${parseInt(theme.primaryColor.slice(5, 7), 16)}, 0.9)`,
-            padding: '4.5px',
+            padding: '3px',
           }}
         >
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg className="w-7 h-7 sm:w-9 sm:h-9" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 8.5-8.5 8.38 8.38 0 0 1 3.8.9 8.5 8.5 0 0 1 4.7 7.6z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
           </svg>
         </button>
@@ -274,14 +274,14 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
         {/* Menu Button (rounded to match actual UI) */}
         <button
           aria-label="Open menu"
-          className="absolute right-6 bottom-6 z-40 text-white rounded-lg shadow-lg hover:scale-110 transition-transform"
+          className="absolute right-6 bottom-6 z-20 text-white rounded-lg shadow-lg hover:scale-110 transition-transform"
           title="Open navigation"
           style={{
             backgroundColor: `rgba(${parseInt(theme.primaryColor.slice(1, 3), 16)}, ${parseInt(theme.primaryColor.slice(3, 5), 16)}, ${parseInt(theme.primaryColor.slice(5, 7), 16)}, 0.9)`,
-            padding: '4.5px',
+            padding: '3px',
           }}
         >
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg className="w-7 h-7 sm:w-9 sm:h-9" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
           </svg>
         </button>

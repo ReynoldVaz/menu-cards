@@ -14,6 +14,7 @@ export interface MenuItemFormData {
   videos?: string[] | null;
   dietType?: 'veg' | 'non-veg' | 'vegan';
   is_todays_special: boolean;
+  is_available?: boolean;
   spice_level?: number;
   sweet_level?: number;
 }
@@ -60,6 +61,7 @@ export function MenuItemForm({
           section: availableSections[0] || DEFAULT_SECTIONS[0],
           ingredients: '',
           is_todays_special: false,
+          is_available: false,
         }
   );
 
@@ -432,6 +434,7 @@ export function MenuItemForm({
         section: formData.section,
         ingredients: formData.ingredients,
         is_todays_special: formData.is_todays_special,
+        is_available: Boolean(formData.is_available),
       };
 
       // Only include optional fields if they have values
@@ -603,6 +606,21 @@ export function MenuItemForm({
           />
           <span className="text-sm font-medium text-gray-700">⭐ Mark as Today's Special</span>
         </label>
+      </div>
+
+      {/* Availability */}
+      <div>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={Boolean(formData.is_available)}
+            onChange={(e) => setFormData({ ...formData, is_available: e.target.checked })}
+            className="w-4 h-4"
+            disabled={isLoading}
+          />
+          <span className="text-sm font-medium text-gray-700">✅ Currently Available</span>
+        </label>
+        <p className="text-xs text-gray-500 ml-6">If unchecked, saved as false by default.</p>
       </div>
 
       {/* Description */}

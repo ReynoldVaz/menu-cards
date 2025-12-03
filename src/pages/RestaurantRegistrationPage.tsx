@@ -22,12 +22,12 @@ export function RestaurantRegistrationPage() {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string>('');
-  const [restaurantName, setRestaurantName] = useState('Juju');
+  const [restaurantName, setRestaurantName] = useState('');
   const [restaurantCode, setRestaurantCode] = useState('');
   const [codeStatus, setCodeStatus] = useState<'available' | 'taken' | 'invalid' | 'unchecked'>('unchecked');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState(state?.email || '');
+  const [email] = useState(state?.email || '');
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
 
@@ -265,17 +265,19 @@ export function RestaurantRegistrationPage() {
             />
           </div>
 
-          {/* Email Address */}
+          {/* Email Address (auto-populated, not editable) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="restaurant@email.com"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              disabled={loading}
+              readOnly
+              disabled
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
+              aria-readonly="true"
+              title="Auto-filled from your account"
             />
+            <p className="text-xs text-gray-500 mt-1">This is your account email and cannot be changed here.</p>
           </div>
 
           {/* Address */}
@@ -309,7 +311,8 @@ export function RestaurantRegistrationPage() {
             disabled={loading || codeStatus !== 'available'}
             className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
           >
-            {loading ? '⏳ Creating...' : '✓ Next: Theme Selection'}
+            {/* {loading ? '⏳ Creating...' : '✓ Next: Theme Selection'} */}
+            {loading ? '⏳ Creating...' : 'Submit Registration Request'}
           </button>
         </form>
 
