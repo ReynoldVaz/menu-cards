@@ -16,6 +16,7 @@ import { ItemModal } from './components/ItemModal';
 import ChatBot from './components/ChatBot';
 import { trackPageview } from "./lib/ga";
 import { getThemeStyles } from './utils/themeUtils';
+import { SocialLinksCard } from './components/SocialLinksCard';
 
 
 function MobileAwareCallButton({ themeColor }: { themeColor?: string }) {
@@ -37,7 +38,7 @@ function MobileAwareCallButton({ themeColor }: { themeColor?: string }) {
 }
 
 function App() {
-  const { menuSections, todaysSpecial, upcomingEvents, loading, theme } = useRestaurant();
+  const { restaurant, menuSections, todaysSpecial, upcomingEvents, loading, theme } = useRestaurant();
   const themeStyles = getThemeStyles(theme || null);
   
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -191,6 +192,8 @@ function App() {
                 borderTop: '1px solid ' + themeStyles.borderColor
               }}
             >
+              {/* Social links card shown above footer when available */}
+              <SocialLinksCard restaurant={restaurant} />
               <h3 className="text-xl font-bold" style={{ color: themeStyles.primaryButtonBg }}>
                 Digital Solutions
               </h3>

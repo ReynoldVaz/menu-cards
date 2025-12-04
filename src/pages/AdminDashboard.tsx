@@ -7,13 +7,14 @@ import type { Restaurant } from '../hooks/useFirebaseRestaurant';
 import { MenuItemForm, type MenuItemFormData } from '../components/MenuItemForm';
 import { EventForm, type EventFormData } from '../components/EventForm';
 import { ThemePreview } from '../components/ThemePreview';
+import { QRCodeGenerator } from '../components/QRCodeGenerator';
 import { BulkUploadMenu } from '../components/BulkUploadMenu';
 import { TEMPLATES, TEMPLATE_NAMES, TEMPLATE_DESCRIPTIONS, getTemplateColors, type TemplateType } from '../utils/templateStyles';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import { formatPrice } from '../utils/formatPrice';
 
 interface AdminDashboardTab {
-  id: 'restaurants' | 'menu' | 'events' | 'settings';
+  id: 'restaurants' | 'menu' | 'events' | 'settings' | 'qr';
   label: string;
   icon: string;
 }
@@ -31,6 +32,7 @@ export function AdminDashboard() {
     { id: 'settings', label: 'Settings', icon: '⚙️' },
     { id: 'menu', label: 'Menu Items', icon: '🍽️' },
     { id: 'events', label: 'Events', icon: '🎉' },
+    { id: 'qr', label: 'QR Code', icon: '📱' },
   ];
 
   // Load current user's restaurant or query parameter restaurant
@@ -133,8 +135,8 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* Mobile Tabs Bar */}
-      <div className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur border-b">
+      {/* Mobile Tabs Bar (non-sticky as requested) */}
+      <div className="lg:hidden bg-white/90 backdrop-blur border-b">
         <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap gap-2">
           {tabs.map((tab) => (
             <button
@@ -213,12 +215,48 @@ export function AdminDashboard() {
 
                 {/* Settings Tab */}
                 {activeTab === 'settings' && <SettingsTab restaurant={restaurant} onUpdate={loadUserRestaurant} />}
+
+                {/* QR Tab */}
+                {activeTab === 'qr' && <QRTab restaurant={restaurant} />}
               </>
             ) : (
               <div className="bg-white rounded-lg shadow p-8 text-center">
                 <p className="text-gray-600">Restaurant not found</p>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * QR Tab
+ */
+function QRTab({ restaurant }: { restaurant: Restaurant }) {
+  const appUrl = import.meta.env.VITE_APP_URL || 'https://menu-cards.vercel.app';
+  const menuLink = `${appUrl}/r/${restaurant.id}`;
+
+  function copyMenuLink() {
+    navigator.clipboard.writeText(menuLink).catch(() => {
+      alert('Copy failed. Please copy manually.');
+    });
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">QR Code</h2>
+      <p className="text-sm text-gray-600 mb-4">Share or download your menu QR code below.</p>
+      <div className="flex flex-col sm:flex-row items-center gap-6">
+        <div className="flex-1 w-full">
+          <QRCodeGenerator restaurantId={restaurant.id} restaurantName={restaurant.name} />
+          <div className="mt-4">
+            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded font-mono text-sm break-all">{menuLink}</div>
+            <div className="mt-3 flex gap-3">
+              <button onClick={copyMenuLink} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Copy Link</button>
+              <a href={menuLink} target="_blank" rel="noreferrer" className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-black text-sm">Open Menu</a>
+            </div>
           </div>
         </div>
       </div>
@@ -330,7 +368,7 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
         ...formData,
         price: String(formData.price),
         is_new: Boolean((formData as any).is_new),
-        is_available: Boolean((formData as any).is_available),
+        is_unavailable: Boolean((formData as any).is_unavailable),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -376,7 +414,7 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
         ...formData,
         price: String(formData.price),
         is_new: Boolean((formData as any).is_new),
-        is_available: Boolean((formData as any).is_available),
+        is_unavailable: Boolean((formData as any).is_unavailable),
         updatedAt: new Date().toISOString(),
       };
 
@@ -606,7 +644,7 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
               videos: (editingItem as any).videos,
               dietType: (editingItem as any).dietType,
               is_todays_special: editingItem.is_todays_special || false,
-              is_available: Boolean((editingItem as any).is_available),
+              is_unavailable: Boolean((editingItem as any).is_unavailable),
               spice_level: (editingItem as any).spice || (editingItem as any).spice_level,
               sweet_level: (editingItem as any).sweet || (editingItem as any).sweet_level,
             } : undefined}
@@ -822,6 +860,11 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [description, setDescription] = useState(restaurant.description || '');
   const [phone, setPhone] = useState(restaurant.phone || '');
   const [email, setEmail] = useState(restaurant.email || '');
+  const [instagram, setInstagram] = useState(restaurant.instagram || '');
+  const [facebook, setFacebook] = useState(restaurant.facebook || '');
+  const [youtube, setYoutube] = useState(restaurant.youtube || '');
+  const [website, setWebsite] = useState(restaurant.website || '');
+  const [googleReviews, setGoogleReviews] = useState(restaurant.googleReviews || '');
   const [themeMode, setThemeMode] = useState(restaurant.theme?.mode || 'custom');
   const [primaryColor, setPrimaryColor] = useState(restaurant.theme?.primaryColor || '#EA580C');
   const [secondaryColor, setSecondaryColor] = useState(restaurant.theme?.secondaryColor || '#FB923C');
@@ -836,16 +879,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [logoPreview, setLogoPreview] = useState<string>(restaurant.logo || '');
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
-  // QR: computed menu link and image source (no extra deps)
-  const menuLink = `https://menu-cards-ten.vercel.app/r/${restaurant.id}`;
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(menuLink)}`;
-  function copyMenuLink() {
-    navigator.clipboard.writeText(menuLink).then(() => {
-      // optional toast could go here
-    }).catch(() => {
-      alert('Copy failed. Please copy manually.');
-    });
-  }
+  // QR: moved to QR tab
 
   // Load approved custom themes for this restaurant
   useEffect(() => {
@@ -936,6 +970,11 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         description,
         phone,
         email,
+        instagram: instagram || null,
+        facebook: facebook || null,
+        youtube: youtube || null,
+        website: website || null,
+        googleReviews: googleReviews || null,
         ...(logoUrl && { logo: logoUrl }),
       });
       onUpdate();
@@ -1010,6 +1049,81 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          {/* Social Links (compact) */}
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-gray-700">Social & Web Links</label>
+            <p className="text-xs text-gray-500">Click a platform to reveal its input.</p>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">Instagram</summary>
+              <div className="mt-3">
+                <input
+                  type="url"
+                  placeholder="https://instagram.com/yourhandle"
+                  value={instagram}
+                  onChange={(e) => setInstagram(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Full profile URL (optional)</p>
+              </div>
+            </details>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">Facebook</summary>
+              <div className="mt-3">
+                <input
+                  type="url"
+                  placeholder="https://facebook.com/yourpage"
+                  value={facebook}
+                  onChange={(e) => setFacebook(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Full page URL (optional)</p>
+              </div>
+            </details>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">YouTube</summary>
+              <div className="mt-3">
+                <input
+                  type="url"
+                  placeholder="https://youtube.com/@yourchannel"
+                  value={youtube}
+                  onChange={(e) => setYoutube(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Channel or video URL (optional)</p>
+              </div>
+            </details>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">Website</summary>
+              <div className="mt-3">
+                <input
+                  type="url"
+                  placeholder="https://www.yourrestaurant.com"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Official website URL (optional)</p>
+              </div>
+            </details>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">Google Reviews Page</summary>
+              <div className="mt-3">
+                <input
+                  type="url"
+                  placeholder="https://www.google.com/maps/place/..."
+                  value={googleReviews}
+                  onChange={(e) => setGoogleReviews(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Link to your Google Business reviews page (optional)</p>
+              </div>
+            </details>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Logo (Optional, max 2MB)</label>
             <input
@@ -1037,22 +1151,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
           </div>
         </div>
 
-        {/* QR Code Section */}
-        <div className="pt-8 border-t">
-          <h3 className="text-lg font-semibold text-gray-700 mb-3">📱 QR Code</h3>
-          <p className="text-sm text-gray-600 mb-4">Share or download your menu QR code below.</p>
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <img src={qrSrc} alt="Menu QR Code" className="w-40 h-40 rounded bg-white p-2 border border-gray-200" />
-            <div className="flex-1 w-full">
-              <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded font-mono text-sm break-all">{menuLink}</div>
-              <div className="mt-3 flex gap-3">
-                <button onClick={copyMenuLink} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Copy Link</button>
-                <a href={qrSrc} download={`menu-qr-${restaurant.id}.png`} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">Download QR</a>
-                <a href={menuLink} target="_blank" rel="noreferrer" className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-black text-sm">Open Menu</a>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* QR Code Section moved to its own tab */}
 
         {/* Theme Settings */}
         <div className="pt-8">

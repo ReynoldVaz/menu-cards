@@ -1,0 +1,9 @@
+id,section,name,description,price,ingredients,image,images,is_todays_special
+1,Vegetarian Starters,Samosa Trio,Crispy pastries with potato & peas,₹1550,"Potatoes, Peas, Flour, Spices, Oil",, ,
+2,Vegetarian Starters,Paneer Tikka,Grilled cottage cheese with spices,₹280,"Paneer, Yogurt, Red chili, Turmeric, Garam masala",, ,
+3,Non-Vegetarian Starters,Chicken Tikka,Marinated and grilled chicken pieces,₹320,"Chicken, Yogurt, Spices",, ,
+4,Vegetarian Main,Saag Paneer,Cottage cheese in spinach curry,₹380,"Paneer, Spinach, Cream, Spices",, ,
+5,Mocktails,Mango Lassi,Yogurt-based drink with fresh mango,₹150,"Yogurt, Mango, Sugar, Cardamom, Ice",, ,
+6,Desserts,Gulab Jamun,Sweet milk solids in cardamom syrup,₹150,"Milk solids, Sugar, Cardamom, Ghee",, ,
+7,Cocktails,Spiced Margarita,Tequila with Indian spice twist,₹350,"Tequila, Lime, Salt, Spices",, ,
+8,Special,Chef's Special Rogan Josh,A traditional recipe passed down through generations - tender lamb cooked with aromatic spices and yogurt,₹550,"Lamb, Yogurt, Ginger, Garlic, Red chili, Garam masala",, ,TRUE

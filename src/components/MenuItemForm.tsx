@@ -14,7 +14,7 @@ export interface MenuItemFormData {
   videos?: string[] | null;
   dietType?: 'veg' | 'non-veg' | 'vegan';
   is_todays_special: boolean;
-  is_available?: boolean;
+  is_unavailable?: boolean;
   spice_level?: number;
   sweet_level?: number;
 }
@@ -61,7 +61,7 @@ export function MenuItemForm({
           section: availableSections[0] || DEFAULT_SECTIONS[0],
           ingredients: '',
           is_todays_special: false,
-          is_available: false,
+          is_unavailable: false,
         }
   );
 
@@ -434,7 +434,7 @@ export function MenuItemForm({
         section: formData.section,
         ingredients: formData.ingredients,
         is_todays_special: formData.is_todays_special,
-        is_available: Boolean(formData.is_available),
+        is_unavailable: Boolean(formData.is_unavailable),
       };
 
       // Only include optional fields if they have values
@@ -608,19 +608,19 @@ export function MenuItemForm({
         </label>
       </div>
 
-      {/* Availability */}
+      {/* Availability (Currently Unavailable) */}
       <div>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
-            checked={Boolean(formData.is_available)}
-            onChange={(e) => setFormData({ ...formData, is_available: e.target.checked })}
+            checked={Boolean(formData.is_unavailable)}
+            onChange={(e) => setFormData({ ...formData, is_unavailable: e.target.checked })}
             className="w-4 h-4"
             disabled={isLoading}
           />
-          <span className="text-sm font-medium text-gray-700">✅ Currently Available</span>
+          <span className="text-sm font-medium text-gray-700">⚠️ Currently Unavailable</span>
         </label>
-        <p className="text-xs text-gray-500 ml-6">If unchecked, saved as false by default.</p>
+        <p className="text-xs text-gray-500 ml-6">Check to mark item unavailable. If unchecked, saved as false.</p>
       </div>
 
       {/* Description */}

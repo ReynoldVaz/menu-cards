@@ -8,16 +8,16 @@ interface BulkUploadMenuProps {
   isLoading?: boolean;
 }
 
-const SAMPLE_CSV = `name,section,price,currency,description,ingredients,dietType,spice_level,sweet_level,is_todays_special
-Paneer Tikka,Appetizers,250,INR,Grilled cottage cheese with spices,Paneer - Yogurt - Spices,veg,3,,false
-Butter Chicken,Main Course,320,INR,Creamy tomato-based curry with chicken,Chicken - Butter - Cream - Tomato,non-veg,2,,false
-Chocolate Cake,Desserts,150,INR,Rich chocolate dessert,Chocolate - Flour - Sugar - Eggs,veg,,4,false
-Mango Lassi,Beverages,80,INR,Yogurt-based mango drink,Yogurt - Mango - Sugar,veg,,3,false
-Caesar Salad,Salads,200,INR,Fresh greens with Caesar dressing,Lettuce - Croutons - Parmesan,veg,1,,false`;
+const SAMPLE_CSV = `name,section,price,currency,description,ingredients,dietType,spice_level,sweet_level,is_todays_special,is_unavailable
+Paneer Tikka,Appetizers,250,INR,Grilled cottage cheese with spices,Paneer - Yogurt - Spices,veg,3,,false,false
+Butter Chicken,Main Course,320,INR,Creamy tomato-based curry with chicken,Chicken - Butter - Cream - Tomato,non-veg,2,,false,false
+Chocolate Cake,Desserts,150,INR,Rich chocolate dessert,Chocolate - Flour - Sugar - Eggs,veg,,4,false,true
+Mango Lassi,Beverages,80,INR,Yogurt-based mango drink,Yogurt - Mango - Sugar,veg,,3,false,false
+Caesar Salad,Salads,200,INR,Fresh greens with Caesar dressing,Lettuce - Croutons - Parmesan,veg,1,,false,false`;
 
-const TEMPLATE_CSV = `name,section,price,currency,description,ingredients,dietType,spice_level,sweet_level,is_todays_special
-[REQUIRED],,[REQUIRED],[optional: INR/USD/EUR/GBP],[optional],[optional],[optional: veg/non-veg/vegan],[optional: 1-5],[optional: 1-5],[optional: true/false]
-Example Item,Main Course,299,INR,Brief description here,Ingredient1 - Ingredient2 - Ingredient3,veg,2,1,false`;
+const TEMPLATE_CSV = `name,section,price,currency,description,ingredients,dietType,spice_level,sweet_level,is_todays_special,is_unavailable
+[REQUIRED],,[REQUIRED],[optional: INR/USD/EUR/GBP],[optional],[optional],[optional: veg/non-veg/vegan],[optional: 1-5],[optional: 1-5],[optional: true/false],[optional: true/false]
+Example Item,Main Course,299,INR,Brief description here,Ingredient1 - Ingredient2 - Ingredient3,veg,2,1,false,false`;
 
 export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuProps) {
   const [preview, setPreview] = useState<MenuItemFormData[]>([]);
@@ -98,6 +98,7 @@ export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuPr
           }
 
           const isTodaysSpecial = row.is_todays_special?.trim().toLowerCase() === 'true';
+          const isUnavailable = row.is_unavailable?.trim().toLowerCase() === 'true';
 
           // Validate currency if provided
           const currency = row.currency?.trim().toUpperCase();
@@ -116,6 +117,7 @@ export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuPr
             ingredients: row.ingredients?.trim() || '',
             dietType: (dietType as 'veg' | 'non-veg' | 'vegan' | undefined),
             is_todays_special: isTodaysSpecial,
+            is_unavailable: isUnavailable || false,
             spice_level: spiceLevel,
             sweet_level: sweetLevel,
           };
@@ -206,10 +208,10 @@ export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuPr
             <h4 className="font-semibold text-blue-900 mb-2">📝 CSV Format Guide:</h4>
             <ul className="text-sm text-blue-800 space-y-1">
               <li><strong>Required fields:</strong> name, section, price</li>
-              <li><strong>Optional fields:</strong> description, ingredients, dietType, spice_level, sweet_level, is_todays_special</li>
+              <li><strong>Optional fields:</strong> description, ingredients, dietType, spice_level, sweet_level, is_todays_special, is_unavailable</li>
               <li><strong>Diet Type values:</strong> veg, non-veg, or vegan</li>
               <li><strong>Spice/Sweet levels:</strong> 1-5 (numeric)</li>
-              <li><strong>Today's Special:</strong> true or false</li>
+              <li><strong>Today's Special / Unavailable:</strong> true or false</li>
             </ul>
           </div>
 
