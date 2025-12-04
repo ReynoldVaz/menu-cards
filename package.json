@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:api": "node api-dev-server.js",
-    "dev:full": "concurrently \"npm run dev\" \"npm run dev:api\"",
+    "dev:full": "concurrently \"npm run dev\" \"vercel dev\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
