@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { db, auth } from '../firebase.config';
-import { collection, getDocs, doc, updateDoc, query, where, addDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where, addDoc, deleteDoc, getDoc, deleteField } from 'firebase/firestore';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import type { MenuItem, Event } from '../data/menuData';
 import type { Restaurant } from '../hooks/useFirebaseRestaurant';
 import { MenuItemForm, type MenuItemFormData } from '../components/MenuItemForm';
@@ -35,21 +36,42 @@ export function AdminDashboard() {
     { id: 'qr', label: 'QR Code', icon: '📱' },
   ];
 
-  // Load current user's restaurant or query parameter restaurant
+  // Load current user's restaurant or query parameter restaurant, but wait for auth
   useEffect(() => {
-    loadRestaurant();
+    let cancelled = false;
+    async function init() {
+      try {
+        setLoading(true);
+        const user = await ensureAuth();
+        if (cancelled) return;
+        if (!user) {
+          setError('Not authenticated');
+          navigate('/admin/auth');
+          return;
+        }
+        await loadRestaurant();
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    init();
+    return () => { cancelled = true; };
   }, [searchParams]);
+
+  function ensureAuth(): Promise<User | null> {
+    if (auth.currentUser) return Promise.resolve(auth.currentUser);
+    return new Promise((resolve) => {
+      const unsub = onAuthStateChanged(auth, (u) => {
+        unsub();
+        resolve(u);
+      });
+    });
+  }
 
   async function loadRestaurant() {
     try {
-      setLoading(true);
-      const currentUser = auth.currentUser;
-      
-      if (!currentUser) {
-        setError('Not authenticated');
-        navigate('/admin/auth');
-        return;
-      }
+      const currentUser = auth.currentUser || (await ensureAuth());
+      if (!currentUser) return; // navigation handled by caller
 
       // Check if restaurant code is passed as query parameter (from master admin)
       const restaurantCode = searchParams.get('restaurant');
@@ -70,13 +92,8 @@ export function AdminDashboard() {
 
   async function loadUserRestaurant() {
     try {
-      const currentUser = auth.currentUser;
-      
-      if (!currentUser) {
-        setError('Not authenticated');
-        navigate('/admin/auth');
-        return;
-      }
+      const currentUser = auth.currentUser || (await ensureAuth());
+      if (!currentUser) return; // navigation handled by caller
 
       // Get user document to find their restaurant code
       const userSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', '==', currentUser.uid)));
@@ -722,10 +739,13 @@ function EventsTab({ restaurantId }: { restaurantId: string }) {
 
     try {
       setSavingEvent(true);
-      const eventData = {
+      const eventData: any = {
         ...formData,
         updatedAt: new Date().toISOString(),
       };
+      if (!formData.image) {
+        eventData.image = deleteField();
+      }
 
       await updateDoc(
         doc(db, `restaurants/${restaurantId}/events/${editingEvent.id}`),
@@ -859,6 +879,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [name, setName] = useState(restaurant.name);
   const [description, setDescription] = useState(restaurant.description || '');
   const [phone, setPhone] = useState(restaurant.phone || '');
+  const [contactPhone, setContactPhone] = useState(restaurant.contactPhone || '');
   const [email, setEmail] = useState(restaurant.email || '');
   const [instagram, setInstagram] = useState(restaurant.instagram || '');
   const [facebook, setFacebook] = useState(restaurant.facebook || '');
@@ -878,8 +899,27 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>(restaurant.logo || '');
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [removeLogo, setRemoveLogo] = useState(false);
+  const [phoneError, setPhoneError] = useState<string>('');
+  const [contactPhoneError, setContactPhoneError] = useState<string>('');
 
   // QR: moved to QR tab
+  function isValidPhone(input: string) {
+    if (!input) return true; // allow empty
+    const cleaned = input.replace(/[^0-9]/g, '');
+    if (cleaned.length < 10) return false; // require at least 10 digits
+    return /^[+0-9 ()-]+$/.test(input);
+  }
+
+  function handlePhoneChange(value: string) {
+    setPhone(value);
+    setPhoneError(isValidPhone(value) ? '' : 'Enter a valid 10-digit phone (digits, +, spaces, () and - allowed).');
+  }
+
+  function handleContactPhoneChange(value: string) {
+    setContactPhone(value);
+    setContactPhoneError(isValidPhone(value) ? '' : 'Enter a valid 10-digit phone (digits, +, spaces, () and - allowed).');
+  }
 
   // Load approved custom themes for this restaurant
   useEffect(() => {
@@ -935,15 +975,20 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         logoUrl = result.url;
         setUploadingLogo(false);
       }
-
-      await updateDoc(doc(db, 'restaurants', restaurant.id), {
+      const updates: any = {
         name,
         description,
         phone,
         email,
         theme: currentTheme,
-        ...(logoUrl && { logo: logoUrl }),
-      });
+      };
+      if (logoFile && logoUrl) {
+        updates.logo = logoUrl;
+      } else if (removeLogo) {
+        updates.logo = deleteField();
+      }
+
+      await updateDoc(doc(db, 'restaurants', restaurant.id), updates);
       onUpdate();
     } catch (err) {
       console.error('Failed to save:', err);
@@ -954,6 +999,14 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
 
   async function handleSaveDetails() {
     try {
+      // Validate phone numbers
+      const phoneOk = isValidPhone(phone);
+      const contactOk = isValidPhone(contactPhone);
+      setPhoneError(phoneOk ? '' : 'Enter a valid 10-digit phone (digits, +, spaces, () and - allowed).');
+      setContactPhoneError(contactOk ? '' : 'Enter a valid 10-digit phone (digits, +, spaces, () and - allowed).');
+      if (!phoneOk || !contactOk) {
+        return;
+      }
       setSaving(true);
       let logoUrl = logoPreview;
       if (logoFile) {
@@ -965,7 +1018,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         logoUrl = result.url;
         setUploadingLogo(false);
       }
-      await updateDoc(doc(db, 'restaurants', restaurant.id), {
+      const updates: any = {
         name,
         description,
         phone,
@@ -975,8 +1028,15 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         youtube: youtube || null,
         website: website || null,
         googleReviews: googleReviews || null,
-        ...(logoUrl && { logo: logoUrl }),
-      });
+        contactPhone: contactPhone || null,
+      };
+      if (logoFile && logoUrl) {
+        updates.logo = logoUrl;
+      } else if (removeLogo) {
+        updates.logo = deleteField();
+      }
+
+      await updateDoc(doc(db, 'restaurants', restaurant.id), updates);
       onUpdate();
     } catch (err) {
       console.error('Failed to save details:', err);
@@ -996,6 +1056,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
 
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
+    setRemoveLogo(false);
   }
 
   function applyColorCombination(combination: ReturnType<typeof getTemplateColors>[0]) {
@@ -1032,13 +1093,15 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Admin Phone (private)</label>
             <input
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => handlePhoneChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
+            {phoneError && (<p className="text-xs text-red-600 mt-1">{phoneError}</p>)}
+            <p className="text-xs text-gray-500 mt-1">Not shown on menu. Used for admin notifications.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -1065,6 +1128,21 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">Full profile URL (optional)</p>
+              </div>
+            </details>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">Public Contact Number</summary>
+              <div className="mt-3">
+                <input
+                  type="tel"
+                  placeholder="e.g. +1 555 123 4567"
+                  value={contactPhone}
+                  onChange={(e) => handleContactPhoneChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                {contactPhoneError && (<p className="text-xs text-red-600 mt-1">{contactPhoneError}</p>)}
+                <p className="text-xs text-gray-500 mt-1">Shown on the public menu. Tap-to-call on mobile.</p>
               </div>
             </details>
 
@@ -1136,7 +1214,18 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
             {logoPreview && (
               <div className="mt-6 space-y-3">
                 <p className="text-sm font-semibold text-gray-700">Logo Preview:</p>
-                <img src={logoPreview} alt="Logo Preview" className="h-20 w-20 object-contain rounded border border-gray-300" />
+                <div className="flex items-center gap-4">
+                  <img src={logoPreview} alt="Logo Preview" className="h-20 w-20 object-contain rounded border border-gray-300" />
+                  <button
+                    type="button"
+                    onClick={() => { setLogoFile(null); setLogoPreview(''); setRemoveLogo(true); }}
+                    disabled={saving || uploadingLogo}
+                    className="px-3 py-2 text-red-700 border border-red-300 rounded hover:bg-red-50 disabled:opacity-50"
+                    title="Remove current logo"
+                  >
+                    Remove Logo
+                  </button>
+                </div>
               </div>
             )}
           </div>

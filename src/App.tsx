@@ -19,21 +19,23 @@ import { getThemeStyles } from './utils/themeUtils';
 import { SocialLinksCard } from './components/SocialLinksCard';
 
 
-function MobileAwareCallButton({ themeColor }: { themeColor?: string }) {
+function MobileAwareCallButton({ themeColor, phone }: { themeColor?: string; phone?: string | null }) {
+  if (!phone) return null;
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const color = themeColor || '#EA580C';
+  const tel = `tel:${phone.replace(/\s|\(|\)|-/g, '')}`;
 
   return isMobile ? (
     <a
-      href="tel:+918698248506"
+      href={tel}
       className="inline-block bg-white text-black mt-4 px-5 py-2 rounded-full text-sm font-medium 
                  shadow-md hover:bg-opacity-90 transition-all"
       style={{ borderColor: color, borderWidth: '2px' }}
     >
-      ☎️ +918698248506
+      ☎️ {phone}
     </a>
   ) : (
-    <p className="text-gray-800 text-sm mt-3">☎️ <span className="font-semibold">+918698248506</span></p>
+    <p className="text-gray-800 text-sm mt-3">☎️ <span className="font-semibold">{phone}</span></p>
   );
 }
 
@@ -214,7 +216,7 @@ function App() {
               {/* <button className="mt-4 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg text-sm shadow-md transition-all">
                 Digitize Your Menu Today
               </button> */}
-              <MobileAwareCallButton />
+              <MobileAwareCallButton themeColor={themeStyles.primaryButtonBg} phone={restaurant?.contactPhone} />
             </div>
 
             {/* FLOATING CHAT ICON */}

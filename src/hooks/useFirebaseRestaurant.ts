@@ -78,6 +78,7 @@ export interface Restaurant {
   youtube?: string;
   website?: string;
   googleReviews?: string;
+  contactPhone?: string;
 }
 
 export interface UseFirebaseRestaurantResult {

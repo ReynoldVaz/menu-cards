@@ -1,7 +1,7 @@
 // no-op import removed
 import type { Restaurant } from '../hooks/useFirebaseRestaurant';
 import { useThemeStyles } from '../context/useThemeStyles';
-import { FaInstagram, FaFacebook, FaYoutube } from 'react-icons/fa';
+import { FaInstagram, FaFacebook, FaYoutube, FaPhone } from 'react-icons/fa';
 import { FiGlobe } from 'react-icons/fi';
 import { SiGoogle } from 'react-icons/si';
 
@@ -20,6 +20,7 @@ export function SocialLinksCard({ restaurant }: SocialLinksCardProps) {
   const IconGoogle = () => <SiGoogle size={18} aria-hidden />;
 
   const links = [
+    { key: 'phone' as const, label: 'Call', icon: <FaPhone />, url: restaurant.contactPhone ? `tel:${restaurant.contactPhone.replace(/\s|\(|\)|-/g, '')}` : undefined, bg: '#E5FFE5' },
     { key: 'instagram' as const, label: 'Instagram', icon: <IconInstagram />, url: restaurant.instagram, bg: '#FCE7F3' },
     { key: 'facebook' as const, label: 'Facebook', icon: <IconFacebook />, url: restaurant.facebook, bg: '#DBEAFE' },
     { key: 'youtube' as const, label: 'YouTube', icon: <IconYouTube />, url: restaurant.youtube, bg: '#FEE2E2' },
