@@ -3,6 +3,7 @@ export interface MenuItem {
   name: string;
   description: string;
   price: string;
+  currency?: 'INR' | 'USD' | 'EUR' | 'GBP';
   section?: string;
   dietType?: 'veg' | 'non-veg' | 'vegan';
   is_todays_special?: boolean;

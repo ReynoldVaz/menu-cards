@@ -27,20 +27,37 @@ export function EventCard({ event }: EventCardProps) {
         </div>
       </div>
 
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center gap-2 text-gray-600">
-          <Calendar className="w-4 h-4" style={{ color: themeStyles.primaryButtonBg }} />
-          <span className="text-sm">{event.date}</span>
-        </div>
-        <div className="flex items-center gap-2 text-gray-600">
-          <Clock className="w-4 h-4" style={{ color: themeStyles.primaryButtonBg }} />
-          <span className="text-sm">{event.time}</span>
-        </div>
-      </div>
+      <div className="flex items-start gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="mb-3">
+            <div className="flex items-center gap-4 text-gray-600 flex-wrap">
+              <span className="inline-flex items-center gap-2">
+                <Calendar className="w-4 h-4" style={{ color: themeStyles.primaryButtonBg }} />
+                <span className="text-sm">{event.date}</span>
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Clock className="w-4 h-4" style={{ color: themeStyles.primaryButtonBg }} />
+                <span className="text-sm">{event.time}</span>
+              </span>
+            </div>
+          </div>
 
-      <p className="text-gray-600 text-sm leading-relaxed">
-        {event.description}
-      </p>
+          {event.description && (
+            <p className="text-gray-600 text-sm leading-relaxed">
+              {event.description}
+            </p>
+          )}
+        </div>
+
+        {(event as any).image && (
+          <img
+            src={(event as any).image}
+            alt={event.title}
+            loading="lazy"
+            className="w-32 h-24 object-cover rounded border"
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase.config';
 import { collection, getDocs, doc, updateDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
+// import { sendApprovalEmail, sendRejectionEmail } from '../utils/emailService'; // TODO: Enable after SendGrid domain authentication
 
 interface Restaurant {
   id: string;
@@ -173,16 +174,47 @@ export function MasterAdminDashboard() {
         updatedAt: new Date().toISOString(),
       });
 
+      // Send approval email to restaurant owner
+      // TODO: Enable after SendGrid domain authentication is complete
+      /*
+      console.log('[DEBUG] === EMAIL APPROVAL FLOW ===');
+      console.log('[DEBUG] Owner Email:', request.ownerEmail);
+      console.log('[DEBUG] Restaurant Name:', request.restaurantName);
+      console.log('[DEBUG] Restaurant Code:', request.restaurantCode);
+      console.log('[DEBUG] Calling sendApprovalEmail()...');
+      
+      const emailResult = await sendApprovalEmail(
+        request.ownerEmail,
+        request.restaurantName,
+        request.restaurantCode
+      );
+      
+      console.log('[DEBUG] Email result:', emailResult);
+      console.log('[DEBUG] Email success:', emailResult.success);
+      console.log('[DEBUG] Email message:', emailResult.message);
+      
+      if (emailResult.success) {
+        console.log('✅ Approval email sent successfully to:', request.ownerEmail);
+      } else {
+        console.warn('⚠️ Approval email FAILED:', emailResult.message);
+        console.warn('⚠️ But registration WAS approved for:', request.restaurantCode);
+      }
+      */
+
       // Reload data
       await loadData();
       console.log('✅ Request approved:', request.restaurantCode);
     } catch (err) {
+      console.error('[DEBUG] Error in handleApproveRequest:', err);
       setError(err instanceof Error ? err.message : 'Failed to approve request');
     }
   }
 
   async function handleRejectRequest(request: ApprovalRequest) {
     try {
+      // Get rejection reason from admin (for now using a default message)
+      const rejectionReason = 'Your registration request does not meet our requirements. Please contact support for more information.';
+
       // Update user document with rejected status
       const userDocRef = doc(db, 'users', request.ownerId);
       await updateDoc(userDocRef, {
@@ -195,6 +227,23 @@ export function MasterAdminDashboard() {
         status: 'rejected',
         updatedAt: new Date().toISOString(),
       });
+
+      // Send rejection email to restaurant owner
+      // TODO: Enable after SendGrid domain authentication is complete
+      /*
+      console.log('[Rejection] Sending email to:', request.ownerEmail);
+      const emailResult = await sendRejectionEmail(
+        request.ownerEmail,
+        request.restaurantName,
+        rejectionReason
+      );
+      
+      if (emailResult.success) {
+        console.log('✅ Rejection email sent successfully');
+      } else {
+        console.warn('⚠️ Rejection email failed, but request was rejected:', emailResult.message);
+      }
+      */
 
       // Reload data
       await loadData();

@@ -1,11 +1,12 @@
 
 
-import { useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { MenuItem } from "../data/menuData";
 import { SmartImage } from "./SmartImage";
-import { DietBadge } from "./DietBadge";
+// DietBadge no longer used; inline icons appended to dish name
 import { trackEvent } from "../lib/ga";
 import { useThemeStyles } from "../context/useThemeStyles";
+import { formatPrice } from "../utils/formatPrice";
 
 
 
@@ -21,11 +22,13 @@ interface MenuSectionProps {
 export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSectionProps) {
   const [open, setOpen] = useState(false);
   const themeStyles = useThemeStyles();
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [height, setHeight] = useState<string>("0px");
 
   function openModal(item: MenuItem) {
-    const imgs = (item.images && item.images.length > 0 && item.images[0])
-        ? item.images
-        : [];
+    const imgs = (item.images && item.images.length > 0)
+      ? item.images
+      : (item.image ? [item.image] : []);
 
     trackEvent("Menu", "Click Item", item.name);
     if (onOpen) onOpen(item, imgs);
@@ -34,12 +37,74 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
   const handleToggle = () => {
     const action = open ? "Collapse Section" : "Expand Section";
     trackEvent("Menu Section", action, title);
-    setOpen(!open);
+    setOpen((prev) => !prev);
   };
 
+  // Smooth height transition by measuring content
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    if (open) {
+      const full = el.scrollHeight;
+      setHeight(full + "px");
+    } else {
+      setHeight("0px");
+    }
+  }, [open, items.length]);
+
+  // Recalculate height on window resize (content width affects height)
+  useEffect(() => {
+    const onResize = () => {
+      if (!contentRef.current) return;
+      if (open) setHeight(contentRef.current.scrollHeight + "px");
+    };
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, [open]);
+  const containerSpacing = open ? 'mb-4' : 'mb-1';
+
+  function LazyVideo({ src }: { src: string }) {
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+
+    useEffect(() => {
+      const el = videoRef.current;
+      if (!el) return;
+      const io = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry.isIntersecting) {
+            // Play when visible
+            const playPromise = el.play();
+            if (playPromise && typeof playPromise.then === 'function') {
+              playPromise.catch(() => {});
+            }
+          } else {
+            // Pause when not visible but keep frame to avoid flicker
+            el.pause();
+          }
+        },
+        { rootMargin: '120px', threshold: 0.15 }
+      );
+      io.observe(el);
+      return () => io.disconnect();
+    }, []);
+
+    return (
+      <video
+        ref={videoRef}
+        src={src}
+        preload="metadata"
+        className="w-20 h-16 object-cover rounded"
+        muted
+        loop
+        playsInline
+        autoPlay
+      />
+    );
+  }
 
   return (
-    <div id={id} className="mb-6">
+    <div id={id} className={containerSpacing}>
       {/* HEADER — Collapsible */}
       <button
         onClick={handleToggle}
@@ -57,34 +122,59 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
 
       {/* COLLAPSIBLE CONTENT */}
       <div
-        className={`overflow-hidden ${
-          open ? "max-h-[5000px] mt-4" : "max-h-0"
-        }`}
+        className={`overflow-hidden ${open ? "mt-4" : "mt-0"}`}
+        style={{ height, transition: "height 320ms cubic-bezier(0.22, 1, 0.36, 1)" }}
+        ref={contentRef}
       >
-        <div className="space-y-6 px-1 sm:px-2">
+        <div
+          className="space-y-6 px-1 sm:px-2"
+          style={{
+            opacity: open ? 1 : 0,
+            transform: open ? "translateY(0)" : "translateY(-6px)",
+            transition: "opacity 280ms ease-out, transform 320ms ease-out",
+          }}
+        >
           {items.map((item) => (
             <div
               key={item.name}
               className="group p-3 sm:p-4 rounded-lg flex items-center gap-4"
               style={{ backgroundColor: `${themeStyles.accentBg}20` }}
             >
-              {/* Thumbnail */}
+              {/* Thumbnail: prefer video preview if available */}
               <button
                 onClick={() => openModal(item)}
                 className="flex-shrink-0 rounded overflow-hidden border-2 hover:opacity-80"
                 style={{ borderColor: themeStyles.borderColor }}
               >
                 <div className="w-20 h-16 overflow-hidden">
-                  {/* <img src={ `https://dummyimage.com/600x400/000/fff&text=${encodeURIComponent(item.name)}` }/> */}
-                  <SmartImage
-                    // src={item.image ?? thumbnailFor(item.name)}
-                    // src={ item.image ? item.image : unsplashThumbnail(item.name) }
-                    // src={ item.image  ?? resolvedImages[item.name]  }
-                    // src={ `https://dummyimage.com/600x400/000/fff&text=${encodeURIComponent(item.name)}` }
-                    // alt={item.name}
-                    src={ item.image  ?? ""  }
-                    className="w-20 h-16 rounded"
-                  />
+                  {(() => {
+                    const videos = (item as any).videos && (item as any).videos.length > 0
+                      ? (item as any).videos
+                      : ((item as any).video ? [(item as any).video] : []);
+                    const images = item.images && item.images.length > 0
+                      ? item.images
+                      : (item.image ? [item.image] : []);
+                    // Prefer showing a video preview if available
+                    if (videos.length > 0) {
+                      return (
+                        <LazyVideo src={videos[0]} />
+                      );
+                    }
+                    if (images.length > 0) {
+                      return (
+                        <SmartImage
+                          src={images[0]}
+                          alt={item.name}
+                          className="w-20 h-16 rounded"
+                        />
+                      );
+                    }
+                    return (
+                      <div className="w-20 h-16 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                        No media
+                      </div>
+                    );
+                  })()}
                 </div>
               </button>
 
@@ -104,9 +194,22 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                           }}
                         >
                           {item.name}
+                          {(item as any).dietType && (
+                            <span className="ml-2 inline-flex items-center">
+                              {((item as any).dietType === 'veg') && (
+                                <span title="Veg" className="text-xs leading-none align-middle">🥬</span>
+                              )}
+                              {((item as any).dietType === 'non-veg') && (
+                                <span title="Non-Veg" className="text-xs leading-none align-middle">🍖</span>
+                              )}
+                              {((item as any).dietType === 'vegan') && (
+                                <span title="Vegan" className="text-xs leading-none align-middle">🌱</span>
+                              )}
+                            </span>
+                          )}
                         </h3>
                       </button>
-                      {(item as any).dietType && <DietBadge dietType={(item as any).dietType} size="sm" />}
+                      {/* Removed badge; icon appended inline to dish name */}
                     </div>                    {/* Spice / Sweet Icons */}
                     <div className="flex items-center gap-2 mt-1">
 
@@ -153,7 +256,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                       <div className="h-5 w-12 bg-gray-200 animate-pulse rounded"></div>
                     ) : (
                       <span className="font-bold text-base sm:text-lg whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
-                        {item.price}
+                        {formatPrice(item.price, (item as any).currency)}
                       </span>
                     )}
                   </div>

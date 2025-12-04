@@ -4,6 +4,7 @@ type VideoPlayerProps = {
   src: string;
   poster?: string;
   className?: string;
+  autoPlayPreview?: boolean;
 };
 
 function isYouTube(url: string) {
@@ -18,7 +19,7 @@ function youTubeEmbed(url: string) {
   return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
 }
 
-export function VideoPlayer({ src, poster, className = '' }: VideoPlayerProps) {
+export function VideoPlayer({ src, poster, className = '', autoPlayPreview = false }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -74,8 +75,11 @@ export function VideoPlayer({ src, poster, className = '' }: VideoPlayerProps) {
       controls
       playsInline
       preload="metadata"
-      poster={poster}
-      className={`w-full h-56 sm:h-80 bg-black ${className}`}
+      poster={autoPlayPreview ? undefined : poster}
+      autoPlay={autoPlayPreview}
+      muted={autoPlayPreview}
+      loop={autoPlayPreview}
+      className={`max-w-full max-h-full w-full h-56 sm:h-80 object-contain ${className}`}
     />
   );
 }

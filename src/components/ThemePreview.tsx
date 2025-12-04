@@ -6,6 +6,7 @@
 
 import { getThemeStyles, getTemplateComponentStyles } from '../utils/themeUtils';
 import type { Theme } from '../hooks/useFirebaseRestaurant';
+import { formatPrice } from '../utils/formatPrice';
 
 interface ThemePreviewProps {
   theme: Theme & {
@@ -28,23 +29,21 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
       border: `1px solid ${themeStyles.borderColor}`,
       boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
     }}>
-      {/* HEADER - Top Bar with gradient */}
+      {/* HEADER - Premium hero (matches actual UI) */}
       <div
         className="relative px-6 py-6 sm:px-8 sm:py-8 text-center flex items-center justify-center"
         style={{
-          background: `linear-gradient(to right, ${theme.primaryColor}, ${theme.secondaryColor})`,
-          minHeight: logoUrl ? '250px' : 'auto',
+          background: `linear-gradient(to bottom, ${theme.primaryColor} 0%, ${theme.secondaryColor} 60%, #1F2937 100%)`,
+          minHeight: logoUrl ? '28vh' : 'auto',
         }}
       >
         {logoUrl ? (
-          /* Logo fills entire header */
+          /* Centered logo, object-contain on premium gradient (no inner box) */
           <img 
             src={logoUrl} 
             alt="Restaurant Logo" 
-            className="w-full h-full object-cover"
-            style={{
-              filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
-            }}
+            className="object-contain"
+            style={{ maxHeight: '22vh', maxWidth: '85vw' }}
           />
         ) : (
           /* Original content when no logo */
@@ -90,7 +89,7 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
       </div>
 
       {/* Digital Solutions Section - Top info */}
-      <div
+      {/* <div
         className="py-8 px-6 sm:px-12 text-center backdrop-blur-md shadow-lg"
         style={{
           backgroundColor: 'rgba(255, 255, 255, 0.7)',
@@ -127,7 +126,7 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
         >
           ☎️ Contact
         </button>
-      </div>
+      </div> */}
 
       {/* Search Bar */}
       <div
@@ -154,7 +153,7 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
         </div>
       </div>
 
-      {/* Menu Section */}
+      {/* Menu Section (spacing updated to match tighter actual UI) */}
       <div
         className="px-6 py-4 sm:px-10"
         style={{ backgroundColor: theme.backgroundColor }}
@@ -179,49 +178,51 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
           <span className="text-xl">+</span>
         </div>
 
-        {/* Menu Item Card */}
+        {/* Menu Item Card (matches actual UI layout) */}
         <div
-          className="p-3 sm:p-4 rounded-lg flex items-center gap-4 mt-4"
+          className="p-3 sm:p-4 rounded-lg flex items-center gap-4 mt-3"
           style={{
             backgroundColor: theme.backgroundColor,
-            borderWidth: '2px',
-            borderColor: theme.accentColor,
+            borderWidth: '1px',
+            borderColor: themeStyles.borderColor,
           }}
         >
+          {/* Thumbnail: 80x64 with border and "No media" placeholder */}
           <div
-            className="flex-shrink-0 rounded overflow-hidden border-2 w-16 h-16"
+            className="flex-shrink-0 rounded overflow-hidden border-2"
             style={{
-              backgroundColor: theme.accentColor,
-              borderColor: theme.primaryColor,
+              width: '80px',
+              height: '64px',
+              borderColor: themeStyles.borderColor,
+              backgroundColor: theme.backgroundColor,
             }}
-          />
-          <div className="flex-1">
-            <h4 
-              className="font-bold"
-              style={{ 
-                color: themeStyles.textColor,
-                fontSize: templateStyles.typography.itemName?.fontSize || '1.1rem',
-              }}
-            >
-              Butter Mango
-            </h4>
-            <p className="text-xs text-gray-600 mt-1">Delicious item</p>
-            <div className="flex justify-between items-center mt-2">
-              <span 
-                className="font-bold"
+          >
+            <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
+              No media
+            </div>
+          </div>
+
+          {/* Title + diet icon inline; price on the right */}
+          <div className="flex-1 min-w-0 flex items-start justify-between">
+            <div className="min-w-0">
+              <h4 
+                className="font-semibold text-gray-800 break-words whitespace-normal leading-snug flex items-center"
                 style={{ 
-                  color: theme.primaryColor,
-                  fontSize: templateStyles.typography.price?.fontSize || '1.25rem',
+                  color: themeStyles.textColor,
+                  fontSize: templateStyles.typography.itemName?.fontSize || '1.05rem',
                 }}
               >
-                ₹350
-              </span>
-              <button
-                className="px-3 py-1 rounded text-xs font-semibold text-white"
-                style={{ backgroundColor: theme.primaryColor }}
+                Butter Chicken
+                <span className="ml-2 inline-flex items-center text-xs leading-none align-middle">🥬</span>
+              </h4>
+            </div>
+            <div className="flex-none ml-3">
+              <span 
+                className="font-bold text-base sm:text-lg whitespace-nowrap"
+                style={{ color: theme.primaryColor }}
               >
-                Add
-              </button>
+                {formatPrice(80)}
+              </span>
             </div>
           </div>
         </div>
@@ -241,15 +242,15 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
         
         {/* Search Button */}
         <button
-          className="absolute right-6 bottom-36 text-white rounded-full shadow-md hover:scale-110 transition-transform z-[40]"
+          className="absolute right-6 bottom-32 sm:bottom-36 text-white rounded-full shadow-md hover:scale-110 transition-transform z-20"
           style={{
             backgroundColor: `rgba(${parseInt(theme.primaryColor.slice(1, 3), 16)}, ${parseInt(theme.primaryColor.slice(3, 5), 16)}, ${parseInt(theme.primaryColor.slice(5, 7), 16)}, 0.85)`,
-            padding: '4.5px',
+            padding: '3px',
           }}
           title="Search menu"
           aria-label="Search menu"
         >
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg className="w-7 h-7 sm:w-9 sm:h-9" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"></circle>
             <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"></path>
           </svg>
@@ -257,30 +258,30 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
 
         {/* Chat Button */}
         <button
-          className="absolute bottom-24 right-6 text-white rounded-full shadow-lg hover:scale-110 transition-transform z-50"
+          className="absolute bottom-20 sm:bottom-24 right-6 text-white rounded-full shadow-lg hover:scale-110 transition-transform z-20"
           aria-label="Open chat"
           title="Chat with AI"
           style={{
             backgroundColor: `rgba(${parseInt(theme.primaryColor.slice(1, 3), 16)}, ${parseInt(theme.primaryColor.slice(3, 5), 16)}, ${parseInt(theme.primaryColor.slice(5, 7), 16)}, 0.9)`,
-            padding: '4.5px',
+            padding: '3px',
           }}
         >
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg className="w-7 h-7 sm:w-9 sm:h-9" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 8.5-8.5 8.38 8.38 0 0 1 3.8.9 8.5 8.5 0 0 1 4.7 7.6z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
           </svg>
         </button>
 
-        {/* Menu Button */}
+        {/* Menu Button (rounded to match actual UI) */}
         <button
           aria-label="Open menu"
-          className="absolute right-6 bottom-6 z-40 text-white rounded-full shadow-lg hover:scale-110 transition-transform"
+          className="absolute right-6 bottom-6 z-20 text-white rounded-lg shadow-lg hover:scale-110 transition-transform"
           title="Open navigation"
           style={{
             backgroundColor: `rgba(${parseInt(theme.primaryColor.slice(1, 3), 16)}, ${parseInt(theme.primaryColor.slice(3, 5), 16)}, ${parseInt(theme.primaryColor.slice(5, 7), 16)}, 0.9)`,
-            padding: '4.5px',
+            padding: '3px',
           }}
         >
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg className="w-7 h-7 sm:w-9 sm:h-9" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
           </svg>
         </button>
@@ -300,7 +301,7 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
       </div>
 
       {/* FOOTER - Digital Solutions Section at bottom */}
-      <div 
+      {/* <div 
         className="backdrop-blur-md py-8 px-6 sm:px-12 text-center shadow-lg border-t"
         style={{ 
           backgroundColor: theme.backgroundColor,
@@ -340,7 +341,7 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
         >
           ☎️ Contact Us
         </button>
-      </div>
+      </div> */}
 
       {/* Color Legend */}
       <div

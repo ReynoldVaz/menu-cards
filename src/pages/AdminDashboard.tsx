@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { db, auth } from '../firebase.config';
-import { collection, getDocs, doc, updateDoc, query, where, addDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where, addDoc, deleteDoc, getDoc, deleteField } from 'firebase/firestore';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import type { MenuItem, Event } from '../data/menuData';
 import type { Restaurant } from '../hooks/useFirebaseRestaurant';
 import { MenuItemForm, type MenuItemFormData } from '../components/MenuItemForm';
 import { EventForm, type EventFormData } from '../components/EventForm';
 import { ThemePreview } from '../components/ThemePreview';
+import { QRCodeGenerator } from '../components/QRCodeGenerator';
+import { BulkUploadMenu } from '../components/BulkUploadMenu';
 import { TEMPLATES, TEMPLATE_NAMES, TEMPLATE_DESCRIPTIONS, getTemplateColors, type TemplateType } from '../utils/templateStyles';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
+import { formatPrice } from '../utils/formatPrice';
 
 interface AdminDashboardTab {
-  id: 'restaurants' | 'menu' | 'events' | 'settings';
+  id: 'restaurants' | 'menu' | 'events' | 'settings' | 'qr' | 'subscribers';
   label: string;
   icon: string;
 }
@@ -26,26 +30,49 @@ export function AdminDashboard() {
 
   const tabs: AdminDashboardTab[] = [
     { id: 'restaurants', label: 'Restaurant', icon: '🏪' },
+    { id: 'settings', label: 'Settings', icon: '⚙️' },
     { id: 'menu', label: 'Menu Items', icon: '🍽️' },
     { id: 'events', label: 'Events', icon: '🎉' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' },
+    { id: 'qr', label: 'QR Code', icon: '📱' },
+    { id: 'subscribers', label: 'Subscribers', icon: '👥' },
   ];
 
-  // Load current user's restaurant or query parameter restaurant
+  // Load current user's restaurant or query parameter restaurant, but wait for auth
   useEffect(() => {
-    loadRestaurant();
+    let cancelled = false;
+    async function init() {
+      try {
+        setLoading(true);
+        const user = await ensureAuth();
+        if (cancelled) return;
+        if (!user) {
+          setError('Not authenticated');
+          navigate('/admin/auth');
+          return;
+        }
+        await loadRestaurant();
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    init();
+    return () => { cancelled = true; };
   }, [searchParams]);
+
+  function ensureAuth(): Promise<User | null> {
+    if (auth.currentUser) return Promise.resolve(auth.currentUser);
+    return new Promise((resolve) => {
+      const unsub = onAuthStateChanged(auth, (u) => {
+        unsub();
+        resolve(u);
+      });
+    });
+  }
 
   async function loadRestaurant() {
     try {
-      setLoading(true);
-      const currentUser = auth.currentUser;
-      
-      if (!currentUser) {
-        setError('Not authenticated');
-        navigate('/admin/auth');
-        return;
-      }
+      const currentUser = auth.currentUser || (await ensureAuth());
+      if (!currentUser) return; // navigation handled by caller
 
       // Check if restaurant code is passed as query parameter (from master admin)
       const restaurantCode = searchParams.get('restaurant');
@@ -66,13 +93,8 @@ export function AdminDashboard() {
 
   async function loadUserRestaurant() {
     try {
-      const currentUser = auth.currentUser;
-      
-      if (!currentUser) {
-        setError('Not authenticated');
-        navigate('/admin/auth');
-        return;
-      }
+      const currentUser = auth.currentUser || (await ensureAuth());
+      if (!currentUser) return; // navigation handled by caller
 
       // Get user document to find their restaurant code
       const userSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', '==', currentUser.uid)));
@@ -97,9 +119,10 @@ export function AdminDashboard() {
       const restaurantSnapshot = await getDocs(query(collection(db, 'restaurants'), where('restaurantCode', '==', restaurantCode)));
       
       if (!restaurantSnapshot.empty) {
-        const restaurantData = restaurantSnapshot.docs[0].data();
+        const docSnap = restaurantSnapshot.docs[0];
+        const restaurantData = docSnap.data();
         setRestaurant({
-          id: restaurantCode, // Use restaurant code as the ID
+          id: docSnap.id, // Use Firestore doc id for paths
           name: restaurantData.name,
           restaurantCode: restaurantData.restaurantCode,
           ownerId: restaurantData.ownerId,
@@ -131,10 +154,29 @@ export function AdminDashboard() {
         </div>
       </div>
 
+      {/* Mobile Tabs Bar (non-sticky as requested) */}
+      <div className="lg:hidden bg-white/90 backdrop-blur border-b">
+        <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`basis-[calc(50%-0.25rem)] px-3 py-2 rounded-full text-sm font-medium border transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300'
+              }`}
+            >
+              <span className="mr-1">{tab.icon}</span>{tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 hidden lg:block">
             <div className="bg-white rounded-lg shadow">
               {/* Navigation Tabs */}
               <div className="border-b">
@@ -192,12 +234,116 @@ export function AdminDashboard() {
 
                 {/* Settings Tab */}
                 {activeTab === 'settings' && <SettingsTab restaurant={restaurant} onUpdate={loadUserRestaurant} />}
+
+                {/* Subscribers Tab */}
+                {activeTab === 'subscribers' && <SubscribersTab restaurant={restaurant} />}
+
+                {/* QR Tab */}
+                {activeTab === 'qr' && <QRTab restaurant={restaurant} />}
               </>
             ) : (
               <div className="bg-white rounded-lg shadow p-8 text-center">
                 <p className="text-gray-600">Restaurant not found</p>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+function SubscribersTab({ restaurant }: { restaurant: Restaurant }) {
+  const [subscribers, setSubscribers] = useState<Array<{ id: string; phone: string; originalInput?: string; createdAt?: any }>>([]);
+
+  useEffect(() => {
+    const ref = collection(db, `restaurants/${restaurant.id}/subscribers`);
+    getDocs(ref).then((snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      setSubscribers(list);
+    }).catch((err) => {
+      console.error('Failed to load subscribers:', err);
+    });
+  }, [restaurant.id]);
+
+  function downloadCsv() {
+    const rows = subscribers.map((s) => ({
+      phone: s.phone,
+      originalInput: s.originalInput || '',
+      createdAt: s.createdAt?.toDate ? s.createdAt.toDate().toISOString() : '',
+    }));
+    const header = ['phone','originalInput','createdAt'];
+    const csv = [header.join(','), ...rows.map(r => `${r.phone},${r.originalInput},${r.createdAt}`)].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${restaurant.name.replace(/[^a-z0-9]+/gi,'-')}-subscribers.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-gray-800">Subscribers ({subscribers.length})</h2>
+        <button onClick={downloadCsv} className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-black text-sm">Download CSV</button>
+      </div>
+      {subscribers.length === 0 ? (
+        <p className="text-gray-600">No subscribers yet.</p>
+      ) : (
+        <div className="overflow-x-auto border rounded">
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="text-left px-3 py-2">Phone</th>
+                <th className="text-left px-3 py-2">Original Input</th>
+                <th className="text-left px-3 py-2">Opt-in Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {subscribers.map((s) => (
+                <tr key={s.id} className="border-t">
+                  <td className="px-3 py-2 font-mono">{s.phone}</td>
+                  <td className="px-3 py-2">{s.originalInput || ''}</td>
+                  <td className="px-3 py-2">{s.createdAt?.toDate ? s.createdAt.toDate().toLocaleString() : ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * QR Tab
+ */
+function QRTab({ restaurant }: { restaurant: Restaurant }) {
+  const appUrl = import.meta.env.VITE_APP_URL || 'https://menu-cards.vercel.app';
+  const menuLink = `${appUrl}/r/${restaurant.id}`;
+
+  function copyMenuLink() {
+    navigator.clipboard.writeText(menuLink).catch(() => {
+      alert('Copy failed. Please copy manually.');
+    });
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">QR Code</h2>
+      <p className="text-sm text-gray-600 mb-4">Share or download your menu QR code below.</p>
+      <div className="flex flex-col sm:flex-row items-center gap-6">
+        <div className="flex-1 w-full">
+          <QRCodeGenerator restaurantId={restaurant.id} restaurantName={restaurant.name} />
+          <div className="mt-4">
+            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded font-mono text-sm break-all">{menuLink}</div>
+            <div className="mt-3 flex gap-3">
+              <button onClick={copyMenuLink} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Copy Link</button>
+              <a href={menuLink} target="_blank" rel="noreferrer" className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-black text-sm">Open Menu</a>
+            </div>
           </div>
         </div>
       </div>
@@ -212,7 +358,8 @@ function RestaurantsTab({ restaurant }: { restaurant: Restaurant }) {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Restaurant Details</h2>
-      <div className="grid grid-cols-2 gap-6">
+      <p className="-mt-4 mb-4 text-sm text-gray-500">To edit these details, go to the Settings tab.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
           <p className="px-3 py-2 border border-gray-300 rounded bg-gray-50">{restaurant.name}</p>
@@ -225,26 +372,16 @@ function RestaurantsTab({ restaurant }: { restaurant: Restaurant }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <p className="px-3 py-2 border border-gray-300 rounded bg-gray-50">{restaurant.description || 'N/A'}</p>
         </div>
-        <div>
+        <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-          <p className="px-3 py-2 border border-gray-300 rounded bg-gray-50">{restaurant.phone || 'N/A'}</p>
+          <p className="px-3 py-2 border border-gray-300 rounded bg-gray-50 whitespace-nowrap overflow-x-auto text-sm">{restaurant.phone || 'N/A'}</p>
         </div>
-        <div>
+        <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <p className="px-3 py-2 border border-gray-300 rounded bg-gray-50">{restaurant.email || 'N/A'}</p>
+          <p className="px-3 py-2 border border-gray-300 rounded bg-gray-50 break-words text-sm">{restaurant.email || 'N/A'}</p>
         </div>
 
-        <div className="col-span-2">
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <h3 className="font-semibold text-blue-900 mb-2">📱 QR Code Link</h3>
-            <p className="text-blue-800 break-all font-mono">
-              https://menu-cards.vercel.app/r/{restaurant.id}
-            </p>
-            <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
-              📥 Generate QR Code
-            </button>
-          </div>
-        </div>
+        {/* QR Code moved to Settings tab */}
       </div>
     </div>
   );
@@ -255,11 +392,13 @@ function RestaurantsTab({ restaurant }: { restaurant: Restaurant }) {
  */
 function MenuTab({ restaurantId }: { restaurantId: string }) {
   const [items, setItems] = useState<MenuItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [sections, setSectionsState] = useState<string[]>(['Appetizers', 'Main Course', 'Desserts', 'Beverages', 'Salads', 'Soups', 'Breads']);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [savingItem, setSavingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
 
   useEffect(() => {
     loadMenuItems();
@@ -315,6 +454,8 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
       const menuItemData: any = {
         ...formData,
         price: String(formData.price),
+        is_new: Boolean((formData as any).is_new),
+        is_unavailable: Boolean((formData as any).is_unavailable),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -359,6 +500,8 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
       const menuItemData: any = {
         ...formData,
         price: String(formData.price),
+        is_new: Boolean((formData as any).is_new),
+        is_unavailable: Boolean((formData as any).is_unavailable),
         updatedAt: new Date().toISOString(),
       };
 
@@ -395,6 +538,20 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
     }
   }
 
+  // Global search: substring match across key fields
+  const filteredItems = items.filter((item) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    const fields = [
+      item.name,
+      item.section,
+      typeof item.price === 'string' ? item.price : String(item.price),
+      (item as any).ingredients ? ((item as any).ingredients as any).toString() : '',
+      (item as any).dietType || '',
+    ].map((v) => (v ? String(v).toLowerCase() : ''));
+    return fields.some((v) => v.includes(q));
+  });
+
   async function handleDeleteItem(itemId: string | undefined) {
     if (!itemId || !confirm('Are you sure you want to delete this item?')) return;
 
@@ -406,19 +563,100 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
     }
   }
 
+  async function handleBulkUpload(bulkItems: MenuItemFormData[]) {
+    try {
+      setSavingItem(true);
+      const createdItems: MenuItem[] = [];
+
+      for (const formData of bulkItems) {
+        const menuItemData: any = {
+          ...formData,
+          price: String(formData.price),
+          is_new: Boolean((formData as any).is_new),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Convert spice_level to spice and sweet_level to sweet
+        if ((formData as any).spice_level) {
+          menuItemData.spice = (formData as any).spice_level;
+          delete menuItemData.spice_level;
+        }
+        if ((formData as any).sweet_level) {
+          menuItemData.sweet = (formData as any).sweet_level;
+          delete menuItemData.sweet_level;
+        }
+
+        // Remove undefined values to prevent Firestore errors
+        Object.keys(menuItemData).forEach(key => {
+          if (menuItemData[key] === undefined) {
+            delete menuItemData[key];
+          }
+        });
+
+        const docRef = await addDoc(
+          collection(db, `restaurants/${restaurantId}/menu_items`),
+          menuItemData
+        );
+
+        createdItems.push({
+          id: docRef.id,
+          ...menuItemData,
+        } as unknown as MenuItem);
+      }
+
+      // Add all new items to local state
+      setItems([...items, ...createdItems]);
+      alert(`✅ Successfully imported ${createdItems.length} items!`);
+    } catch (err) {
+      console.error('Failed to bulk upload items:', err);
+      alert(`❌ Error importing items: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSavingItem(false);
+    }
+  }
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       {!showForm ? (
         <>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-4 gap-3 flex-wrap">
             <h2 className="text-2xl font-bold text-gray-800">Menu Items ({items.length})</h2>
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium"
-            >
-              ➕ Add Item
-            </button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => setShowBulkUpload(true)}
+                className="px-4 py-2 bg-gray-800 hover:bg-black text-white rounded font-medium"
+              >
+                ⬆️ Bulk Import
+              </button>
+              <button
+                onClick={() => setShowForm(true)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium"
+              >
+                ➕ Add Item
+              </button>
+            </div>
           </div>
+
+          <div className="mb-4">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search items (name, section, ingredients...)"
+              className="w-full sm:w-96 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {showBulkUpload && (
+            <div className="mb-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-800">Bulk Import</h3>
+                <button onClick={() => setShowBulkUpload(false)} className="text-sm text-gray-600 hover:text-gray-800">Close</button>
+              </div>
+              <BulkUploadMenu onUpload={handleBulkUpload} isLoading={savingItem} />
+            </div>
+          )}
 
           {loading ? (
             <p className="text-gray-600">Loading...</p>
@@ -429,23 +667,23 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
               <table className="w-full text-sm">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-4 py-2 text-left font-semibold text-gray-700">Name</th>
-                    <th className="px-4 py-2 text-left font-semibold text-gray-700">Section</th>
-                    <th className="px-4 py-2 text-left font-semibold text-gray-700">Price</th>
-                    <th className="px-4 py-2 text-left font-semibold text-gray-700">Veg</th>
-                    <th className="px-4 py-2 text-left font-semibold text-gray-700">Special</th>
-                    <th className="px-4 py-2 text-left font-semibold text-gray-700">Actions</th>
+                    <th className="px-3 sm:px-4 py-2 text-left font-semibold text-gray-700">Name</th>
+                    <th className="px-3 sm:px-4 py-2 text-left font-semibold text-gray-700 hidden sm:table-cell">Section</th>
+                    <th className="px-3 sm:px-4 py-2 text-left font-semibold text-gray-700">Price</th>
+                    <th className="px-3 sm:px-4 py-2 text-left font-semibold text-gray-700 hidden sm:table-cell">Veg</th>
+                    <th className="px-3 sm:px-4 py-2 text-left font-semibold text-gray-700 hidden sm:table-cell">Special</th>
+                    <th className="px-3 sm:px-4 py-2 text-left font-semibold text-gray-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item) => (
+                  {filteredItems.map((item) => (
                     <tr key={item.id} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium">{item.name}</td>
-                      <td className="px-4 py-3">{item.section}</td>
-                      <td className="px-4 py-3">₹{item.price}</td>
-                      <td className="px-4 py-3">{(item as any).is_vegetarian ? '🌱' : '-'}</td>
-                      <td className="px-4 py-3">{item.is_todays_special ? '⭐' : '-'}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 sm:px-4 py-3 font-medium">{item.name}</td>
+                      <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">{item.section}</td>
+                      <td className="px-3 sm:px-4 py-3">{formatPrice(item.price, (item as any).currency)}</td>
+                      <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">{(item as any).is_vegetarian ? '🌱' : '-'}</td>
+                      <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">{item.is_todays_special ? '⭐' : '-'}</td>
+                      <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
                         <button
                           onClick={() => {
                             setEditingItem(item);
@@ -488,9 +726,12 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
               section: editingItem.section || '',
               ingredients: typeof editingItem.ingredients === 'string' ? editingItem.ingredients : editingItem.ingredients?.join(', ') || '',
               image: editingItem.image,
+              images: (editingItem as any).images,
               video: editingItem.video,
+              videos: (editingItem as any).videos,
               dietType: (editingItem as any).dietType,
               is_todays_special: editingItem.is_todays_special || false,
+              is_unavailable: Boolean((editingItem as any).is_unavailable),
               spice_level: (editingItem as any).spice || (editingItem as any).spice_level,
               sweet_level: (editingItem as any).sweet || (editingItem as any).sweet_level,
             } : undefined}
@@ -568,10 +809,13 @@ function EventsTab({ restaurantId }: { restaurantId: string }) {
 
     try {
       setSavingEvent(true);
-      const eventData = {
+      const eventData: any = {
         ...formData,
         updatedAt: new Date().toISOString(),
       };
+      if (!formData.image) {
+        eventData.image = deleteField();
+      }
 
       await updateDoc(
         doc(db, `restaurants/${restaurantId}/events/${editingEvent.id}`),
@@ -705,6 +949,14 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [name, setName] = useState(restaurant.name);
   const [description, setDescription] = useState(restaurant.description || '');
   const [phone, setPhone] = useState(restaurant.phone || '');
+  const [contactPhone, setContactPhone] = useState(restaurant.contactPhone || '');
+  const [email, setEmail] = useState(restaurant.email || '');
+  const [instagram, setInstagram] = useState(restaurant.instagram || '');
+  const [facebook, setFacebook] = useState(restaurant.facebook || '');
+  const [youtube, setYoutube] = useState(restaurant.youtube || '');
+  const [website, setWebsite] = useState(restaurant.website || '');
+  const [googleReviews, setGoogleReviews] = useState(restaurant.googleReviews || '');
+  const [captureCustomerPhone, setCaptureCustomerPhone] = useState<boolean>(restaurant.captureCustomerPhone || false);
   const [themeMode, setThemeMode] = useState(restaurant.theme?.mode || 'custom');
   const [primaryColor, setPrimaryColor] = useState(restaurant.theme?.primaryColor || '#EA580C');
   const [secondaryColor, setSecondaryColor] = useState(restaurant.theme?.secondaryColor || '#FB923C');
@@ -718,6 +970,27 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>(restaurant.logo || '');
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [removeLogo, setRemoveLogo] = useState(false);
+  const [phoneError, setPhoneError] = useState<string>('');
+  const [contactPhoneError, setContactPhoneError] = useState<string>('');
+
+  // QR: moved to QR tab
+  function isValidPhone(input: string) {
+    if (!input) return true; // allow empty
+    const cleaned = input.replace(/[^0-9]/g, '');
+    if (cleaned.length < 10) return false; // require at least 10 digits
+    return /^[+0-9 ()-]+$/.test(input);
+  }
+
+  function handlePhoneChange(value: string) {
+    setPhone(value);
+    setPhoneError(isValidPhone(value) ? '' : 'Enter a valid 10-digit phone (digits, +, spaces, () and - allowed).');
+  }
+
+  function handleContactPhoneChange(value: string) {
+    setContactPhone(value);
+    setContactPhoneError(isValidPhone(value) ? '' : 'Enter a valid 10-digit phone (digits, +, spaces, () and - allowed).');
+  }
 
   // Load approved custom themes for this restaurant
   useEffect(() => {
@@ -744,6 +1017,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
       loadApprovedThemes();
     }
   }, [restaurant.restaurantCode]);
+
 
   const templateColors = getTemplateColors(selectedTemplate);
 
@@ -773,17 +1047,72 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         logoUrl = result.url;
         setUploadingLogo(false);
       }
-
-      await updateDoc(doc(db, 'restaurants', restaurant.id), {
+      const updates: any = {
         name,
         description,
         phone,
+        email,
         theme: currentTheme,
-        ...(logoUrl && { logo: logoUrl }),
-      });
+      };
+      if (logoFile && logoUrl) {
+        updates.logo = logoUrl;
+      } else if (removeLogo) {
+        updates.logo = deleteField();
+      }
+
+      await updateDoc(doc(db, 'restaurants', restaurant.id), updates);
       onUpdate();
     } catch (err) {
       console.error('Failed to save:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveDetails() {
+    try {
+      // Validate phone numbers
+      const phoneOk = isValidPhone(phone);
+      const contactOk = isValidPhone(contactPhone);
+      setPhoneError(phoneOk ? '' : 'Enter a valid 10-digit phone (digits, +, spaces, () and - allowed).');
+      setContactPhoneError(contactOk ? '' : 'Enter a valid 10-digit phone (digits, +, spaces, () and - allowed).');
+      if (!phoneOk || !contactOk) {
+        return;
+      }
+      setSaving(true);
+      let logoUrl = logoPreview;
+      if (logoFile) {
+        setUploadingLogo(true);
+        const result = await uploadToCloudinary(logoFile, {
+          restaurantCode: restaurant.restaurantCode || '',
+          fileType: 'logo',
+        });
+        logoUrl = result.url;
+        setUploadingLogo(false);
+      }
+      const updates: any = {
+        name,
+        description,
+        phone,
+        email,
+        instagram: instagram || null,
+        facebook: facebook || null,
+        youtube: youtube || null,
+        website: website || null,
+        googleReviews: googleReviews || null,
+        contactPhone: contactPhone || null,
+        captureCustomerPhone: Boolean(captureCustomerPhone),
+      };
+      if (logoFile && logoUrl) {
+        updates.logo = logoUrl;
+      } else if (removeLogo) {
+        updates.logo = deleteField();
+      }
+
+      await updateDoc(doc(db, 'restaurants', restaurant.id), updates);
+      onUpdate();
+    } catch (err) {
+      console.error('Failed to save details:', err);
     } finally {
       setSaving(false);
     }
@@ -800,6 +1129,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
 
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
+    setRemoveLogo(false);
   }
 
   function applyColorCombination(combination: ReturnType<typeof getTemplateColors>[0]) {
@@ -817,6 +1147,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         
         {/* Restaurant Details */}
         <div className="space-y-4 pb-8 border-b">
+                    {/* Customer phone capture opt-in */}
+                    <div className="flex items-start gap-3 p-3 border rounded">
+                      <input
+                        id="captureCustomerPhone"
+                        type="checkbox"
+                        className="mt-1"
+                        checked={captureCustomerPhone}
+                        onChange={(e) => setCaptureCustomerPhone(e.target.checked)}
+                      />
+                      <label htmlFor="captureCustomerPhone" className="text-sm text-gray-700">
+                        Enable phone collection prompt for customers scanning the QR. If enabled, visitors will see a dialog asking to provide their phone number to receive updates. They can skip this.
+                      </label>
+                    </div>
           <h3 className="text-lg font-semibold text-gray-700">Restaurant Details</h3>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name</label>
@@ -836,13 +1179,114 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Admin Phone (private)</label>
             <input
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => handlePhoneChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
+            {phoneError && (<p className="text-xs text-red-600 mt-1">{phoneError}</p>)}
+            <p className="text-xs text-gray-500 mt-1">Not shown on menu. Used for admin notifications.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          {/* Social Links (compact) */}
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-gray-700">Social & Web Links</label>
+            <p className="text-xs text-gray-500">Click a platform to reveal its input.</p>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">Instagram</summary>
+              <div className="mt-3">
+                <input
+                  type="url"
+                  placeholder="https://instagram.com/yourhandle"
+                  value={instagram}
+                  onChange={(e) => setInstagram(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Full profile URL (optional)</p>
+              </div>
+            </details>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">Public Contact Number</summary>
+              <div className="mt-3">
+                <input
+                  type="tel"
+                  placeholder="e.g. +1 555 123 4567"
+                  value={contactPhone}
+                  onChange={(e) => handleContactPhoneChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                {contactPhoneError && (<p className="text-xs text-red-600 mt-1">{contactPhoneError}</p>)}
+                <p className="text-xs text-gray-500 mt-1">Shown on the public menu. Tap-to-call on mobile.</p>
+              </div>
+            </details>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">Facebook</summary>
+              <div className="mt-3">
+                <input
+                  type="url"
+                  placeholder="https://facebook.com/yourpage"
+                  value={facebook}
+                  onChange={(e) => setFacebook(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Full page URL (optional)</p>
+              </div>
+            </details>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">YouTube</summary>
+              <div className="mt-3">
+                <input
+                  type="url"
+                  placeholder="https://youtube.com/@yourchannel"
+                  value={youtube}
+                  onChange={(e) => setYoutube(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Channel or video URL (optional)</p>
+              </div>
+            </details>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">Website</summary>
+              <div className="mt-3">
+                <input
+                  type="url"
+                  placeholder="https://www.yourrestaurant.com"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Official website URL (optional)</p>
+              </div>
+            </details>
+
+            <details className="rounded border p-3">
+              <summary className="cursor-pointer select-none font-medium">Google Reviews Page</summary>
+              <div className="mt-3">
+                <input
+                  type="url"
+                  placeholder="https://www.google.com/maps/place/..."
+                  value={googleReviews}
+                  onChange={(e) => setGoogleReviews(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Link to your Google Business reviews page (optional)</p>
+              </div>
+            </details>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Logo (Optional, max 2MB)</label>
@@ -856,11 +1300,33 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
             {logoPreview && (
               <div className="mt-6 space-y-3">
                 <p className="text-sm font-semibold text-gray-700">Logo Preview:</p>
-                <img src={logoPreview} alt="Logo Preview" className="h-20 w-20 object-contain rounded border border-gray-300" />
+                <div className="flex items-center gap-4">
+                  <img src={logoPreview} alt="Logo Preview" className="h-20 w-20 object-contain rounded border border-gray-300" />
+                  <button
+                    type="button"
+                    onClick={() => { setLogoFile(null); setLogoPreview(''); setRemoveLogo(true); }}
+                    disabled={saving || uploadingLogo}
+                    className="px-3 py-2 text-red-700 border border-red-300 rounded hover:bg-red-50 disabled:opacity-50"
+                    title="Remove current logo"
+                  >
+                    Remove Logo
+                  </button>
+                </div>
               </div>
             )}
           </div>
+          <div className="pt-2">
+            <button
+              onClick={handleSaveDetails}
+              disabled={saving}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+            >
+              {saving ? 'Saving...' : 'Save Details'}
+            </button>
+          </div>
         </div>
+
+        {/* QR Code Section moved to its own tab */}
 
         {/* Theme Settings */}
         <div className="pt-8">

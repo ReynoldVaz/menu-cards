@@ -129,6 +129,13 @@ export function QuickUploadPage() {
       createdAt: new Date().toISOString(),
     };
 
+    // Add currency if provided, default to INR
+    if (row.currency) {
+      item.currency = row.currency.toUpperCase();
+    } else {
+      item.currency = 'INR';
+    }
+
     // Only add optional fields if they have values
     if (image) item.image = image;
     if (normalizedImages.length > 0) item.images = normalizedImages;

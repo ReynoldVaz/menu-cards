@@ -4,6 +4,7 @@ import { MenuItem } from '../data/menuData';
 import { ItemModal } from './ItemModal';
 import { useThemeStyles } from '../context/useThemeStyles';
 import { hexToRgba } from '../utils/themeUtils';
+import { formatPrice } from '../utils/formatPrice';
 
 interface TodaysSpecialProps {
   item: MenuItem | null;
@@ -24,7 +25,9 @@ export function TodaysSpecial({ item }: TodaysSpecialProps) {
   }
 
   const [open, setOpen] = useState(false);
-  const images = item.images && item.images.length > 0 ? item.images : modalImagesFor(item.name);
+  const images = item.images && item.images.length > 0
+    ? item.images
+    : (item.image ? [item.image] : modalImagesFor(item.name));
   const themeStyles = useThemeStyles();
 
   return (
@@ -49,7 +52,7 @@ export function TodaysSpecial({ item }: TodaysSpecialProps) {
             </h3>
           </button>
           <span className="font-bold text-lg sm:text-xl whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
-            {item.price}
+            {formatPrice(item.price)}
           </span>
         </div>
         <button onClick={() => setOpen(true)} className="text-sm text-gray-600 hover:text-gray-800">
