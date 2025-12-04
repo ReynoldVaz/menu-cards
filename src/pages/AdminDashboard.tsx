@@ -132,9 +132,17 @@ export function AdminDashboard() {
           description: restaurantData.description,
           logo: restaurantData.logo,
           theme: restaurantData.theme,
+          // Social + public links
+          instagram: restaurantData.instagram,
+          facebook: restaurantData.facebook,
+          youtube: restaurantData.youtube,
+          website: restaurantData.website,
+          googleReviews: restaurantData.googleReviews,
+          contactPhone: restaurantData.contactPhone,
           isActive: restaurantData.isActive,
           createdAt: restaurantData.createdAt,
           updatedAt: restaurantData.updatedAt,
+          captureCustomerPhone: restaurantData.captureCustomerPhone,
         } as Restaurant);
       } else {
         setError('Restaurant not found');
@@ -966,6 +974,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
     (restaurant.theme?.template as TemplateType) || 'modern'
   );
   const [saving, setSaving] = useState(false);
+  const [savedNotice, setSavedNotice] = useState<string>('');
   const [approvedThemes, setApprovedThemes] = useState<any[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>(restaurant.logo || '');
@@ -1062,6 +1071,8 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
 
       await updateDoc(doc(db, 'restaurants', restaurant.id), updates);
       onUpdate();
+      setSavedNotice('Saved successfully');
+      setTimeout(() => setSavedNotice(''), 1000);
     } catch (err) {
       console.error('Failed to save:', err);
     } finally {
@@ -1111,6 +1122,8 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
 
       await updateDoc(doc(db, 'restaurants', restaurant.id), updates);
       onUpdate();
+      setSavedNotice('Details saved');
+      setTimeout(() => setSavedNotice(''), 1000);
     } catch (err) {
       console.error('Failed to save details:', err);
     } finally {
@@ -1157,19 +1170,6 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         
         {/* Restaurant Details */}
         <div className="space-y-4 pb-8 border-b">
-                    {/* Customer phone capture opt-in */}
-                    <div className="flex items-start gap-3 p-3 border rounded">
-                      <input
-                        id="captureCustomerPhone"
-                        type="checkbox"
-                        className="mt-1"
-                        checked={captureCustomerPhone}
-                        onChange={(e) => setCaptureCustomerPhone(e.target.checked)}
-                      />
-                      <label htmlFor="captureCustomerPhone" className="text-sm text-gray-700">
-                        Enable phone collection prompt for customers scanning the QR. If enabled, visitors will see a dialog asking to provide their phone number to receive updates. They can skip this.
-                      </label>
-                    </div>
           <h3 className="text-lg font-semibold text-gray-700">Restaurant Details</h3>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name</label>
@@ -1223,7 +1223,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   onChange={(e) => setInstagram(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Full profile URL (optional)</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Full profile URL (optional)</p>
+                  {instagram && (
+                    <button
+                      type="button"
+                      onClick={() => setInstagram('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear Instagram link"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
 
@@ -1238,7 +1250,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
                 {contactPhoneError && (<p className="text-xs text-red-600 mt-1">{contactPhoneError}</p>)}
-                <p className="text-xs text-gray-500 mt-1">Shown on the public menu. Tap-to-call on mobile.</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Shown on the public menu. Tap-to-call on mobile.</p>
+                  {contactPhone && (
+                    <button
+                      type="button"
+                      onClick={() => setContactPhone('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear contact number"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
 
@@ -1252,7 +1276,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   onChange={(e) => setFacebook(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Full page URL (optional)</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Full page URL (optional)</p>
+                  {facebook && (
+                    <button
+                      type="button"
+                      onClick={() => setFacebook('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear Facebook link"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
 
@@ -1266,7 +1302,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   onChange={(e) => setYoutube(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Channel or video URL (optional)</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Channel or video URL (optional)</p>
+                  {youtube && (
+                    <button
+                      type="button"
+                      onClick={() => setYoutube('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear YouTube link"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
 
@@ -1280,7 +1328,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   onChange={(e) => setWebsite(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Official website URL (optional)</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Official website URL (optional)</p>
+                  {website && (
+                    <button
+                      type="button"
+                      onClick={() => setWebsite('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear website link"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
 
@@ -1294,9 +1354,34 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   onChange={(e) => setGoogleReviews(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Link to your Google Business reviews page (optional)</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Link to your Google Business reviews page (optional)</p>
+                  {googleReviews && (
+                    <button
+                      type="button"
+                      onClick={() => setGoogleReviews('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear Google Reviews link"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
+            {/* Customer phone capture opt-in – moved below Social links */}
+            <div className="flex items-start gap-3 p-3 border rounded">
+              <input
+                id="captureCustomerPhone"
+                type="checkbox"
+                className="mt-1"
+                checked={captureCustomerPhone}
+                onChange={(e) => setCaptureCustomerPhone(e.target.checked)}
+              />
+              <label htmlFor="captureCustomerPhone" className="text-sm text-gray-700">
+                Enable phone collection prompt for customers scanning the QR. If enabled, visitors will see a dialog asking to provide their phone number to receive updates. They can skip this.
+              </label>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Logo (Optional, max 2MB)</label>
@@ -1325,7 +1410,12 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
               </div>
             )}
           </div>
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col items-center gap-2">
+            {savedNotice && (
+              <div className="text-green-700 bg-green-100 border border-green-200 rounded px-3 py-1 text-sm animate-fade">
+                {savedNotice}
+              </div>
+            )}
             <button
               onClick={handleSaveDetails}
               disabled={saving}
@@ -1599,12 +1689,17 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
       */}
 
       {/* Save Button */}
+      {savedNotice && (
+        <div className="mt-2 text-center text-green-700 bg-green-100 border border-green-200 rounded px-3 py-1 text-sm animate-fade">
+          {savedNotice}
+        </div>
+      )}
       <button
         onClick={handleSave}
         disabled={saving}
         className="w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
       >
-        {saving ? 'Saving...' : 'Save All Changes'}
+        {saving ? 'Saving...' : 'Save Theme Settings'}
       </button>
     </div>
   );

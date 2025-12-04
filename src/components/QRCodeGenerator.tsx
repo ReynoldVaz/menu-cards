@@ -12,7 +12,7 @@ export function QRCodeGenerator({
 }: QRCodeGeneratorProps) {
   const qrRef = useRef<HTMLDivElement>(null);
 
-  const qrUrl = `${import.meta.env.VITE_APP_URL || 'https://menu-cards.vercel.app'}/r/${restaurantId}`;
+  const qrUrl = `${import.meta.env.VITE_APP_URL || 'https://menu-cards-ten.vercel.app'}/r/${restaurantId}`;
 
   const downloadQR = () => {
     const svg = qrRef.current?.querySelector('svg');

@@ -134,42 +134,56 @@ export function SideDrawer({
 
             {/* Diet Options - Collapsable Content */}
             {dietFilterOpen && (
-              <div className="p-4 space-y-2 border-t" style={{ borderColor: themeStyles.borderColor }}>
-                {/* Veg */}
-                <button
-                  onClick={() => onDietChange('veg')}
-                  className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
-                  style={{
-                    backgroundColor: selectedDiets.has('veg') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.1),
-                    color: selectedDiets.has('veg') ? 'white' : themeStyles.primaryButtonBg,
-                  }}
-                >
-                  <span>🥬</span> Vegetarian
-                </button>
+              <div className="p-4 border-t" style={{ borderColor: themeStyles.borderColor }}>
+                <div className="flex flex-wrap gap-2">
+                  {/* Veg badge */}
+                  <button
+                    onClick={() => onDietChange('veg')}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                    style={{
+                      backgroundColor: selectedDiets.has('veg') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.08),
+                      color: selectedDiets.has('veg') ? 'white' : themeStyles.primaryButtonBg,
+                      borderColor: themeStyles.primaryButtonBg,
+                      borderWidth: '1px',
+                    }}
+                    title="Vegetarian"
+                    aria-label="Vegetarian"
+                  >
+                    <span className="text-[12px] leading-none">🥬</span>
+                  </button>
 
-                {/* Non-Veg */}
-                <button
-                  onClick={() => onDietChange('non-veg')}
-                  className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
-                  style={{
-                    backgroundColor: selectedDiets.has('non-veg') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.1),
-                    color: selectedDiets.has('non-veg') ? 'white' : themeStyles.primaryButtonBg,
-                  }}
-                >
-                  <span>🍗</span> Non-Veg
-                </button>
+                  {/* Non-Veg badge */}
+                  <button
+                    onClick={() => onDietChange('non-veg')}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                    style={{
+                      backgroundColor: selectedDiets.has('non-veg') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.08),
+                      color: selectedDiets.has('non-veg') ? 'white' : themeStyles.primaryButtonBg,
+                      borderColor: themeStyles.primaryButtonBg,
+                      borderWidth: '1px',
+                    }}
+                    title="Non-Veg"
+                    aria-label="Non-Veg"
+                  >
+                    <span className="text-[12px] leading-none">🍗</span>
+                  </button>
 
-                {/* Vegan */}
-                <button
-                  onClick={() => onDietChange('vegan')}
-                  className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
-                  style={{
-                    backgroundColor: selectedDiets.has('vegan') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.1),
-                    color: selectedDiets.has('vegan') ? 'white' : themeStyles.primaryButtonBg,
-                  }}
-                >
-                  <span>🌱</span> Vegan
-                </button>
+                  {/* Vegan badge */}
+                  <button
+                    onClick={() => onDietChange('vegan')}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                    style={{
+                      backgroundColor: selectedDiets.has('vegan') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.08),
+                      color: selectedDiets.has('vegan') ? 'white' : themeStyles.primaryButtonBg,
+                      borderColor: themeStyles.primaryButtonBg,
+                      borderWidth: '1px',
+                    }}
+                    title="Vegan"
+                    aria-label="Vegan"
+                  >
+                    <span className="text-[12px] leading-none">🌱</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
