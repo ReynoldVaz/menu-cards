@@ -73,6 +73,13 @@ export interface Restaurant {
   restaurantCode?: string;
   ownerId?: string;
   menuSectionNames?: string[];
+  instagram?: string;
+  facebook?: string;
+  youtube?: string;
+  website?: string;
+  googleReviews?: string;
+  contactPhone?: string;
+  captureCustomerPhone?: boolean;
 }
 
 export interface UseFirebaseRestaurantResult {

@@ -4,6 +4,7 @@ import { SmartImage } from './SmartImage';
 import { ParallaxImage } from './ParallaxImage';
 import { VideoPlayer } from './VideoPlayer';
 import { useThemeStyles } from '../context/useThemeStyles';
+import { formatPrice } from '../utils/formatPrice';
 
 interface ItemModalProps {
   item: MenuItem | null;
@@ -14,11 +15,13 @@ interface ItemModalProps {
 export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
   const [index, setIndex] = useState(0);
   const [tab, setTab] = useState<'description' | 'ingredients' | 'price'>('description');
+  const [mounted, setMounted] = useState(false);
   const themeStyles = useThemeStyles();
 
   useEffect(() => {
     setIndex(0);
     setTab('description');
+    setMounted(true);
   }, [item]);
 
   // Lock background scroll when modal is open
@@ -36,11 +39,32 @@ useEffect(() => {
 
   if (!item) return null;
 
+  // Prepare media arrays for modal
+  const modalVideos = item.videos?.length
+    ? item.videos
+    : item.video
+    ? [item.video]
+    : [];
+  const modalImages = images && images.length > 0 ? images : [];
+  const modalMedia = [
+    ...modalVideos.map((v) => ({ type: 'video' as const, src: v })),
+    ...modalImages.map((s) => ({ type: 'image' as const, src: s })),
+  ];
+  const activeMedia = modalMedia[index];
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      {/* Backdrop with fade-in */}
+      <div
+        className={`fixed inset-0 bg-black/50 transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}
+        onClick={onClose}
+      />
 
-      <div className="relative max-w-3xl w-full mx-0 sm:mx-0 rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" style={{ backgroundColor: themeStyles.backgroundColor }}>
+      {/* Modal card with scale/opacity entrance */}
+      <div
+        className={`relative max-w-3xl w-full mx-0 sm:mx-0 rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transform transition-all duration-300 ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        style={{ backgroundColor: themeStyles.backgroundColor }}
+      >
         
         {/* Header */}
         <div className="flex justify-between items-start p-4 flex-shrink-0" style={{ backgroundColor: themeStyles.backgroundColor, borderBottomColor: themeStyles.borderColor, borderBottomWidth: '1px' }}>
@@ -48,7 +72,7 @@ useEffect(() => {
             <h3 className="text-lg font-bold text-gray-800 break-words">
               {item.name}
             </h3>
-            <p className="text-sm font-semibold" style={{ color: themeStyles.primaryButtonBg }}>{item.price}</p>
+            <p className="text-sm font-semibold" style={{ color: themeStyles.primaryButtonBg }}>{formatPrice(item.price, (item as any).currency)}</p>
           </div>
           <button
             onClick={onClose}
@@ -64,88 +88,88 @@ useEffect(() => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* Media Section */}
-            <div>
-              <div className="relative bg-gray-50 rounded">
-                {(() => {
-                  const videos = item.videos?.length
-                    ? item.videos
-                    : item.video
-                    ? [item.video]
-                    : [];
-
-                  const media = [
-                    ...videos.map((v) => ({ type: 'video' as const, src: v })),
-                    ...images.map((s) => ({ type: 'image' as const, src: s })),
-                  ];
-
-                  if (media.length === 0) {
-                    return (
-                      <div className="w-full h-64 sm:h-80 bg-gray-100 flex items-center justify-center rounded">
-                        <span className="text-gray-400">No media available</span>
-                      </div>
-                    );
-                  }
-
-                  const active = media[index];
-
-                  return (
-                    <>
-                      <div className="w-full h-56 sm:h-80 rounded overflow-hidden">
-                        {active.type === 'video' ? (
-                          <VideoPlayer src={active.src} poster={item.image ?? images[0]} />
-                        ) : (
-                          <ParallaxImage src={active.src} alt={`${item.name} image ${index + 1}`} />
-                        )}
-                      </div>
-
-                      {media.length > 1 && (
-                        <div className="absolute inset-x-0 top-1/2 flex justify-between px-2 -translate-y-1/2">
-                          <button
-                            className="bg-white/80 rounded-full p-1 shadow"
-                            onClick={() => setIndex((i) => (i - 1 + media.length) % media.length)}
-                            aria-label="Previous"
-                          >
-                            ‹
-                          </button>
-                          <button
-                            className="bg-white/80 rounded-full p-1 shadow"
-                            onClick={() => setIndex((i) => (i + 1) % media.length)}
-                            aria-label="Next"
-                          >
-                            ›
-                          </button>
+            <div className="relative rounded">
+              {modalMedia.length === 0 ? (
+                <div className="w-full h-64 sm:h-80 flex items-center justify-center rounded" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.95))' }}>
+                  <span className="text-gray-400">No media available</span>
+                </div>
+              ) : (
+                <>
+                  <div
+                    className="w-full h-[40vh] sm:h-[55vh] md:h-[60vh] rounded-lg overflow-hidden flex items-center justify-center shadow-md ring-1 ring-white/10 relative touch-pan-y"
+                    style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.95))' }}
+                    onPointerDown={(e) => {
+                      const startX = e.clientX;
+                      const startY = e.clientY;
+                      const target = e.currentTarget;
+                      function onMove() {}
+                      function onUp(ue: PointerEvent) {
+                        target.releasePointerCapture?.(e.pointerId);
+                        target.removeEventListener('pointermove', onMove as any);
+                        target.removeEventListener('pointerup', onUp as any);
+                        const dx = ue.clientX - startX;
+                        const dy = ue.clientY - startY;
+                        if (Math.abs(dx) > 30 && Math.abs(dy) < 40) {
+                          if (dx < 0) {
+                            setIndex((i) => (i + 1) % modalMedia.length);
+                          } else {
+                            setIndex((i) => (i - 1 + modalMedia.length) % modalMedia.length);
+                          }
+                        }
+                      }
+                      try { target.setPointerCapture?.(e.pointerId); } catch {}
+                      target.addEventListener('pointermove', onMove as any);
+                      target.addEventListener('pointerup', onUp as any);
+                    }}
+                  >
+                    {/* Crossfade for media */}
+                    <div className="w-full h-full flex items-center justify-center">
+                      {activeMedia?.type === 'video' ? (
+                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100">
+                          <VideoPlayer src={activeMedia.src} autoPlayPreview className="w-full h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100">
+                          <ParallaxImage
+                            src={activeMedia.src}
+                            alt={`${item.name} image ${index + 1}`}
+                            fit="contain"
+                            intensity={0}
+                            backgroundClass="bg-black"
+                          />
                         </div>
                       )}
+                    </div>
+                  </div>
 
-                      <div className="flex gap-2 mt-2 overflow-x-auto">
-                        {media.map((m, i) => (
-                          <button
-                            key={`${m.type}:${m.src}`}
-                            onClick={() => setIndex(i)}
-                            className="flex-shrink-0 rounded overflow-hidden border"
-                            style={{
-                              borderWidth: i === index ? '2px' : '1px',
-                              borderColor: i === index ? themeStyles.accentBg : 'transparent',
-                              boxShadow: i === index ? `0 0 0 2px ${themeStyles.accentBg}40` : 'none',
-                            }}
-                          >
-                            <div className="w-20 h-14 overflow-hidden rounded bg-gray-50 flex items-center justify-center">
-                              {m.type === 'image' ? (
-                                <SmartImage src={m.src} alt={`${item.name} thumb ${i + 1}`} />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-600 text-sm">
-                                  ▶︎ Video
-                                </div>
-                              )}
+                  <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                    {modalMedia.map((m, i) => (
+                      <button
+                        key={`${m.type}:${m.src}`}
+                        onClick={() => setIndex(i)}
+                        className="flex-shrink-0 rounded-md overflow-hidden border bg-black/40 hover:scale-[1.03] transition-transform duration-200"
+                        style={{
+                          borderWidth: i === index ? '2px' : '1px',
+                          borderColor: i === index ? themeStyles.accentBg : themeStyles.borderColor + '40',
+                          boxShadow: i === index ? `0 2px 8px ${themeStyles.accentBg}30` : 'none',
+                        }}
+                      >
+                        <div className="w-20 h-14 overflow-hidden rounded bg-black/60 flex items-center justify-center">
+                          {m.type === 'image' ? (
+                            <SmartImage src={m.src} alt={`${item.name} thumb ${i + 1}`} className="w-full h-full" fit="cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
+                              ▶ Video
                             </div>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
+            {/* End Media Section; next column renders details */}
 
             {/* Tabs + Content */}
             <div>
@@ -201,7 +225,7 @@ useEffect(() => {
                 {tab === 'price' && (
                   <div>
                     <h4 className="font-semibold text-gray-800">Price</h4>
-                    <p className="text-sm text-gray-600 mt-1">{item.price}</p>
+                    <p className="text-sm text-gray-600 mt-1">{formatPrice(item.price, (item as any).currency)}</p>
                   </div>
                 )}
               </div>

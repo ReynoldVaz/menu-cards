@@ -1,6 +1,7 @@
 import { Flame } from 'lucide-react';
 import { useRestaurant } from '../context/useRestaurant';
 import { hexToRgba, getTemplateComponentStyles, getTypographyStyle } from '../utils/themeUtils';
+import { useEffect, useState } from 'react';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -11,15 +12,20 @@ export function Header({ onMenuClick }: HeaderProps) {
   const primaryColor = theme?.primaryColor || '#EA580C';
   const secondaryColor = theme?.secondaryColor || '#FB923C';
   const accentColor = theme?.accentColor || '#FED7AA';
+  const [mounted, setMounted] = useState(false);
   
   const templateStyles = getTemplateComponentStyles(theme || null);
   const restaurantNameStyle = getTypographyStyle(templateStyles.typography.restaurantName);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <div 
-      className="relative text-white"
+      className={`relative text-white transition-opacity duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}
       style={{
-        background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`,
+        background: `linear-gradient(to bottom, ${primaryColor} 0%, ${secondaryColor} 60%, #1F2937 100%)`,
       }}
     >
       {/* hamburger - visible only on small screens */}
@@ -35,18 +41,21 @@ export function Header({ onMenuClick }: HeaderProps) {
       </button> */}
 
       {restaurant?.logo ? (
-        /* Logo fills entire header */
+        /* Centered logo with object-contain (no zoom/crop) */
         <div 
-          className="w-full flex items-center justify-center px-6 py-6 sm:px-8 sm:py-8"
-          style={{
-            minHeight: '200px',
-            background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`,
-          }}
+          className="w-full relative overflow-hidden flex items-center justify-center"
+          style={{ minHeight: '28vh' }}
         >
+          {/* Premium gradient background */}
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${primaryColor} 0%, ${secondaryColor} 60%, #111827 100%)` }} />
+          {/* Soft vignette for depth */}
+          <div className="absolute inset-0" style={{ boxShadow: 'inset 0 0 120px rgba(0,0,0,0.35)' }} />
+          {/* Logo */}
           <img 
             src={restaurant.logo} 
             alt={restaurant.name || 'Restaurant Logo'} 
-            className="object-contain max-h-48 max-w-xs sm:max-w-md"
+            className="relative z-10 object-contain"
+            style={{ maxHeight: '22vh', maxWidth: '85vw' }}
           />
         </div>
       ) : (

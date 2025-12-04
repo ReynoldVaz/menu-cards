@@ -35,6 +35,7 @@ export function EventForm({
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(initialData?.image || '');
+  const [removeImage, setRemoveImage] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string>('');
 
@@ -60,6 +61,7 @@ export function EventForm({
     };
     reader.readAsDataURL(file);
     setError('');
+    setRemoveImage(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +69,7 @@ export function EventForm({
     setError('');
 
     try {
-      let imageUrl = formData.image;
+      let imageUrl = removeImage ? undefined : formData.image;
 
       // Upload image if new file selected
       if (imageFile) {
@@ -176,8 +178,16 @@ export function EventForm({
           disabled={isLoading || uploadingImage}
         />
         {imagePreview && (
-          <div className="mt-2">
-            <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover rounded" />
+          <div className="mt-2 flex items-center gap-4">
+            <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover rounded border" />
+            <button
+              type="button"
+              onClick={() => { setImageFile(null); setImagePreview(''); setRemoveImage(true); }}
+              disabled={isLoading || uploadingImage}
+              className="px-3 py-2 text-red-700 border border-red-300 rounded hover:bg-red-50 disabled:opacity-50"
+            >
+              Remove Image
+            </button>
           </div>
         )}
       </div>

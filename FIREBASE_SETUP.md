@@ -84,17 +84,20 @@ restaurants/
 
 ## Step 5: Upload Data
 
-Use the **Firebase Data Uploader** script included in the project:
+Use the **Admin Dashboard** to bulk import menu items:
 
-```bash
-# From menu-cards directory
-npm run upload-data
-```
+1. Navigate to Admin Dashboard → Menu Items tab
+2. Click "Bulk Upload CSV" button
+3. Download the template CSV file
+4. Fill in your menu items (name, section, price required; others optional)
+5. Upload the CSV file
+6. Review the preview and confirm import
 
 This will:
-1. Parse your CSV files
-2. Transform data for Firebase
-3. Upload to Firestore automatically
+1. Parse your CSV file
+2. Validate data
+3. Transform data for Firebase
+4. Upload to Firestore automatically
 
 ---
 
