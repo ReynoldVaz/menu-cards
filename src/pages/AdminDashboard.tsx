@@ -132,9 +132,17 @@ export function AdminDashboard() {
           description: restaurantData.description,
           logo: restaurantData.logo,
           theme: restaurantData.theme,
+          // Social + public links
+          instagram: restaurantData.instagram,
+          facebook: restaurantData.facebook,
+          youtube: restaurantData.youtube,
+          website: restaurantData.website,
+          googleReviews: restaurantData.googleReviews,
+          contactPhone: restaurantData.contactPhone,
           isActive: restaurantData.isActive,
           createdAt: restaurantData.createdAt,
           updatedAt: restaurantData.updatedAt,
+          captureCustomerPhone: restaurantData.captureCustomerPhone,
         } as Restaurant);
       } else {
         setError('Restaurant not found');
@@ -1223,7 +1231,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   onChange={(e) => setInstagram(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Full profile URL (optional)</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Full profile URL (optional)</p>
+                  {instagram && (
+                    <button
+                      type="button"
+                      onClick={() => setInstagram('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear Instagram link"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
 
@@ -1238,7 +1258,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
                 {contactPhoneError && (<p className="text-xs text-red-600 mt-1">{contactPhoneError}</p>)}
-                <p className="text-xs text-gray-500 mt-1">Shown on the public menu. Tap-to-call on mobile.</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Shown on the public menu. Tap-to-call on mobile.</p>
+                  {contactPhone && (
+                    <button
+                      type="button"
+                      onClick={() => setContactPhone('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear contact number"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
 
@@ -1252,7 +1284,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   onChange={(e) => setFacebook(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Full page URL (optional)</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Full page URL (optional)</p>
+                  {facebook && (
+                    <button
+                      type="button"
+                      onClick={() => setFacebook('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear Facebook link"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
 
@@ -1266,7 +1310,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   onChange={(e) => setYoutube(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Channel or video URL (optional)</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Channel or video URL (optional)</p>
+                  {youtube && (
+                    <button
+                      type="button"
+                      onClick={() => setYoutube('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear YouTube link"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
 
@@ -1280,7 +1336,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   onChange={(e) => setWebsite(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Official website URL (optional)</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Official website URL (optional)</p>
+                  {website && (
+                    <button
+                      type="button"
+                      onClick={() => setWebsite('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear website link"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
 
@@ -1294,7 +1362,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   onChange={(e) => setGoogleReviews(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Link to your Google Business reviews page (optional)</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Link to your Google Business reviews page (optional)</p>
+                  {googleReviews && (
+                    <button
+                      type="button"
+                      onClick={() => setGoogleReviews('')}
+                      className="text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                      title="Clear Google Reviews link"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
           </div>

@@ -105,7 +105,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     }
 
     return (
-      <div ref={containerRef} className="relative max-w-2xl mx-auto">
+        <div ref={containerRef} className="relative max-w-2xl mx-auto">
         <div className="relative">
           <input
             ref={ref}
@@ -157,9 +157,53 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
             ))}
           </ul>
         )}
+
+        {/* Collapsible Legend Pane */}
+        <LegendPane />
       </div>
     );
   }
 );
 
 SearchBar.displayName = 'SearchBar';
+
+function LegendPane() {
+  const themeStyles = useThemeStyles();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm"
+        style={{ backgroundColor: `${themeStyles.accentBg}20`, color: themeStyles.primaryButtonBg }}
+      >
+        <span className="font-semibold">Legend</span>
+        <span className="text-xs">{open ? 'Hide' : 'Show'}</span>
+      </button>
+      {open && (
+        <div className="mt-2 grid grid-cols-2 gap-2 text-xs px-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] leading-none">🌶️</span>
+            <span>Spice level</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] leading-none">🍯</span>
+            <span>Sweetness</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] leading-none">🥬</span>
+            <span>Vegetarian</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] leading-none">🍗</span>
+            <span>Non-Veg</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] leading-none">🌱</span>
+            <span>Vegan</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

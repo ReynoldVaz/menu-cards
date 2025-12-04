@@ -195,15 +195,15 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                         >
                           {item.name}
                           {(item as any).dietType && (
-                            <span className="ml-2 inline-flex items-center">
+                            <span className="ml-2 inline-flex items-center gap-1 leading-none">
                               {((item as any).dietType === 'veg') && (
-                                <span title="Veg" className="text-xs leading-none align-middle">🥬</span>
+                                <span title="Veg" className="text-[10px] leading-none align-middle">🥬</span>
                               )}
                               {((item as any).dietType === 'non-veg') && (
-                                <span title="Non-Veg" className="text-xs leading-none align-middle">🍖</span>
+                                <span title="Non-Veg" className="text-[10px] leading-none align-middle">🍗</span>
                               )}
                               {((item as any).dietType === 'vegan') && (
-                                <span title="Vegan" className="text-xs leading-none align-middle">🌱</span>
+                                <span title="Vegan" className="text-[10px] leading-none align-middle">🌱</span>
                               )}
                             </span>
                           )}
@@ -211,6 +211,12 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                       </button>
                       {/* Removed badge; icon appended inline to dish name */}
                     </div>                    {/* Spice / Sweet Icons */}
+                    {/* Availability disclaimer */}
+                    {((item as any).is_unavailable === true) && (
+                      <div className="mt-0.5 text-xs text-red-600">
+                        Currently unavailable
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 mt-1">
 
                       {/* {item.spice > 0 && (
@@ -230,18 +236,18 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                       )} */}
                         {/* Spice rating */}
   {typeof item.spice === "number" && item.spice > 0 && (
-    <div className="flex items-center text-red-500 text-sm">
+    <div className="flex items-center text-red-500 text-[10px] leading-none gap-0.5">
       {Array.from({ length: item.spice }).map((_, i) => (
-        <span key={i}>🌶️</span>
+        <span key={i} className="leading-none">🌶️</span>
       ))}
     </div>
   )}
 
   {/* Sweet rating */}
   {typeof item.sweet === "number" && item.sweet > 0 && (
-    <div className="flex items-center text-amber-600 text-sm">
+    <div className="flex items-center text-amber-600 text-[10px] leading-none gap-0.5">
       {Array.from({ length: item.sweet }).map((_, i) => (
-        <span key={i}>🍯</span>
+        <span key={i} className="leading-none">🍯</span>
       ))}
     </div>
   )}
