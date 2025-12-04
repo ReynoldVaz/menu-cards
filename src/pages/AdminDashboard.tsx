@@ -974,6 +974,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
     (restaurant.theme?.template as TemplateType) || 'modern'
   );
   const [saving, setSaving] = useState(false);
+  const [savedNotice, setSavedNotice] = useState<string>('');
   const [approvedThemes, setApprovedThemes] = useState<any[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>(restaurant.logo || '');
@@ -1070,6 +1071,8 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
 
       await updateDoc(doc(db, 'restaurants', restaurant.id), updates);
       onUpdate();
+      setSavedNotice('Saved successfully');
+      setTimeout(() => setSavedNotice(''), 1000);
     } catch (err) {
       console.error('Failed to save:', err);
     } finally {
@@ -1119,6 +1122,8 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
 
       await updateDoc(doc(db, 'restaurants', restaurant.id), updates);
       onUpdate();
+      setSavedNotice('Details saved');
+      setTimeout(() => setSavedNotice(''), 1000);
     } catch (err) {
       console.error('Failed to save details:', err);
     } finally {
@@ -1165,19 +1170,6 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         
         {/* Restaurant Details */}
         <div className="space-y-4 pb-8 border-b">
-                    {/* Customer phone capture opt-in */}
-                    <div className="flex items-start gap-3 p-3 border rounded">
-                      <input
-                        id="captureCustomerPhone"
-                        type="checkbox"
-                        className="mt-1"
-                        checked={captureCustomerPhone}
-                        onChange={(e) => setCaptureCustomerPhone(e.target.checked)}
-                      />
-                      <label htmlFor="captureCustomerPhone" className="text-sm text-gray-700">
-                        Enable phone collection prompt for customers scanning the QR. If enabled, visitors will see a dialog asking to provide their phone number to receive updates. They can skip this.
-                      </label>
-                    </div>
           <h3 className="text-lg font-semibold text-gray-700">Restaurant Details</h3>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name</label>
@@ -1377,6 +1369,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                 </div>
               </div>
             </details>
+            {/* Customer phone capture opt-in – moved below Social links */}
+            <div className="flex items-start gap-3 p-3 border rounded">
+              <input
+                id="captureCustomerPhone"
+                type="checkbox"
+                className="mt-1"
+                checked={captureCustomerPhone}
+                onChange={(e) => setCaptureCustomerPhone(e.target.checked)}
+              />
+              <label htmlFor="captureCustomerPhone" className="text-sm text-gray-700">
+                Enable phone collection prompt for customers scanning the QR. If enabled, visitors will see a dialog asking to provide their phone number to receive updates. They can skip this.
+              </label>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Logo (Optional, max 2MB)</label>
@@ -1405,7 +1410,12 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
               </div>
             )}
           </div>
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col items-center gap-2">
+            {savedNotice && (
+              <div className="text-green-700 bg-green-100 border border-green-200 rounded px-3 py-1 text-sm animate-fade">
+                {savedNotice}
+              </div>
+            )}
             <button
               onClick={handleSaveDetails}
               disabled={saving}
@@ -1679,12 +1689,17 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
       */}
 
       {/* Save Button */}
+      {savedNotice && (
+        <div className="mt-2 text-center text-green-700 bg-green-100 border border-green-200 rounded px-3 py-1 text-sm animate-fade">
+          {savedNotice}
+        </div>
+      )}
       <button
         onClick={handleSave}
         disabled={saving}
         className="w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
       >
-        {saving ? 'Saving...' : 'Save All Changes'}
+        {saving ? 'Saving...' : 'Save Theme Settings'}
       </button>
     </div>
   );
