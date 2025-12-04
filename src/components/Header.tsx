@@ -20,6 +20,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
+  
 
   return (
     <div 
