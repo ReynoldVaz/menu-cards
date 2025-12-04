@@ -16,7 +16,7 @@ Mango Lassi,Beverages,80,INR,Yogurt-based mango drink,Yogurt - Mango - Sugar,veg
 Caesar Salad,Salads,200,INR,Fresh greens with Caesar dressing,Lettuce - Croutons - Parmesan,veg,1,,false,false`;
 
 const TEMPLATE_CSV = `name,section,price,currency,description,ingredients,dietType,spice_level,sweet_level,is_todays_special,is_unavailable
-[REQUIRED],,[REQUIRED],[optional: INR/USD/EUR/GBP],[optional],[optional],[optional: veg/non-veg/vegan],[optional: 1-5],[optional: 1-5],[optional: true/false],[optional: true/false]
+[REQUIRED],[REQUIRED],[REQUIRED],[optional: INR/USD/EUR/GBP],[optional],[optional],[optional: veg/non-veg/vegan],[optional: 1-5],[optional: 1-5],[optional: true/false],[optional: true/false]
 Example Item,Main Course,299,INR,Brief description here,Ingredient1 - Ingredient2 - Ingredient3,veg,2,1,false,false`;
 
 export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuProps) {
@@ -61,6 +61,16 @@ export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuPr
 
         results.data.forEach((row: any, index: number) => {
           const lineNum = index + 2; // +2 because of header and 0-indexing
+
+          // Skip template hint row if present
+          const nameVal = (row.name ?? '').toString().trim();
+          const sectionVal = (row.section ?? '').toString().trim();
+          if (
+            nameVal === '[REQUIRED]' ||
+            sectionVal === '[REQUIRED]'
+          ) {
+            return; // ignore the second row of TEMPLATE_CSV
+          }
 
           // Validate mandatory fields
           if (!row.name || row.name.trim() === '') {
