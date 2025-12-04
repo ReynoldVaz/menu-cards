@@ -120,7 +120,7 @@ function App() {
       } finally {
         localStorage.setItem('customerPhoneOptIn', 'true');
         localStorage.setItem('customerPhoneNumber', customerPhone);
-        setTimeout(() => setShowOptIn(false), 1000);
+        setTimeout(() => setShowOptIn(false), 1500);
       }
     };
     void save();
