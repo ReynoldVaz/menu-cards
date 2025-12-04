@@ -26,7 +26,8 @@ export function Header({ onMenuClick }: HeaderProps) {
     <div 
       className={`relative text-white transition-opacity duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}
       style={{
-        background: `linear-gradient(to bottom, ${primaryColor} 0%, ${secondaryColor} 60%, #1F2937 100%)`,
+        // Match ThemePreview: clean two-stop gradient without dark fade
+        background: `linear-gradient(to bottom, ${primaryColor} 0%, ${secondaryColor} 100%)`,
       }}
     >
       {/* hamburger - visible only on small screens */}
@@ -47,10 +48,8 @@ export function Header({ onMenuClick }: HeaderProps) {
           className="w-full relative overflow-hidden flex items-center justify-center"
           style={{ minHeight: '28vh' }}
         >
-          {/* Premium gradient background */}
-          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${primaryColor} 0%, ${secondaryColor} 60%, #111827 100%)` }} />
-          {/* Soft vignette for depth */}
-          <div className="absolute inset-0" style={{ boxShadow: 'inset 0 0 120px rgba(0,0,0,0.35)' }} />
+          {/* Clean gradient background to match preview */}
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${primaryColor} 0%, ${secondaryColor} 100%)` }} />
           {/* Logo */}
           <img 
             src={restaurant.logo} 

@@ -26,14 +26,16 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
 
   return (
     <div className="rounded-lg overflow-hidden" style={{
-      border: `1px solid ${themeStyles.borderColor}`,
-      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+      // Remove outer border to avoid any dark lines at top/bottom
+      border: 'none',
+      // boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
     }}>
       {/* HEADER - Premium hero (matches actual UI) */}
       <div
         className="relative px-6 py-6 sm:px-8 sm:py-8 text-center flex items-center justify-center"
         style={{
-          background: `linear-gradient(to bottom, ${theme.primaryColor} 0%, ${theme.secondaryColor} 60%, #1F2937 100%)`,
+          // Smooth two-stop gradient without dark fade to avoid shadowed edges
+          background: `linear-gradient(to bottom, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%)`,
           minHeight: logoUrl ? '28vh' : 'auto',
         }}
       >

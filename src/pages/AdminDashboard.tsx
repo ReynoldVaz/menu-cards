@@ -1140,6 +1140,16 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
     setThemeMode('custom');
   }
 
+  function applySeasonalTheme(name: 'christmas') {
+    if (name === 'christmas') {
+      setPrimaryColor('#C62828'); // rich red
+      setSecondaryColor('#2E7D32'); // evergreen
+      setAccentColor('#FFD54F'); // warm gold
+      setBackgroundColor('#0b1020'); // deep night sky
+      setThemeMode('custom');
+    }
+  }
+
   return (
     <div className="bg-white rounded-lg shadow p-6 space-y-8">
       <div>
@@ -1456,6 +1466,32 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
                   </div>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Seasonal Themes */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-3">🎄 Seasonal Themes</label>
+            <p className="text-xs text-gray-600 mb-4">Apply festive presets for special occasions</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                onClick={() => applySeasonalTheme('christmas')}
+                className="p-4 rounded-lg border-2 border-gray-300 hover:border-green-500 transition-all hover:shadow-md text-left"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-2xl">🎅</span>
+                  <div>
+                    <div className="font-semibold text-gray-800">Christmas</div>
+                    <div className="text-xs text-gray-600">Red • Green • Gold • Night Sky</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1 h-10 rounded" style={{ backgroundColor: '#C62828' }} title="Primary: #C62828"></div>
+                  <div className="flex-1 h-10 rounded" style={{ backgroundColor: '#2E7D32' }} title="Secondary: #2E7D32"></div>
+                  <div className="flex-1 h-10 rounded" style={{ backgroundColor: '#FFD54F' }} title="Accent: #FFD54F"></div>
+                  <div className="flex-1 h-10 rounded border border-gray-300" style={{ backgroundColor: '#0b1020' }} title="Background: #0b1020"></div>
+                </div>
+              </button>
             </div>
           </div>
 
