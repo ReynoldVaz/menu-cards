@@ -11,6 +11,7 @@ interface UploadProgress {
 
 
 
+
 export function QuickUploadPage() {
   const [restaurantId, setRestaurantId] = useState('rest-001');
   const [menuCsv, setMenuCsv] = useState<string>('');
