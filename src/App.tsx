@@ -17,6 +17,8 @@ import ChatBot from './components/ChatBot';
 import { trackPageview } from "./lib/ga";
 import { getThemeStyles } from './utils/themeUtils';
 import { SocialLinksCard } from './components/SocialLinksCard';
+import { db } from './firebase.config';
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 
 
 function MobileAwareCallButton({ themeColor, phone }: { themeColor?: string; phone?: string | null }) {
@@ -42,6 +44,11 @@ function MobileAwareCallButton({ themeColor, phone }: { themeColor?: string; pho
 function App() {
   const { restaurant, menuSections, todaysSpecial, upcomingEvents, loading, theme } = useRestaurant();
   const themeStyles = getThemeStyles(theme || null);
+  const companyPhone = import.meta.env.VITE_COMPANY_PHONE as string | undefined;
+  const [showOptIn, setShowOptIn] = useState(false);
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [optInError, setOptInError] = useState('');
+  const [optInInfo, setOptInInfo] = useState('');
   
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<null | any>(null);
@@ -61,6 +68,68 @@ function App() {
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
+
+  // Show opt-in dialog if restaurant requests capture and user not already opted/skipped
+  useEffect(() => {
+    if (!restaurant) return;
+    const shouldPrompt = restaurant.captureCustomerPhone;
+    const alreadyOpted = localStorage.getItem('customerPhoneOptIn') === 'true';
+    const skipped = localStorage.getItem('customerPhoneOptOut') === 'true';
+    if (shouldPrompt && !alreadyOpted && !skipped) {
+      setShowOptIn(true);
+    }
+  }, [restaurant]);
+
+  function isValidCustomerPhone(input: string) {
+    const cleaned = input.replace(/[^0-9]/g, '');
+    if (cleaned.length < 10) return false;
+    return /^[+0-9 ()-]+$/.test(input);
+  }
+
+  function handleOptInSubmit() {
+    if (!isValidCustomerPhone(customerPhone)) {
+      setOptInError('Enter a valid 10-digit phone (digits, +, spaces, () and - allowed).');
+      return;
+    }
+    const save = async () => {
+      try {
+        const sanitized = customerPhone.replace(/\D/g, '');
+        if (restaurant?.id && sanitized) {
+          const ref = doc(db, `restaurants/${restaurant.id}/subscribers`, sanitized);
+          const existing = await getDoc(ref);
+          if (existing.exists()) {
+            setOptInInfo('This number is already subscribed. Thanks!');
+          } else {
+            await setDoc(
+              ref,
+              {
+                phone: sanitized,
+                originalInput: customerPhone,
+                optedIn: true,
+                preferredChannel: 'whatsapp',
+                source: 'qr-prompt',
+                createdAt: serverTimestamp(),
+              },
+              { merge: true }
+            );
+            setOptInInfo('Subscribed successfully. Thanks!');
+          }
+        }
+      } catch (e) {
+        console.error('Failed to save subscriber phone:', e);
+      } finally {
+        localStorage.setItem('customerPhoneOptIn', 'true');
+        localStorage.setItem('customerPhoneNumber', customerPhone);
+        setTimeout(() => setShowOptIn(false), 1000);
+      }
+    };
+    void save();
+  }
+
+  function handleOptInSkip() {
+    localStorage.setItem('customerPhoneOptOut', 'true');
+    setShowOptIn(false);
+  }
 
   return (
     <div 
@@ -216,8 +285,32 @@ function App() {
               {/* <button className="mt-4 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg text-sm shadow-md transition-all">
                 Digitize Your Menu Today
               </button> */}
-              <MobileAwareCallButton themeColor={themeStyles.primaryButtonBg} phone={restaurant?.contactPhone} />
+              <MobileAwareCallButton themeColor={themeStyles.primaryButtonBg} phone={companyPhone ?? null} />
             </div>
+
+            {showOptIn && (
+              <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30">
+                <div className="bg-white rounded-lg shadow-lg w-11/12 max-w-md p-5">
+                  <h4 className="text-lg font-semibold mb-2" style={{ color: themeStyles.primaryButtonBg }}>Stay up to date</h4>
+                  <p className="text-sm text-gray-700 mb-2">Share your phone number to receive updates and offers from {restaurant?.name}. You can skip if you prefer.</p>
+                  <p className="text-xs text-gray-500 mb-3">Format: include country code, e.g., +91 98765 43210 or +1 415 555 1234.</p>
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => { setCustomerPhone(e.target.value); setOptInError(''); }}
+                    placeholder="e.g., +91 98765 43210"
+                    inputMode="tel"
+                    className="w-full px-3 py-2 border rounded mb-2"
+                  />
+                  {optInError && <p className="text-red-600 text-xs mb-3">{optInError}</p>}
+                  {optInInfo && <p className="text-green-600 text-xs mb-3">{optInInfo}</p>}
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={handleOptInSkip} className="px-4 py-2 rounded border">Skip</button>
+                    <button onClick={handleOptInSubmit} className="px-4 py-2 rounded text-white" style={{ backgroundColor: themeStyles.primaryButtonBg }}>Submit</button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* FLOATING CHAT ICON */}
             <ChatBot menuSections={menuSections} todaysSpecial={todaysSpecial} events={upcomingEvents} />

@@ -15,7 +15,7 @@ import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import { formatPrice } from '../utils/formatPrice';
 
 interface AdminDashboardTab {
-  id: 'restaurants' | 'menu' | 'events' | 'settings' | 'qr';
+  id: 'restaurants' | 'menu' | 'events' | 'settings' | 'qr' | 'subscribers';
   label: string;
   icon: string;
 }
@@ -34,6 +34,7 @@ export function AdminDashboard() {
     { id: 'menu', label: 'Menu Items', icon: '🍽️' },
     { id: 'events', label: 'Events', icon: '🎉' },
     { id: 'qr', label: 'QR Code', icon: '📱' },
+    { id: 'subscribers', label: 'Subscribers', icon: '👥' },
   ];
 
   // Load current user's restaurant or query parameter restaurant, but wait for auth
@@ -118,9 +119,10 @@ export function AdminDashboard() {
       const restaurantSnapshot = await getDocs(query(collection(db, 'restaurants'), where('restaurantCode', '==', restaurantCode)));
       
       if (!restaurantSnapshot.empty) {
-        const restaurantData = restaurantSnapshot.docs[0].data();
+        const docSnap = restaurantSnapshot.docs[0];
+        const restaurantData = docSnap.data();
         setRestaurant({
-          id: restaurantCode, // Use restaurant code as the ID
+          id: docSnap.id, // Use Firestore doc id for paths
           name: restaurantData.name,
           restaurantCode: restaurantData.restaurantCode,
           ownerId: restaurantData.ownerId,
@@ -233,6 +235,9 @@ export function AdminDashboard() {
                 {/* Settings Tab */}
                 {activeTab === 'settings' && <SettingsTab restaurant={restaurant} onUpdate={loadUserRestaurant} />}
 
+                {/* Subscribers Tab */}
+                {activeTab === 'subscribers' && <SubscribersTab restaurant={restaurant} />}
+
                 {/* QR Tab */}
                 {activeTab === 'qr' && <QRTab restaurant={restaurant} />}
               </>
@@ -244,6 +249,71 @@ export function AdminDashboard() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+function SubscribersTab({ restaurant }: { restaurant: Restaurant }) {
+  const [subscribers, setSubscribers] = useState<Array<{ id: string; phone: string; originalInput?: string; createdAt?: any }>>([]);
+
+  useEffect(() => {
+    const ref = collection(db, `restaurants/${restaurant.id}/subscribers`);
+    getDocs(ref).then((snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      setSubscribers(list);
+    }).catch((err) => {
+      console.error('Failed to load subscribers:', err);
+    });
+  }, [restaurant.id]);
+
+  function downloadCsv() {
+    const rows = subscribers.map((s) => ({
+      phone: s.phone,
+      originalInput: s.originalInput || '',
+      createdAt: s.createdAt?.toDate ? s.createdAt.toDate().toISOString() : '',
+    }));
+    const header = ['phone','originalInput','createdAt'];
+    const csv = [header.join(','), ...rows.map(r => `${r.phone},${r.originalInput},${r.createdAt}`)].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${restaurant.name.replace(/[^a-z0-9]+/gi,'-')}-subscribers.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-gray-800">Subscribers ({subscribers.length})</h2>
+        <button onClick={downloadCsv} className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-black text-sm">Download CSV</button>
+      </div>
+      {subscribers.length === 0 ? (
+        <p className="text-gray-600">No subscribers yet.</p>
+      ) : (
+        <div className="overflow-x-auto border rounded">
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="text-left px-3 py-2">Phone</th>
+                <th className="text-left px-3 py-2">Original Input</th>
+                <th className="text-left px-3 py-2">Opt-in Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {subscribers.map((s) => (
+                <tr key={s.id} className="border-t">
+                  <td className="px-3 py-2 font-mono">{s.phone}</td>
+                  <td className="px-3 py-2">{s.originalInput || ''}</td>
+                  <td className="px-3 py-2">{s.createdAt?.toDate ? s.createdAt.toDate().toLocaleString() : ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -886,6 +956,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [youtube, setYoutube] = useState(restaurant.youtube || '');
   const [website, setWebsite] = useState(restaurant.website || '');
   const [googleReviews, setGoogleReviews] = useState(restaurant.googleReviews || '');
+  const [captureCustomerPhone, setCaptureCustomerPhone] = useState<boolean>(restaurant.captureCustomerPhone || false);
   const [themeMode, setThemeMode] = useState(restaurant.theme?.mode || 'custom');
   const [primaryColor, setPrimaryColor] = useState(restaurant.theme?.primaryColor || '#EA580C');
   const [secondaryColor, setSecondaryColor] = useState(restaurant.theme?.secondaryColor || '#FB923C');
@@ -946,6 +1017,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
       loadApprovedThemes();
     }
   }, [restaurant.restaurantCode]);
+
 
   const templateColors = getTemplateColors(selectedTemplate);
 
@@ -1029,6 +1101,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         website: website || null,
         googleReviews: googleReviews || null,
         contactPhone: contactPhone || null,
+        captureCustomerPhone: Boolean(captureCustomerPhone),
       };
       if (logoFile && logoUrl) {
         updates.logo = logoUrl;
@@ -1074,6 +1147,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         
         {/* Restaurant Details */}
         <div className="space-y-4 pb-8 border-b">
+                    {/* Customer phone capture opt-in */}
+                    <div className="flex items-start gap-3 p-3 border rounded">
+                      <input
+                        id="captureCustomerPhone"
+                        type="checkbox"
+                        className="mt-1"
+                        checked={captureCustomerPhone}
+                        onChange={(e) => setCaptureCustomerPhone(e.target.checked)}
+                      />
+                      <label htmlFor="captureCustomerPhone" className="text-sm text-gray-700">
+                        Enable phone collection prompt for customers scanning the QR. If enabled, visitors will see a dialog asking to provide their phone number to receive updates. They can skip this.
+                      </label>
+                    </div>
           <h3 className="text-lg font-semibold text-gray-700">Restaurant Details</h3>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name</label>

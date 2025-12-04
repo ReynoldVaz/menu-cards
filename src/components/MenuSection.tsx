@@ -63,6 +63,46 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
   }, [open]);
   const containerSpacing = open ? 'mb-4' : 'mb-1';
 
+  function LazyVideo({ src }: { src: string }) {
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+
+    useEffect(() => {
+      const el = videoRef.current;
+      if (!el) return;
+      const io = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry.isIntersecting) {
+            // Play when visible
+            const playPromise = el.play();
+            if (playPromise && typeof playPromise.then === 'function') {
+              playPromise.catch(() => {});
+            }
+          } else {
+            // Pause when not visible but keep frame to avoid flicker
+            el.pause();
+          }
+        },
+        { rootMargin: '120px', threshold: 0.15 }
+      );
+      io.observe(el);
+      return () => io.disconnect();
+    }, []);
+
+    return (
+      <video
+        ref={videoRef}
+        src={src}
+        preload="metadata"
+        className="w-20 h-16 object-cover rounded"
+        muted
+        loop
+        playsInline
+        autoPlay
+      />
+    );
+  }
+
   return (
     <div id={id} className={containerSpacing}>
       {/* HEADER — Collapsible */}
@@ -117,14 +157,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                     // Prefer showing a video preview if available
                     if (videos.length > 0) {
                       return (
-                        <video
-                          src={videos[0]}
-                          className="w-20 h-16 object-cover rounded"
-                          muted
-                          loop
-                          playsInline
-                          autoPlay
-                        />
+                        <LazyVideo src={videos[0]} />
                       );
                     }
                     if (images.length > 0) {

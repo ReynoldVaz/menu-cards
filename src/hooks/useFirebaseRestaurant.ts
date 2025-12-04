@@ -79,6 +79,7 @@ export interface Restaurant {
   website?: string;
   googleReviews?: string;
   contactPhone?: string;
+  captureCustomerPhone?: boolean;
 }
 
 export interface UseFirebaseRestaurantResult {
