@@ -51,7 +51,9 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
       ? item.images
       : (item.image ? [item.image] : []);
 
-    if (enableAnalytics && restaurantId) {
+      console.log("Tracking event:", item.name);
+      console.log(enableAnalytics, restaurantId);
+      if (enableAnalytics && restaurantId) {
       // Use a composite label for uniqueness: `${restaurantId}|${item.name}`
       trackEvent("Menu", "Click Item", `${restaurantId}|${item.name}`);
     }
