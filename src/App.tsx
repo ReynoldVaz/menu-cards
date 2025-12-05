@@ -120,7 +120,7 @@ function App() {
       } finally {
         localStorage.setItem('customerPhoneOptIn', 'true');
         localStorage.setItem('customerPhoneNumber', customerPhone);
-        setTimeout(() => setShowOptIn(false), 1000);
+        setTimeout(() => setShowOptIn(false), 1500);
       }
     };
     void save();
@@ -224,7 +224,9 @@ function App() {
                         setSelectedItem(it);
                         setSelectedImages(imgs || []);
                       }}
-                      isLoading={loading} // ✨ PASSING THE LOADING STATE
+                      isLoading={loading}
+                      enableAnalytics={restaurant?.enableAnalytics}
+                      restaurantId={restaurant?.id}
                     />
                     {idx < menuSections.length - 1 && (
                       <div 

@@ -143,6 +143,7 @@ export function AdminDashboard() {
           createdAt: restaurantData.createdAt,
           updatedAt: restaurantData.updatedAt,
           captureCustomerPhone: restaurantData.captureCustomerPhone,
+          enableAnalytics: restaurantData.enableAnalytics ?? false,
         } as Restaurant);
       } else {
         setError('Restaurant not found');
@@ -575,13 +576,14 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
     try {
       setSavingItem(true);
       const createdItems: MenuItem[] = [];
+      const updatedItems: MenuItem[] = [];
 
       for (const formData of bulkItems) {
         const menuItemData: any = {
           ...formData,
           price: String(formData.price),
           is_new: Boolean((formData as any).is_new),
-          createdAt: new Date().toISOString(),
+          // createdAt only when creating new
           updatedAt: new Date().toISOString(),
         };
 
@@ -602,20 +604,38 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
           }
         });
 
-        const docRef = await addDoc(
-          collection(db, `restaurants/${restaurantId}/menu_items`),
-          menuItemData
-        );
+        // Upsert logic by name: update existing record if name matches, else add new
+        const itemsRef = collection(db, `restaurants/${restaurantId}/menu_items`);
+        const existingSnap = await getDocs(query(itemsRef, where('name', '==', formData.name.trim())));
 
-        createdItems.push({
-          id: docRef.id,
-          ...menuItemData,
-        } as unknown as MenuItem);
+        if (!existingSnap.empty) {
+          const existingDoc = existingSnap.docs[0];
+          // Preserve createdAt from existing, update other fields
+          const existingData = existingDoc.data();
+          const updatePayload = {
+            ...menuItemData,
+            createdAt: existingData.createdAt || new Date().toISOString(),
+          };
+          await updateDoc(doc(db, `restaurants/${restaurantId}/menu_items/${existingDoc.id}`), updatePayload);
+          updatedItems.push({ id: existingDoc.id, ...updatePayload } as unknown as MenuItem);
+        } else {
+          const createPayload = {
+            ...menuItemData,
+            createdAt: new Date().toISOString(),
+          };
+          const docRef = await addDoc(itemsRef, createPayload);
+          createdItems.push({ id: docRef.id, ...createPayload } as unknown as MenuItem);
+        }
       }
 
       // Add all new items to local state
-      setItems([...items, ...createdItems]);
-      alert(`✅ Successfully imported ${createdItems.length} items!`);
+      // Merge: update existing entries in local state, then append created
+      let nextItems = items.slice();
+      for (const updated of updatedItems) {
+        nextItems = nextItems.map((it) => (it.id === updated.id ? ({ ...it, ...updated } as unknown as MenuItem) : it));
+      }
+      setItems([...nextItems, ...createdItems]);
+      alert(`✅ Imported ${createdItems.length} new, updated ${updatedItems.length} existing items.`);
     } catch (err) {
       console.error('Failed to bulk upload items:', err);
       alert(`❌ Error importing items: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -965,6 +985,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [website, setWebsite] = useState(restaurant.website || '');
   const [googleReviews, setGoogleReviews] = useState(restaurant.googleReviews || '');
   const [captureCustomerPhone, setCaptureCustomerPhone] = useState<boolean>(restaurant.captureCustomerPhone || false);
+  const [enableAnalytics, setEnableAnalytics] = useState<boolean>(restaurant.enableAnalytics ?? false);
   const [themeMode, setThemeMode] = useState(restaurant.theme?.mode || 'custom');
   const [primaryColor, setPrimaryColor] = useState(restaurant.theme?.primaryColor || '#EA580C');
   const [secondaryColor, setSecondaryColor] = useState(restaurant.theme?.secondaryColor || '#FB923C');
@@ -1113,6 +1134,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         googleReviews: googleReviews || null,
         contactPhone: contactPhone || null,
         captureCustomerPhone: Boolean(captureCustomerPhone),
+        enableAnalytics: Boolean(enableAnalytics),
       };
       if (logoFile && logoUrl) {
         updates.logo = logoUrl;
@@ -1187,6 +1209,23 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-24"
             />
+          </div>
+          {/* Enable Analytics Toggle */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Enable Analytics</label>
+            <div className="flex items-center gap-2">
+              <input
+                id="enableAnalytics"
+                type="checkbox"
+                checked={enableAnalytics}
+                onChange={e => setEnableAnalytics(e.target.checked)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                disabled={saving}
+              />
+              <label htmlFor="enableAnalytics" className="text-sm text-gray-700">
+                Track menu item clicks and show analytics for this restaurant
+              </label>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Admin Phone (private)</label>

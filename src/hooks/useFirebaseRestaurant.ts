@@ -80,6 +80,7 @@ export interface Restaurant {
   googleReviews?: string;
   contactPhone?: string;
   captureCustomerPhone?: boolean;
+  enableAnalytics?: boolean;
 }
 
 export interface UseFirebaseRestaurantResult {
