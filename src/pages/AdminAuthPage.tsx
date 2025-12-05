@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   createUserWithEmailAndPassword, 
@@ -6,12 +6,11 @@ import {
   signInWithPopup, 
   GoogleAuthProvider,
   linkWithCredential,
-  // sendEmailVerification // EMAIL VERIFICATION: on hold
+  sendEmailVerification
 } from 'firebase/auth';
 import { auth, db } from '../firebase.config';
 import { doc, getDoc } from 'firebase/firestore';
 
-// EMAIL VERIFICATION: on hold (keeping type but commenting usage)
 type AuthMode = 'welcome' | 'login' | 'signup' | 'link-account' | 'verify-email';
 
 // Email validation helper
@@ -47,29 +46,13 @@ export function AdminAuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [showSignupPassword, setShowSignupPassword] = useState(false);
-  const [showSignupConfirm, setShowSignupConfirm] = useState(false);
   
   // Account linking state
   const [pendingCredential, setPendingCredential] = useState<any>(null);
   const [pendingEmail, setPendingEmail] = useState<string>('');
   
   // Email verification state
-  // EMAIL VERIFICATION: on hold
   const [verificationEmail, setVerificationEmail] = useState<string>('');
-
-  // When switching into signup mode from welcome, ensure stale login state is cleared
-  // This avoids carrying over login error and prefilled email/password into signup.
-  // Also clear when returning to welcome.
-  useEffect(() => {
-    if (mode === 'signup' || mode === 'welcome' || mode === 'login') {
-      setError('');
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-    }
-  }, [mode]);
 
   const handleGoogleAuth = async () => {
     try {
@@ -221,53 +204,62 @@ export function AdminAuthPage() {
   };
 
   // Handle checking email verification
-  // EMAIL VERIFICATION: on hold
-  // const handleCheckEmailVerification = async () => {
-  //   try {
-  //     setLoading(true);
-  //     setError('');
-  //     const currentUser = auth.currentUser;
-  //     if (!currentUser) {
-  //       setError('❌ Session expired. Please go back and sign up again.');
-  //       return;
-  //     }
-  //     await currentUser.reload();
-  //     if (currentUser.emailVerified) {
-  //       navigate('/admin/register-restaurant', {
-  //         state: { userId: currentUser.uid, email: currentUser.email },
-  //       });
-  //     } else {
-  //       setError('⏳ Email not verified yet. Please check your inbox and click the verification link.');
-  //     }
-  //   } catch (err: any) {
-  //     console.error('Verification check error:', err);
-  //     setError('❌ Error checking verification status. Please try again.');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const handleCheckEmailVerification = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Reload user to get latest verification status
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        setError('❌ Session expired. Please go back and sign up again.');
+        return;
+      }
+      
+      // Reload user data to get latest emailVerified status
+      await currentUser.reload();
+      
+      if (currentUser.emailVerified) {
+        console.log('✅ Email verified! Proceeding to restaurant registration...');
+        // Email is verified, proceed to restaurant registration
+        navigate('/admin/register-restaurant', {
+          state: { userId: currentUser.uid, email: currentUser.email },
+        });
+      } else {
+        setError('⏳ Email not verified yet. Please check your inbox and click the verification link.');
+      }
+    } catch (err: any) {
+      console.error('Verification check error:', err);
+      setError('❌ Error checking verification status. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle resending verification email
-  // EMAIL VERIFICATION: on hold
-  // const handleResendVerificationEmail = async () => {
-  //   try {
-  //     setLoading(true);
-  //     setError('');
-  //     const currentUser = auth.currentUser;
-  //     if (!currentUser) {
-  //       setError('❌ Session expired. Please go back and sign up again.');
-  //       return;
-  //     }
-  //     await sendEmailVerification(currentUser);
-  //     setError('');
-  //     setError('📧 Verification email resent! Check your inbox.');
-  //   } catch (err: any) {
-  //     console.error('Resend error:', err);
-  //     setError('❌ Failed to resend verification email. Please try again.');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const handleResendVerificationEmail = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        setError('❌ Session expired. Please go back and sign up again.');
+        return;
+      }
+      
+      await sendEmailVerification(currentUser);
+      setError(''); // Clear any previous errors
+      console.log('✅ Verification email resent to:', currentUser.email);
+      // Show success message (we'll use error state temporarily for feedback)
+      setError('📧 Verification email resent! Check your inbox.'); // This will be shown as info, not error
+    } catch (err: any) {
+      console.error('Resend error:', err);
+      setError('❌ Failed to resend verification email. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Helper function to route user after successful authentication
   const routeUserAfterAuth = async (uid: string) => {
@@ -351,19 +343,17 @@ export function AdminAuthPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log('✅ SignUp successful:', userCredential.user.uid);
       
-      // EMAIL VERIFICATION: on hold
-      // console.log('📧 Sending verification email to:', email);
-      // await sendEmailVerification(userCredential.user);
-      // console.log('✅ Verification email sent!');
-      // setVerificationEmail(email);
-      // setEmail('');
-      // setPassword('');
-      // setConfirmPassword('');
-      // setMode('verify-email');
-      // Proceed directly to registration for now
-      navigate('/admin/register-restaurant', {
-        state: { userId: userCredential.user.uid, email: userCredential.user.email },
-      });
+      // Send verification email
+      console.log('📧 Sending verification email to:', email);
+      await sendEmailVerification(userCredential.user);
+      console.log('✅ Verification email sent!');
+      
+      // Store verification info and go to verification screen
+      setVerificationEmail(email);
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setMode('verify-email');
     } catch (err: any) {
       console.error('Signup error:', err.code, err.message);
       
@@ -405,16 +395,17 @@ export function AdminAuthPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log('✅ Login successful:', userCredential.user.uid);
       
-      // EMAIL VERIFICATION: on hold (do not block login based on emailVerified)
-      // if (!userCredential.user.emailVerified) {
-      //   console.log('⚠️ Email not verified yet');
-      //   setVerificationEmail(userCredential.user.email || email);
-      //   setEmail('');
-      //   setPassword('');
-      //   setMode('verify-email');
-      //   setError('📧 Please verify your email first. We\'ve sent a verification link to your inbox.');
-      //   return;
-      // }
+      // Check if email is verified
+      if (!userCredential.user.emailVerified) {
+        console.log('⚠️ Email not verified yet');
+        // Store email for verification and show verification screen
+        setVerificationEmail(userCredential.user.email || email);
+        setEmail('');
+        setPassword('');
+        setMode('verify-email');
+        setError('📧 Please verify your email first. We\'ve sent a verification link to your inbox.');
+        return;
+      }
       
       // Route user using the same function
       await routeUserAfterAuth(userCredential.user.uid);
@@ -517,24 +508,14 @@ export function AdminAuthPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <div className="relative">
-                  <input
-                    type={showLoginPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-12"
-                    disabled={loading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowLoginPassword((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
-                    aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showLoginPassword ? 'Hide' : 'Show'}
-                  </button>
-                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  disabled={loading}
+                />
               </div>
 
               <button
@@ -609,46 +590,26 @@ export function AdminAuthPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <div className="relative">
-                  <input
-                    type={showSignupPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent pr-12"
-                    disabled={loading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowSignupPassword((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
-                    aria-label={showSignupPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showSignupPassword ? 'Hide' : 'Show'}
-                  </button>
-                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  disabled={loading}
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                <div className="relative">
-                  <input
-                    type={showSignupConfirm ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent pr-12"
-                    disabled={loading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowSignupConfirm((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
-                    aria-label={showSignupConfirm ? 'Hide password' : 'Show password'}
-                  >
-                    {showSignupConfirm ? 'Hide' : 'Show'}
-                  </button>
-                </div>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  disabled={loading}
+                />
               </div>
 
               <button
@@ -847,8 +808,6 @@ export function AdminAuthPage() {
               </ol>
             </div>
 
-            {/* EMAIL VERIFICATION: on hold — actions disabled */}
-            {/*
             <button
               onClick={handleCheckEmailVerification}
               disabled={loading}
@@ -864,7 +823,6 @@ export function AdminAuthPage() {
             >
               {loading ? '⏳ Resending...' : '📮 Resend Verification Email'}
             </button>
-            */}
 
             <button
               onClick={() => {

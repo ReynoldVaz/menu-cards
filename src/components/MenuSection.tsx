@@ -17,53 +17,26 @@ interface MenuSectionProps {
   items: MenuItem[];
   onOpen?: (item: MenuItem, images: string[]) => void;
   isLoading?: boolean;
-  enableAnalytics?: boolean;
-  restaurantId?: string;
 }
 
-
-export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalytics, restaurantId }: MenuSectionProps) {
+export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSectionProps) {
   const [open, setOpen] = useState(false);
   const themeStyles = useThemeStyles();
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [height, setHeight] = useState<string>("0px");
-  const [analyticsSummary, setAnalyticsSummary] = useState<Record<string, number> | null>(null);
-  const [lastTracked, setLastTracked] = useState<string | null>(null);
-  // Handle item click for analytics
-  const handleItemClick = (item: MenuItem) => {
-    if (enableAnalytics && restaurantId) {
-      // Send event name and label as before, but log the intended payload for custom GA4 param
-      trackEvent('menu_item_click', `${restaurantId}|${item.name}`);
-      setLastTracked(`Tracked click: ${item.name} (ID: ${item.id}) for restaurant ${restaurantId}`);
-      // Log the intended analytics payload for developer
-      console.log('[Analytics] menu_item_click', {
-        event_label: item.name,
-        restaurant_id: restaurantId,
-        item_id: item.id,
-      });
-    } else {
-      setLastTracked('Analytics not enabled or restaurantId missing.');
-    }
-  };
 
   function openModal(item: MenuItem) {
     const imgs = (item.images && item.images.length > 0)
       ? item.images
       : (item.image ? [item.image] : []);
 
-    if (enableAnalytics && restaurantId) {
-      // Use a composite label for uniqueness: `${restaurantId}|${item.name}`
-      trackEvent("Menu", "Click Item", `${restaurantId}|${item.name}`);
-    }
+    trackEvent("Menu", "Click Item", item.name);
     if (onOpen) onOpen(item, imgs);
   }
 
   const handleToggle = () => {
     const action = open ? "Collapse Section" : "Expand Section";
-    if (enableAnalytics && restaurantId) {
-      // Use a composite label for uniqueness: `${restaurantId}|${title}`
-      trackEvent("Menu Section", action, `${restaurantId}|${title}`);
-    }
+    trackEvent("Menu Section", action, title);
     setOpen((prev) => !prev);
   };
 
@@ -89,28 +62,6 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
     return () => window.removeEventListener("resize", onResize);
   }, [open]);
   const containerSpacing = open ? 'mb-4' : 'mb-1';
-
-  // Fetch GA4 analytics summary (event counts per item)
-  useEffect(() => {
-    if (!enableAnalytics || !restaurantId) return;
-    fetch(`/api/analytics?restaurantId=${encodeURIComponent(restaurantId)}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`Analytics error ${res.status}`);
-        const data = await res.json();
-        setAnalyticsSummary(data);
-        console.debug('GA4 analytics summary:', data);
-        // Also log to browser console
-        if (typeof window !== 'undefined' && window.console) {
-          window.console.log('GA4 analytics summary:', data);
-        }
-      })
-      .catch((err) => {
-        console.debug('Analytics fetch failed:', err?.message || err);
-        if (typeof window !== 'undefined' && window.console) {
-          window.console.error('Analytics fetch failed:', err?.message || err);
-        }
-      });
-  }, [enableAnalytics, restaurantId]);
 
   function LazyVideo({ src }: { src: string }) {
     const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -151,28 +102,9 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
       />
     );
   }
+
   return (
     <div id={id} className={containerSpacing}>
-      {/* Analytics status indicator and last tracked event message */}
-      <div style={{ marginBottom: 8 }}>
-        <span style={{
-          color: enableAnalytics ? 'green' : 'red',
-          fontWeight: 'bold',
-          marginRight: 12,
-        }}>
-          Analytics: {enableAnalytics ? 'ENABLED' : 'DISABLED'}
-        </span>
-        {enableAnalytics && restaurantId && (
-          <span style={{ color: '#555', fontSize: 12 }}>
-            Restaurant ID: {restaurantId}
-          </span>
-        )}
-      </div>
-      {lastTracked && (
-        <div style={{ color: '#2563eb', fontSize: 13, marginBottom: 8 }}>
-          {lastTracked}
-        </div>
-      )}
       {/* HEADER — Collapsible */}
       <button
         onClick={handleToggle}
@@ -210,7 +142,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
             >
               {/* Thumbnail: prefer video preview if available */}
               <button
-                onClick={() => { handleItemClick(item); openModal(item); }}
+                onClick={() => openModal(item)}
                 className="flex-shrink-0 rounded overflow-hidden border-2 hover:opacity-80"
                 style={{ borderColor: themeStyles.borderColor }}
               >
@@ -246,13 +178,13 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
                 </div>
               </button>
 
-              {/* DETAILS */}
+                {/* DETAILS */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-4 mb-1">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <button
-                        onClick={() => { handleItemClick(item); openModal(item); }}
+                        onClick={() => openModal(item)}
                         className="text-left flex-1"
                       >
                         <h3 
@@ -286,23 +218,41 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
                       </div>
                     )}
                     <div className="flex items-center gap-2 mt-1">
-                      {/* Spice rating */}
-                      {typeof item.spice === "number" && item.spice > 0 && (
-                        <div className="flex items-center text-red-500 text-[10px] leading-none gap-0.5">
+
+                      {/* {item.spice > 0 && (
+                        <div className="flex text-red-500 text-sm">
                           {Array.from({ length: item.spice }).map((_, i) => (
-                            <span key={i} className="leading-none">🌶️</span>
+                            <span key={i}>🌶️</span>
                           ))}
                         </div>
                       )}
 
-                      {/* Sweet rating */}
-                      {typeof item.sweet === "number" && item.sweet > 0 && (
-                        <div className="flex items-center text-amber-600 text-[10px] leading-none gap-0.5">
+                      {item.sweet > 0 && (
+                        <div className="flex text-amber-600 text-sm">
                           {Array.from({ length: item.sweet }).map((_, i) => (
-                            <span key={i} className="leading-none">🍯</span>
+                            <span key={i}>🍯</span>
                           ))}
                         </div>
-                      )}
+                      )} */}
+                        {/* Spice rating */}
+  {typeof item.spice === "number" && item.spice > 0 && (
+    <div className="flex items-center text-red-500 text-[10px] leading-none gap-0.5">
+      {Array.from({ length: item.spice }).map((_, i) => (
+        <span key={i} className="leading-none">🌶️</span>
+      ))}
+    </div>
+  )}
+
+  {/* Sweet rating */}
+  {typeof item.sweet === "number" && item.sweet > 0 && (
+    <div className="flex items-center text-amber-600 text-[10px] leading-none gap-0.5">
+      {Array.from({ length: item.sweet }).map((_, i) => (
+        <span key={i} className="leading-none">🍯</span>
+      ))}
+    </div>
+  )}
+
+
                     </div>
                   </div>
 
@@ -314,11 +264,6 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
                       <span className="font-bold text-base sm:text-lg whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
                         {formatPrice(item.price, (item as any).currency)}
                       </span>
-                    )}
-                    {analyticsSummary && analyticsSummary[item.name] > 0 && (
-                      <div className="text-[10px] text-gray-500 mt-1 whitespace-nowrap">
-                        {analyticsSummary[item.name]} clicks
-                      </div>
                     )}
                   </div>
                 </div>
