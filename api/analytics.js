@@ -62,6 +62,11 @@ const keyFile = JSON.parse(process.env.GA_SERVICE_ACCOUNT_KEY); // Service accou
 
 export default async function handler(req, res) {
   try {
+    const { restaurantId } = req.query;
+    if (!restaurantId) {
+      return res.status(400).json({ error: "Missing restaurantId" });
+    }
+
     const auth = new google.auth.GoogleAuth({
       credentials: keyFile,
       scopes: ["https://www.googleapis.com/auth/analytics.readonly"],
@@ -72,51 +77,61 @@ export default async function handler(req, res) {
       auth,
     });
 
+    // Filter for event_label starting with restaurantId|
     const response = await analyticsDataClient.properties.runReport({
-    // const response = await analyticsDataClient.properties.runRealtimeReport({
       property: `properties/${propertyId}`,
       requestBody: {
-        // dimensions: [{ name: "eventName" }], // grouping by event name
         dimensions: [
-          { name: "eventName" },    // Top-level event
-            // { name: "menu_item" },   // Nested parameter, e.g., menu item name
-          //  { name: "customEvent:menu_item" }  // API name from GA4 Custom Dimension
-          { name: "customEvent:event_label" },   // Nested parameter, e.g., menu item name
-        // { name: "eventParameter:event_label" }
+          { name: "eventName" },
+          { name: "customEvent:event_label" },
         ],
         metrics: [
-            { name: "eventCount" },
-
-        ],   // count of each event
+          { name: "eventCount" },
+        ],
         dateRanges: [{ startDate: "7daysAgo", endDate: "today" }],
-        // Removed dimensionFilter to fetch all events
+        dimensionFilter: {
+          andGroup: {
+            expressions: [
+              {
+                filter: {
+                  fieldName: "eventName",
+                  stringFilter: {
+                    matchType: "EXACT",
+                    value: "Click Item",
+                  },
+                },
+              },
+              {
+                filter: {
+                  fieldName: "customEvent:event_label",
+                  stringFilter: {
+                    matchType: "BEGINS_WITH",
+                    value: `${restaurantId}|`,
+                  },
+                },
+              },
+            ],
+          },
+        },
       },
     });
 
-    // return res.status(200).json(response.data);
-
-    // ⭐ Convert GA4 rows -> { itemName: clicks }
+    // Convert GA4 rows -> { itemName: clicks }
     const rows = response.data.rows || [];
-
     const itemClicks = {};
-
     rows.forEach((row) => {
-      const eventName = row.dimensionValues[0]?.value || "";
-      const itemName = row.dimensionValues[1]?.value || "";
+      // event_label is `${restaurantId}|${itemName}`
+      const eventLabel = row.dimensionValues[1]?.value || "";
+      const itemName = eventLabel.split("|").slice(1).join("|");
       const count = Number(row.metricValues[0]?.value || 0);
-
-      if (eventName === "Click Item" && itemName) {
+      if (itemName) {
         if (!itemClicks[itemName]) itemClicks[itemName] = 0;
         itemClicks[itemName] += count;
       }
     });
-
     return res.status(200).json(itemClicks);
-
   } catch (err) {
     console.error(err);
-    // res.status(500).json({ error: "Failed to fetch analytics data", details: err });
-
-     return res.status(500).json({ error: "Failed to fetch analytics", details: err });
+    return res.status(500).json({ error: "Failed to fetch analytics", details: err });
   }
 }
