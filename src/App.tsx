@@ -41,7 +41,11 @@ function MobileAwareCallButton({ themeColor, phone }: { themeColor?: string; pho
   );
 }
 
-function App() {
+interface AppProps {
+  analyticsSummary?: Record<string, number> | null;
+}
+
+function App({ analyticsSummary }: AppProps) {
   const { restaurant, menuSections, todaysSpecial, upcomingEvents, loading, theme } = useRestaurant();
   const themeStyles = getThemeStyles(theme || null);
   const companyPhone = import.meta.env.VITE_COMPANY_PHONE as string | undefined;
@@ -227,6 +231,7 @@ function App() {
                       isLoading={loading}
                       enableAnalytics={restaurant?.enableAnalytics}
                       restaurantId={restaurant?.id}
+                      analyticsSummary={analyticsSummary}
                     />
                     {idx < menuSections.length - 1 && (
                       <div 

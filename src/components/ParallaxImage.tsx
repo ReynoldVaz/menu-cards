@@ -76,6 +76,8 @@ export function ParallaxImage({ src, alt = '', className = '', intensity = 18, f
     };
   }, [intensity]);
 
+  // Always use transparent background for fit='contain' unless backgroundClass is explicitly set
+  const effectiveBackgroundClass = backgroundClass ?? (fit === 'contain' ? 'bg-transparent' : 'bg-gray-100');
   return (
     <div
       ref={wrapRef}
@@ -88,7 +90,7 @@ export function ParallaxImage({ src, alt = '', className = '', intensity = 18, f
         className="w-full h-full"
         style={{ transform: 'translate3d(0,0,0)', transition: 'transform 300ms ease-out', willChange: 'transform' }}
       >
-        <SmartImage src={src} alt={alt} className="w-full h-full" fit={fit} backgroundClass={backgroundClass ?? (fit === 'contain' ? 'bg-black' : 'bg-gray-100')} />
+        <SmartImage src={src} alt={alt} className="w-full h-full" fit={fit} backgroundClass={effectiveBackgroundClass} />
       </div>
     </div>
   );

@@ -97,7 +97,7 @@ useEffect(() => {
                 <>
                   <div
                     className="w-full h-[40vh] sm:h-[55vh] md:h-[60vh] rounded-lg overflow-hidden flex items-center justify-center shadow-md ring-1 ring-white/10 relative touch-pan-y"
-                    style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.95))' }}
+                    style={{ background: activeMedia?.type === 'image' ? 'transparent' : 'linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.95))' }}
                     onPointerDown={(e) => {
                       const startX = e.clientX;
                       const startY = e.clientY;
@@ -129,13 +129,12 @@ useEffect(() => {
                           <VideoPlayer src={activeMedia.src} autoPlayPreview className="w-full h-full object-contain" />
                         </div>
                       ) : (
-                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100">
-                          <ParallaxImage
+                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100 flex items-center justify-center">
+                          <img
                             src={activeMedia.src}
                             alt={`${item.name} image ${index + 1}`}
-                            fit="contain"
-                            intensity={0}
-                            backgroundClass="bg-black"
+                            className="w-full h-full object-contain"
+                            style={{ background: 'transparent' }}
                           />
                         </div>
                       )}

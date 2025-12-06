@@ -364,14 +364,14 @@ export function MasterAdminDashboard() {
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
       <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">👑 Master Admin Dashboard</h1>
-            <p className="text-gray-600 mt-1">Manage all restaurants</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">👑 Master Admin Dashboard</h1>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage all restaurants</p>
           </div>
           <button
             onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors w-full sm:w-auto"
           >
             Logout
           </button>
@@ -387,12 +387,12 @@ export function MasterAdminDashboard() {
 
       {/* Tabs */}
       <div className="max-w-7xl mx-auto px-4 mt-8">
-        <div className="flex gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              className={`flex-1 min-w-[120px] px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                 activeTab === tab.id
                   ? 'bg-orange-600 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
@@ -405,10 +405,10 @@ export function MasterAdminDashboard() {
       </div>
 
       {/* Tab Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-6 sm:py-8">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-gray-600 text-sm font-medium">Total Restaurants</h3>
               <p className="text-4xl font-bold text-orange-600 mt-2">{restaurants.length}</p>
@@ -445,63 +445,63 @@ export function MasterAdminDashboard() {
               approvalRequests
                 .filter((r) => r.status === 'pending')
                 .map((request) => (
-                  <div key={request.id} className="bg-white rounded-lg shadow p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                  <div key={request.id} className="bg-white rounded-lg shadow p-4 sm:p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">{request.restaurantName}</h3>
-                        <p className="text-sm text-gray-600 mt-1">Code: {request.restaurantCode}</p>
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900">{request.restaurantName}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">Code: {request.restaurantCode}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">
+                      <div className="sm:text-right">
+                        <p className="text-xs sm:text-sm text-gray-600">
                           Submitted: {new Date(request.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6 p-2 sm:p-4 bg-gray-50 rounded-lg">
                       <div>
                         <p className="text-xs text-gray-600 font-medium">Email</p>
-                        <p className="text-sm text-gray-900 font-mono mt-1">{request.ownerEmail}</p>
+                        <p className="text-xs sm:text-sm text-gray-900 font-mono mt-1 break-all">{request.ownerEmail}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-600 font-medium">Phone</p>
-                        <p className="text-sm text-gray-900 mt-1">{request.phone}</p>
+                        <p className="text-xs sm:text-sm text-gray-900 mt-1">{request.phone}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-600 font-medium">Address</p>
-                        <p className="text-sm text-gray-900 mt-1">{request.address}</p>
+                        <p className="text-xs sm:text-sm text-gray-900 mt-1 break-all">{request.address}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-600 font-medium">Owner ID</p>
-                        <p className="text-sm text-gray-900 font-mono mt-1">
+                        <p className="text-xs sm:text-sm text-gray-900 font-mono mt-1">
                           {request.ownerId.slice(0, 8)}...
                         </p>
                       </div>
                     </div>
 
                     {request.description && (
-                      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="mb-4 sm:mb-6 p-2 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <p className="text-xs text-blue-600 font-medium mb-2">Description</p>
-                        <p className="text-sm text-blue-900">{request.description}</p>
+                        <p className="text-xs sm:text-sm text-blue-900">{request.description}</p>
                       </div>
                     )}
 
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                       <button
                         onClick={() => handleApproveRequest(request)}
-                        className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
+                        className="w-full sm:flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
                       >
                         ✓ Approve
                       </button>
                       <button
                         onClick={() => handleRejectRequest(request)}
-                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors"
+                        className="w-full sm:flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors"
                       >
                         ✕ Reject
                       </button>
                       <button
                         onClick={() => handleDeregisterPendingRequest(request)}
-                        className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition-colors"
+                        className="w-full sm:flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium transition-colors"
                       >
                         🗑️ Deregister
                       </button>
@@ -514,22 +514,14 @@ export function MasterAdminDashboard() {
             {approvalRequests.filter((r) => r.status === 'approved').length > 0 && (
               <div className="mt-8">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Approved Requests</h3>
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <table className="w-full">
+                <div className="bg-white rounded-lg shadow overflow-x-auto">
+                  <table className="w-full min-w-[600px]">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                          Restaurant
-                        </th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                          Code
-                        </th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                          Owner Email
-                        </th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                          Approved Date
-                        </th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Restaurant</th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Code</th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Owner Email</th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Approved Date</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -537,16 +529,10 @@ export function MasterAdminDashboard() {
                         .filter((r) => r.status === 'approved')
                         .map((request) => (
                           <tr key={request.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 font-medium text-gray-900">
-                              {request.restaurantName}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {request.restaurantCode}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{request.ownerEmail}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {new Date(request.updatedAt || request.createdAt).toLocaleDateString()}
-                            </td>
+                            <td className="px-3 sm:px-6 py-4 font-medium text-gray-900">{request.restaurantName}</td>
+                            <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600">{request.restaurantCode}</td>
+                            <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 break-all">{request.ownerEmail}</td>
+                            <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600">{new Date(request.updatedAt || request.createdAt).toLocaleDateString()}</td>
                           </tr>
                         ))}
                     </tbody>
@@ -568,53 +554,53 @@ export function MasterAdminDashboard() {
               themeRequests
                 .filter((r) => r.status === 'pending')
                 .map((request) => (
-                  <div key={request.id} className="bg-white rounded-lg shadow p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                  <div key={request.id} className="bg-white rounded-lg shadow p-4 sm:p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">{request.themeName}</h3>
-                        <p className="text-sm text-gray-600 mt-1">Restaurant: {request.restaurantName}</p>
-                        <p className="text-sm text-gray-600">Code: {request.restaurantCode}</p>
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900">{request.themeName}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">Restaurant: {request.restaurantName}</p>
+                        <p className="text-xs sm:text-sm text-gray-600">Code: {request.restaurantCode}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">
+                      <div className="sm:text-right">
+                        <p className="text-xs sm:text-sm text-gray-600">
                           Submitted: {new Date(request.requestedAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
 
                     {/* Description */}
-                    <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div className="mb-4 sm:mb-6 p-2 sm:p-4 bg-gray-50 rounded-lg">
                       <p className="text-xs text-gray-600 font-medium mb-2">Description</p>
-                      <p className="text-sm text-gray-900">{request.description}</p>
+                      <p className="text-xs sm:text-sm text-gray-900">{request.description}</p>
                     </div>
 
                     {/* Color Preview */}
-                    <div className="mb-6">
+                    <div className="mb-4 sm:mb-6">
                       <p className="text-xs text-gray-600 font-medium mb-2">Color Scheme</p>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <div
-                          className="flex-1 h-16 rounded flex items-center justify-center text-white text-xs font-semibold"
+                          className="flex-1 min-w-[80px] h-12 sm:h-16 rounded flex items-center justify-center text-white text-xs font-semibold"
                           style={{ backgroundColor: request.primaryColor }}
                           title={`Primary: ${request.primaryColor}`}
                         >
                           Primary
                         </div>
                         <div
-                          className="flex-1 h-16 rounded flex items-center justify-center text-white text-xs font-semibold"
+                          className="flex-1 min-w-[80px] h-12 sm:h-16 rounded flex items-center justify-center text-white text-xs font-semibold"
                           style={{ backgroundColor: request.secondaryColor }}
                           title={`Secondary: ${request.secondaryColor}`}
                         >
                           Secondary
                         </div>
                         <div
-                          className="flex-1 h-16 rounded flex items-center justify-center text-gray-800 text-xs font-semibold"
+                          className="flex-1 min-w-[80px] h-12 sm:h-16 rounded flex items-center justify-center text-gray-800 text-xs font-semibold"
                           style={{ backgroundColor: request.accentColor }}
                           title={`Accent: ${request.accentColor}`}
                         >
                           Accent
                         </div>
                         <div
-                          className="flex-1 h-16 rounded border-2 border-gray-300 flex items-center justify-center text-gray-800 text-xs font-semibold"
+                          className="flex-1 min-w-[80px] h-12 sm:h-16 rounded border-2 border-gray-300 flex items-center justify-center text-gray-800 text-xs font-semibold"
                           style={{ backgroundColor: request.backgroundColor }}
                           title={`Background: ${request.backgroundColor}`}
                         >
@@ -625,14 +611,14 @@ export function MasterAdminDashboard() {
 
                     {/* Logo Preview */}
                     {request.logoUrl && (
-                      <div className="mb-6">
+                      <div className="mb-4 sm:mb-6">
                         <p className="text-xs text-gray-600 font-medium mb-2">Logo Preview</p>
-                        <img src={request.logoUrl} alt="Logo" className="h-20 w-20 object-contain rounded" />
+                        <img src={request.logoUrl} alt="Logo" className="h-16 sm:h-20 w-16 sm:w-20 object-contain rounded" />
                       </div>
                     )}
 
                     {/* Actions */}
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                       <button
                         onClick={async () => {
                           try {
@@ -646,7 +632,7 @@ export function MasterAdminDashboard() {
                             alert('Error approving request: ' + err);
                           }
                         }}
-                        className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium"
+                        className="w-full sm:flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium"
                       >
                         ✓ Approve
                       </button>
@@ -664,7 +650,7 @@ export function MasterAdminDashboard() {
                             alert('Error rejecting request: ' + err);
                           }
                         }}
-                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium"
+                        className="w-full sm:flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium"
                       >
                         ✗ Reject
                       </button>
@@ -677,19 +663,13 @@ export function MasterAdminDashboard() {
             {themeRequests.filter((r) => r.status === 'approved').length > 0 && (
               <div className="mt-8">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Approved Theme Requests</h3>
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <table className="w-full">
+                <div className="bg-white rounded-lg shadow overflow-x-auto">
+                  <table className="w-full min-w-[500px]">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                          Theme Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                          Restaurant
-                        </th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                          Approved Date
-                        </th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Theme Name</th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Restaurant</th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Approved Date</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -697,15 +677,9 @@ export function MasterAdminDashboard() {
                         .filter((r) => r.status === 'approved')
                         .map((request) => (
                           <tr key={request.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 font-medium text-gray-900">
-                              {request.themeName}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {request.restaurantName}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {new Date(request.reviewedAt || request.requestedAt).toLocaleDateString()}
-                            </td>
+                            <td className="px-3 sm:px-6 py-4 font-medium text-gray-900">{request.themeName}</td>
+                            <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600">{request.restaurantName}</td>
+                            <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600">{new Date(request.reviewedAt || request.requestedAt).toLocaleDateString()}</td>
                           </tr>
                         ))}
                     </tbody>
@@ -718,114 +692,60 @@ export function MasterAdminDashboard() {
 
         {/* All Restaurants Tab */}
         {activeTab === 'restaurants' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      Restaurant
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      Code
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      Owner ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      Actions
-                    </th>
+          <div className="bg-white rounded-lg shadow overflow-x-auto">
+            <table className="w-full min-w-[700px]">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Restaurant</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Code</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Owner ID</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Email</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Status</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {restaurants.map((restaurant) => (
+                  <tr key={restaurant.id} className="hover:bg-gray-50">
+                    <td className="px-3 sm:px-6 py-4">
+                      <div className="font-medium text-gray-900">{restaurant.name}</div>
+                      {restaurant.address && (
+                        <div className="text-xs sm:text-sm text-gray-500 break-all">{restaurant.address}</div>
+                      )}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600">{restaurant.restaurantCode}</td>
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 font-mono">{restaurant.ownerId ? restaurant.ownerId.slice(0, 8) + '...' : 'N/A'}</td>
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 break-all">{restaurant.email}</td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${restaurant.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{restaurant.isActive ? '✓ Active' : '✗ Inactive'}</span>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <button onClick={() => navigateToRestaurantDashboard(restaurant.restaurantCode)} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors w-full sm:w-auto">Edit</button>
+                        <button onClick={() => toggleRestaurantStatus(restaurant.restaurantCode, restaurant.isActive)} className={`px-3 py-1 rounded font-medium transition-colors text-white w-full sm:w-auto ${restaurant.isActive ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'}`}>{restaurant.isActive ? 'Deactivate' : 'Activate'}</button>
+                        <button onClick={() => handleDeregisterRestaurantOwner(restaurant)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors w-full sm:w-auto">🗑️ Deregister</button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {restaurants.map((restaurant) => (
-                    <tr key={restaurant.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">{restaurant.name}</div>
-                        {restaurant.address && (
-                          <div className="text-sm text-gray-500">{restaurant.address}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {restaurant.restaurantCode}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 font-mono">
-                        {restaurant.ownerId ? restaurant.ownerId.slice(0, 8) + '...' : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{restaurant.email}</td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                            restaurant.isActive
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {restaurant.isActive ? '✓ Active' : '✗ Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => navigateToRestaurantDashboard(restaurant.restaurantCode)}
-                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() =>
-                              toggleRestaurantStatus(restaurant.restaurantCode, restaurant.isActive)
-                            }
-                            className={`px-3 py-1 rounded font-medium transition-colors text-white ${
-                              restaurant.isActive
-                                ? 'bg-orange-600 hover:bg-orange-700'
-                                : 'bg-green-600 hover:bg-green-700'
-                            }`}
-                          >
-                            {restaurant.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            onClick={() => handleDeregisterRestaurantOwner(restaurant)}
-                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors"
-                          >
-                            🗑️ Deregister
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
         {/* Settings Tab */}
         {activeTab === 'settings' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Master Admin Settings</h2>
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Master Admin Settings</h2>
             <div className="space-y-4">
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="p-2 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <h3 className="font-semibold text-blue-900 mb-2">Current User</h3>
-                <p className="text-sm text-blue-800">
-                  Email: <span className="font-mono">{auth.currentUser?.email}</span>
-                </p>
-                <p className="text-sm text-blue-800">
-                  Role: <span className="font-semibold">Master Admin</span>
-                </p>
+                <p className="text-xs sm:text-sm text-blue-800">Email: <span className="font-mono break-all">{auth.currentUser?.email}</span></p>
+                <p className="text-xs sm:text-sm text-blue-800">Role: <span className="font-semibold">Master Admin</span></p>
               </div>
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="p-2 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <h3 className="font-semibold text-gray-900 mb-2">Manage Restaurants</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Use the "All Restaurants" tab to view, edit, and manage all restaurants on the
-                  platform.
-                </p>
+                <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-4">Use the "All Restaurants" tab to view, edit, and manage all restaurants on the platform.</p>
               </div>
             </div>
           </div>
