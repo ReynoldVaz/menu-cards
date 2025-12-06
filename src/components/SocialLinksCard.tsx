@@ -36,6 +36,9 @@ export function SocialLinksCard({ restaurant }: SocialLinksCardProps) {
       className="mx-6 sm:mx-10 mb-8 rounded-lg shadow p-4"
       style={{ backgroundColor: themeStyles.backgroundColor, border: `1px solid ${themeStyles.borderColor}` }}
     >
+      <div className="mb-2 text-center font-medium text-gray-600 text-sm">
+        Connect with {restaurant.name}
+      </div>
       <div className="flex flex-nowrap items-center justify-center gap-3 overflow-x-auto no-scrollbar">
         {links.map((l) => (
           <a
