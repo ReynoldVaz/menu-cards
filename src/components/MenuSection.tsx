@@ -29,7 +29,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [height, setHeight] = useState<string>("0px");
   const [lastTracked, setLastTracked] = useState<string | null>(null);
-
+const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: string]: number }>({});
 
   const sectionViews = analyticsSummary
   ? items.reduce((sum, item) => sum + (analyticsSummary[item.name] || 0), 0)
@@ -378,9 +378,29 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
                     {isLoading ? (
                       <div className="h-5 w-12 bg-gray-200 animate-pulse rounded"></div>
                     ) : (
-                      <span className="font-bold text-base sm:text-lg whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
-                        {formatPrice(item.price, (item as any).currency)}
-                      </span>
+                      Array.isArray((item as any).portions) && (item as any).portions.length > 1 ? (
+                        <select
+                          value={selectedPortionIdxMap[item.id ?? item.name] ?? ((item as any).portions.findIndex((p: any) => p.default) >= 0 ? (item as any).portions.findIndex((p: any) => p.default) : 0)}
+                          onChange={e => {
+                            setSelectedPortionIdxMap(prev => ({
+                              ...prev,
+                              [item.id ?? item.name]: Number(e.target.value)
+                            }));
+                          }}
+                          className="font-bold text-xs sm:text-sm whitespace-nowrap rounded border border-gray-300 px-1 py-0.5 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[90px] min-w-[70px]"
+                          style={{ color: themeStyles.primaryButtonBg, backgroundColor: themeStyles.backgroundColor }}
+                        >
+                          {(item as any).portions.map((portion: any, idx: number) => (
+                            <option key={idx} value={idx} style={{ color: themeStyles.primaryButtonBg }}>
+                              {portion.label} ({formatPrice(portion.price, portion.currency)})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="font-bold text-base sm:text-lg whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
+                          {formatPrice(item.price, (item as any).currency)}
+                        </span>
+                      )
                     )}
                     {analyticsSummary && analyticsSummary[item.name] > 0 && (
                       <div className="text-[10px] text-gray-700 mt-1 whitespace-nowrap flex items-center gap-1">

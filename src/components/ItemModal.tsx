@@ -17,6 +17,17 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
   const [tab, setTab] = useState<'description' | 'ingredients' | 'price'>('description');
   const [mounted, setMounted] = useState(false);
   const themeStyles = useThemeStyles();
+  // Portion selection logic
+  const portions = Array.isArray((item as any)?.portions) && (item as any).portions.length > 0
+    ? (item as any).portions
+    : [{
+        label: 'Full',
+        price: item?.price ?? 0,
+        currency: (item as any)?.currency ?? 'INR',
+        default: true,
+      }];
+  const defaultPortionIdx = portions.findIndex((p: any) => p.default) >= 0 ? portions.findIndex((p: any) => p.default) : 0;
+  const [selectedPortionIdx, setSelectedPortionIdx] = useState<number>(defaultPortionIdx);
 
   useEffect(() => {
     setIndex(0);
@@ -72,7 +83,24 @@ useEffect(() => {
             <h3 className="text-lg font-bold text-gray-800 break-words">
               {item.name}
             </h3>
-            <p className="text-sm font-semibold" style={{ color: themeStyles.primaryButtonBg }}>{formatPrice(item.price, (item as any).currency)}</p>
+            {/* Portions dropdown and price */}
+{/* {portions.length > 1 ? (
+  <div className="flex flex-wrap gap-2 mt-1">
+    {portions.map((portion: any, idx: number) => (
+      <span
+        key={idx}
+        className="inline-block text-xs sm:text-sm font-semibold px-2 py-1 rounded bg-gray-100"
+        style={{ color: themeStyles.primaryButtonBg }}
+      >
+        {portion.label} - {formatPrice(portion.price, portion.currency)}
+      </span>
+    ))}
+  </div>
+) : (
+  <p className="text-sm font-semibold mt-1" style={{ color: themeStyles.primaryButtonBg }}>
+    {formatPrice(portions[0].price, portions[0].currency)}
+  </p>
+)} */}
           </div>
           <button
             onClick={onClose}
@@ -224,7 +252,23 @@ useEffect(() => {
                 {tab === 'price' && (
                   <div>
                     <h4 className="font-semibold text-gray-800">Price</h4>
-                    <p className="text-sm text-gray-600 mt-1">{formatPrice(item.price, (item as any).currency)}</p>
+                    {portions.length > 1 ? (
+  <div className="flex flex-wrap gap-2 mt-1">
+    {portions.map((portion: any, idx: number) => (
+      <span
+        key={idx}
+        className="inline-block text-xs sm:text-sm font-semibold px-2 py-1 rounded bg-gray-100"
+        style={{ color: themeStyles.primaryButtonBg }}
+      >
+        {portion.label} | {formatPrice(portion.price, portion.currency)}
+      </span>
+    ))}
+  </div>
+) : (
+  <p className="text-sm font-semibold mt-1" style={{ color: themeStyles.primaryButtonBg }}>
+    {formatPrice(portions[0].price, portions[0].currency)}
+  </p>
+)}
                   </div>
                 )}
               </div>

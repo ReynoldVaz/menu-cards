@@ -762,6 +762,7 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
               is_unavailable: Boolean((editingItem as any).is_unavailable),
               spice_level: (editingItem as any).spice || (editingItem as any).spice_level,
               sweet_level: (editingItem as any).sweet || (editingItem as any).sweet_level,
+              portions: (editingItem as any).portions || [], // <-- Add this line
             } : undefined}
             onSubmit={editingItem ? handleUpdateItem : handleAddItem}
             onCancel={() => {

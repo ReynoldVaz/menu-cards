@@ -1,6 +1,14 @@
 import { useRef, useState } from 'react';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 
+
+export interface Portion {
+  label: string; // e.g., "Full", "Half", "250ml", "500ml"
+  price: number;
+  currency?: 'INR' | 'USD' | 'EUR' | 'GBP';
+  default?: boolean; // true for default portion/size
+}
+
 export interface MenuItemFormData {
   name: string;
   description: string;
@@ -17,6 +25,7 @@ export interface MenuItemFormData {
   is_unavailable?: boolean;
   spice_level?: number;
   sweet_level?: number;
+  portions?: Portion[]; // New: array of portions/sizes with prices
 }
 
 interface MenuItemFormProps {
@@ -45,6 +54,31 @@ export function MenuItemForm({
   availableSections = DEFAULT_SECTIONS,
   onSectionsUpdate,
 }: MenuItemFormProps) {
+
+  // Portions state: default to single portion if none
+  const defaultPortion: Portion = {
+    label: 'Full',
+    price: initialData?.price || 0,
+    currency: initialData?.currency || 'INR',
+    default: true,
+  };
+  // const [portions, setPortions] = useState<Portion[]>(
+  //   initialData?.portions && initialData.portions.length > 0
+  //     ? initialData.portions
+  //     : [defaultPortion]
+  // );
+
+  const [portions, setPortions] = useState<Portion[]>(
+  initialData?.portions && initialData.portions.length > 0
+    ? initialData.portions
+    : [{
+        label: 'Full',
+        price: initialData?.price ?? 0,
+        currency: initialData?.currency ?? 'INR',
+        default: true,
+      }]
+);
+
   const [formData, setFormData] = useState<MenuItemFormData>(
     initialData 
       ? {
@@ -52,6 +86,16 @@ export function MenuItemForm({
           currency: initialData.currency || 'INR',
           dietType: initialData.dietType,
           section: initialData.section || availableSections[0] || DEFAULT_SECTIONS[0],
+          price: initialData.price || defaultPortion.price,
+          // portions: initialData.portions || [defaultPortion],
+          portions: initialData?.portions && initialData.portions.length > 0
+  ? initialData.portions
+  : [{
+      label: 'Full',
+      price: initialData?.price ?? 0,
+      currency: initialData?.currency ?? 'INR',
+      default: true,
+    }],
         }
       : {
           name: '',
@@ -62,6 +106,7 @@ export function MenuItemForm({
           ingredients: '',
           is_todays_special: false,
           is_unavailable: false,
+          portions: [defaultPortion],
         }
   );
 
@@ -90,6 +135,10 @@ export function MenuItemForm({
   const [replacingVideoIndex, setReplacingVideoIndex] = useState<number | null>(null);
   const videoReplaceInputRef = useRef<HTMLInputElement>(null);
   const imageReplaceInputRef = useRef<HTMLInputElement>(null);
+
+  const [portionWise, setPortionWise] = useState(
+  initialData?.portions && initialData.portions.length > 1
+);
 
   const MAX_IMAGES = 3;
   const MAX_VIDEOS = 2;
@@ -438,20 +487,52 @@ export function MenuItemForm({
         return;
       }
 
-      if (formData.price <= 0) {
-        setError('Price must be greater than 0');
-        return;
-      }
+
+
+      // Prepare portions for submission
+      // let submitPortions = portionWise ? (formData.portions || []) : [];
+
+      // Prepare portions for submission
+let submitPortions = formData.portions;
+if (!portionWise) {
+  submitPortions = [{
+    label: 'Full',
+    price: formData.price,
+    currency: formData.currency || 'INR',
+    default: true,
+  }];
+}
+
+      // // Validate portions
+      // const validPortions = (formData.portions && formData.portions.length > 0) ? formData.portions : [];
+      // const hasValidPrice = validPortions.some(p => p.price > 0);
+      // if (!hasValidPrice) {
+      //   setError('At least one portion must have a price greater than 0');
+      //   return;
+      // }
+
+      // Validate portions
+const validPortions = (submitPortions && submitPortions.length > 0) ? submitPortions : [];
+const hasValidPrice = validPortions.some(p => p.price > 0);
+if (!hasValidPrice) {
+  setError('At least one portion must have a price greater than 0');
+  return;
+}
+
+      // Use default portion for legacy price/currency
+      const defaultPortion = validPortions.find(p => p.default) || validPortions[0];
 
       const submitData: any = {
         name: formData.name,
         description: formData.description,
-        price: formData.price,
-        currency: formData.currency || 'INR',
+        price: defaultPortion.price,
+        currency: defaultPortion.currency || 'INR',
         section: formData.section,
         ingredients: formData.ingredients,
         is_todays_special: formData.is_todays_special,
         is_unavailable: Boolean(formData.is_unavailable),
+        // portions: submitPortions.length > 0 ? submitPortions : undefined,
+        portions: validPortions,
       };
 
       // Only include optional fields if they have values
@@ -486,6 +567,7 @@ export function MenuItemForm({
           {error}
         </div>
       )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Item Name *</label>
@@ -499,31 +581,231 @@ export function MenuItemForm({
           />
         </div>
 
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isLoading}
-            />
-            <select
-              value={formData.currency || 'INR'}
-              onChange={(e) => setFormData({ ...formData, currency: e.target.value as 'INR' | 'USD' | 'EUR' | 'GBP' })}
-              className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              disabled={isLoading}
-            >
-              <option value="INR">₹ INR</option>
-              <option value="USD">$ USD</option>
-              <option value="EUR">€ EUR</option>
-              <option value="GBP">£ GBP</option>
-            </select>
-          </div>
+          {/* <label className="block text-sm font-medium text-gray-700 mb-1">Portion/Size & Price *</label>
+          <div className="flex flex-col gap-2 w-full">
+            {portions.map((portion, idx) => (
+              <div key={idx} className="flex flex-wrap gap-2 items-center w-full">
+                <input
+                  type="text"
+                  value={portion.label}
+                  onChange={e => {
+                    const updated = [...portions];
+                    updated[idx].label = e.target.value;
+                    setPortions(updated);
+                    setFormData({ ...formData, portions: updated });
+                  }}
+                  className="min-w-[80px] max-w-[120px] flex-1 px-2 py-1 border border-gray-300 rounded"
+                  disabled={isLoading}
+                  placeholder="Full/Half/250ml"
+                />
+                <input
+                  type="number"
+                  value={portion.price}
+                  min="0"
+                  step="0.01"
+                  onChange={e => {
+                    const updated = [...portions];
+                    updated[idx].price = parseFloat(e.target.value);
+                    setPortions(updated);
+                    setFormData({ ...formData, portions: updated });
+                  }}
+                  className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded"
+                  disabled={isLoading}
+                  placeholder="Price"
+                />
+                <select
+                  value={portion.currency || 'INR'}
+                  onChange={e => {
+                    const updated = [...portions];
+                    updated[idx].currency = e.target.value as Portion['currency'];
+                    setPortions(updated);
+                    setFormData({ ...formData, portions: updated });
+                  }}
+                  className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded bg-white"
+                  disabled={isLoading}
+                >
+                  <option value="INR">₹ INR</option>
+                  <option value="USD">$ USD</option>
+                  <option value="EUR">€ EUR</option>
+                  <option value="GBP">£ GBP</option>
+                </select>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="radio"
+                    checked={portion.default === true}
+                    onChange={() => {
+                      const updated = portions.map((p, i) => ({ ...p, default: i === idx }));
+                      setPortions(updated);
+                      setFormData({ ...formData, portions: updated });
+                    }}
+                    name="defaultPortion"
+                    disabled={isLoading}
+                  />
+                  <span className="text-xs">Default</span>
+                </div>
+                {portions.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = portions.filter((_, i) => i !== idx);
+                      setPortions(updated);
+                      setFormData({ ...formData, portions: updated });
+                    }}
+                    className="px-2 py-1 bg-red-500 text-white rounded text-xs"
+                    disabled={isLoading}
+                  >Remove</button>
+                )}
+              </div>
+            ))}
+            {portions.length < 5 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPortions([...portions, { label: '', price: 0, currency: 'INR', default: false }]);
+                }}
+                className="px-3 py-1 bg-blue-500 text-white rounded text-xs w-fit"
+                disabled={isLoading}
+              >+ Add Portion/Size</button>
+            )}
+            <div className="text-xs text-gray-500">E.g., Full/Half for food, 250ml/500ml for drinks. Mark one as default.</div>
+          </div> */}
+
+<label className="block text-sm font-medium text-gray-700 mb-1">Pricing *</label>
+<div className="mb-2">
+  <label className="inline-flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={portionWise}
+      onChange={e => setPortionWise(e.target.checked)}
+      className="form-checkbox"
+    />
+    <span className="text-sm">Enable portion-wise pricing</span>
+  </label>
+</div>
+<>
+
+
+{portionWise ? (
+  <div className="flex flex-col gap-2 w-full">
+    {portions.map((portion, idx) => (
+      <div key={idx} className="flex flex-wrap gap-2 items-center w-full">
+  <input
+    type="text"
+    value={portion.label}
+    onChange={e => {
+      const updated = [...portions];
+      updated[idx].label = e.target.value;
+      setPortions(updated);
+      setFormData({ ...formData, portions: updated });
+    }}
+    className="min-w-[80px] max-w-[120px] flex-1 px-2 py-1 border border-gray-300 rounded"
+    disabled={isLoading}
+    placeholder="Full/Half/250ml"
+  />
+  <input
+    type="number"
+    value={portion.price}
+    min="0"
+    step="0.01"
+    onChange={e => {
+      const updated = [...portions];
+      updated[idx].price = parseFloat(e.target.value);
+      setPortions(updated);
+      setFormData({ ...formData, portions: updated });
+    }}
+    className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded"
+    disabled={isLoading}
+    placeholder="Price"
+  />
+  <select
+    value={portion.currency || 'INR'}
+    onChange={e => {
+      const updated = [...portions];
+      updated[idx].currency = e.target.value as Portion['currency'];
+      setPortions(updated);
+      setFormData({ ...formData, portions: updated });
+    }}
+    className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded bg-white"
+    disabled={isLoading}
+  >
+    <option value="INR">₹ INR</option>
+    <option value="USD">$ USD</option>
+    <option value="EUR">€ EUR</option>
+    <option value="GBP">£ GBP</option>
+  </select>
+  <div className="flex items-center gap-1">
+    <input
+      type="radio"
+      checked={portion.default === true}
+      onChange={() => {
+        const updated = portions.map((p, i) => ({ ...p, default: i === idx }));
+        setPortions(updated);
+        setFormData({ ...formData, portions: updated });
+      }}
+      name="defaultPortion"
+      disabled={isLoading}
+    />
+    <span className="text-xs">Default</span>
+  </div>
+  {portions.length > 1 && (
+    <button
+      type="button"
+      onClick={() => {
+        const updated = portions.filter((_, i) => i !== idx);
+        setPortions(updated);
+        setFormData({ ...formData, portions: updated });
+      }}
+      className="px-2 py-1 bg-red-500 text-white rounded text-xs"
+      disabled={isLoading}
+    >Remove</button>
+  )}
+</div>
+    ))}
+
+    {portions.length < 5 && (
+  <button
+    type="button"
+    onClick={() => {
+      setPortions([...portions, { label: '', price: 0, currency: 'INR', default: false }]);
+      setFormData({ ...formData, portions: [...portions, { label: '', price: 0, currency: 'INR', default: false }] });
+    }}
+    className="px-3 py-1 bg-blue-500 text-white rounded text-xs w-fit"
+    disabled={isLoading}
+  >+ Add Portion/Size</button>
+)}
+<div className="text-xs text-gray-500">E.g., Full/Half for food, 250ml/500ml for drinks. Mark one as default.</div>
+
+  </div>
+) : (
+  <div className="flex gap-2 items-center">
+    <input
+      type="number"
+      value={formData.price}
+      min="0"
+      step="0.01"
+      onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+      className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded"
+      disabled={isLoading}
+      placeholder="Price"
+    />
+    <select
+      value={formData.currency || 'INR'}
+      onChange={e => setFormData({ ...formData, currency: e.target.value as Portion['currency'] })}
+      className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded bg-white"
+      disabled={isLoading}
+    >
+      <option value="INR">₹ INR</option>
+      <option value="USD">$ USD</option>
+      <option value="EUR">€ EUR</option>
+      <option value="GBP">£ GBP</option>
+    </select>
+  </div>
+)}
+
+</>
+
         </div>
       </div>
 
