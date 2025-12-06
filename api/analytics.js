@@ -90,31 +90,18 @@ export default async function handler(req, res) {
         ],
         dateRanges: [{ startDate: "7daysAgo", endDate: "today" }],
         dimensionFilter: {
-          andGroup: {
-            expressions: [
-              {
-                filter: {
-                  fieldName: "eventName",
-                  stringFilter: {
-                    matchType: "EXACT",
-                    value: "Click Item",
-                  },
-                },
-              },
-              {
-                filter: {
-                  fieldName: "customEvent:event_label",
-                  stringFilter: {
-                    matchType: "BEGINS_WITH",
-                    value: `${restaurantId}|`,
-                  },
-                },
-              },
-            ],
+          filter: {
+            stringFilter: {
+              matchType: "BEGINS_WITH",
+              value: `${restaurantId}|`,
+            },
+            fieldName: "customEvent:event_label",
           },
         },
       },
     });
+    console.log("GA4 Response:", response);
+    console.log("GA4 Response data:", response.data);
 
     // Convert GA4 rows -> { itemName: clicks }
     const rows = response.data.rows || [];
@@ -122,9 +109,11 @@ export default async function handler(req, res) {
     rows.forEach((row) => {
       // event_label is `${restaurantId}|${itemName}`
       const eventLabel = row.dimensionValues[1]?.value || "";
-      const itemName = eventLabel.split("|").slice(1).join("|");
+      const [eventRestaurantId, ...itemNameParts] = eventLabel.split("|");
+      const itemName = itemNameParts.join("|");
       const count = Number(row.metricValues[0]?.value || 0);
-      if (itemName) {
+      // Only count events for the requested restaurantId
+      if (eventRestaurantId === restaurantId && itemName) {
         if (!itemClicks[itemName]) itemClicks[itemName] = 0;
         itemClicks[itemName] += count;
       }

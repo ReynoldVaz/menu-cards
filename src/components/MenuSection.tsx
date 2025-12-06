@@ -19,16 +19,22 @@ interface MenuSectionProps {
   isLoading?: boolean;
   enableAnalytics?: boolean;
   restaurantId?: string;
+  analyticsSummary?: Record<string, number> | null;
 }
 
 
-export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalytics, restaurantId }: MenuSectionProps) {
+export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalytics, restaurantId, analyticsSummary }: MenuSectionProps) {
   const [open, setOpen] = useState(false);
   const themeStyles = useThemeStyles();
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [height, setHeight] = useState<string>("0px");
-  const [analyticsSummary, setAnalyticsSummary] = useState<Record<string, number> | null>(null);
   const [lastTracked, setLastTracked] = useState<string | null>(null);
+
+
+  const sectionViews = analyticsSummary
+  ? items.reduce((sum, item) => sum + (analyticsSummary[item.name] || 0), 0)
+  : 0;
+
   // Handle item click for analytics
   const handleItemClick = (item: MenuItem) => {
     if (enableAnalytics && restaurantId) {
@@ -53,7 +59,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
 
     if (enableAnalytics && restaurantId) {
       // Use a composite label for uniqueness: `${restaurantId}|${item.name}`
-      trackEvent("Menu", "Click Item", `${restaurantId}|${item.name}`);
+      trackEvent("Menu", `Click Item - ${restaurantId}`, `${restaurantId}|${item.name}`);
     }
     if (onOpen) onOpen(item, imgs);
   }
@@ -91,26 +97,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
   const containerSpacing = open ? 'mb-4' : 'mb-1';
 
   // Fetch GA4 analytics summary (event counts per item)
-  useEffect(() => {
-    if (!enableAnalytics || !restaurantId) return;
-    fetch(`/api/analytics?restaurantId=${encodeURIComponent(restaurantId)}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`Analytics error ${res.status}`);
-        const data = await res.json();
-        setAnalyticsSummary(data);
-        console.debug('GA4 analytics summary:', data);
-        // Also log to browser console
-        if (typeof window !== 'undefined' && window.console) {
-          window.console.log('GA4 analytics summary:', data);
-        }
-      })
-      .catch((err) => {
-        console.debug('Analytics fetch failed:', err?.message || err);
-        if (typeof window !== 'undefined' && window.console) {
-          window.console.error('Analytics fetch failed:', err?.message || err);
-        }
-      });
-  }, [enableAnalytics, restaurantId]);
+  // Analytics summary is now passed as a prop from above; no fetch here.
 
   function LazyVideo({ src }: { src: string }) {
     const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -153,8 +140,12 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
   }
   return (
     <div id={id} className={containerSpacing}>
+
+
       {/* Analytics status indicator and last tracked event message */}
-      <div style={{ marginBottom: 8 }}>
+
+
+      {/* <div style={{ marginBottom: 8 }}>
         <span style={{
           color: enableAnalytics ? 'green' : 'red',
           fontWeight: 'bold',
@@ -172,9 +163,12 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
         <div style={{ color: '#2563eb', fontSize: 13, marginBottom: 8 }}>
           {lastTracked}
         </div>
-      )}
+      )} */}
+
+
+
       {/* HEADER — Collapsible */}
-      <button
+      {/* <button
         onClick={handleToggle}
         className="w-full flex items-center justify-between px-4 py-3 rounded-lg shadow-sm"
         style={{
@@ -183,12 +177,85 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
         }}
       >
         <h2 className="text-lg font-semibold">{title}</h2>
+              {enableAnalytics && sectionViews > 0 && (
+<span
+  style={{
+    color: '#374151', // Tailwind's text-gray-700 (darker)
+    fontSize: '10px',
+    marginTop: '4px',
+    whiteSpace: 'nowrap',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '2px',
+  }}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="14"
+    height="14"
+    fill="none"
+    viewBox="0 0 24 24"
+    style={{ display: 'inline', verticalAlign: 'middle' }}
+  >
+    <path
+      fill="currentColor"
+      d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z"
+    />
+  </svg>
+  {sectionViews}
+</span>
+
+)}
         <span className="text-xl">
           {open ? "−" : "+"}
         </span>
-      </button>
+      </button> */}
+
+      <button
+  onClick={handleToggle}
+  className="w-full flex items-center justify-between px-4 py-3 rounded-lg shadow-sm"
+  style={{
+    backgroundColor: themeStyles.accentBg,
+    color: themeStyles.primaryButtonBg,
+  }}
+>
+  <h2 className="text-lg font-semibold flex items-center gap-2">
+    {title}
+    {enableAnalytics && sectionViews > 0 && (
+      <span
+        style={{
+          color: '#374151',
+          fontSize: '10px',
+          marginLeft: '8px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '2px',
+        }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          fill="none"
+          viewBox="0 0 24 24"
+          style={{ display: 'inline', verticalAlign: 'middle' }}
+        >
+          <path
+            fill="currentColor"
+            d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z"
+          />
+        </svg>
+        {sectionViews}
+      </span>
+    )}
+  </h2>
+  <span className="text-xl">
+    {open ? "−" : "+"}
+  </span>
+</button>
 
       {/* COLLAPSIBLE CONTENT */}
+
       <div
         className={`overflow-hidden ${open ? "mt-4" : "mt-0"}`}
         style={{ height, transition: "height 320ms cubic-bezier(0.22, 1, 0.36, 1)" }}
@@ -316,8 +383,21 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
                       </span>
                     )}
                     {analyticsSummary && analyticsSummary[item.name] > 0 && (
-                      <div className="text-[10px] text-gray-500 mt-1 whitespace-nowrap">
-                        {analyticsSummary[item.name]} clicks
+                      <div className="text-[10px] text-gray-700 mt-1 whitespace-nowrap flex items-center gap-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="13"
+                          height="13"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          style={{ display: 'inline', verticalAlign: 'middle' }}
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z"
+                          />
+                        </svg>
+                        {analyticsSummary[item.name]}
                       </div>
                     )}
                   </div>
