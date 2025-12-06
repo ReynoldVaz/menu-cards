@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useFirebaseRestaurant } from '../hooks/useFirebaseRestaurant';
 import { RestaurantProvider } from '../context/RestaurantContext';
 import App from '../App';
+import { AnalyticsSummaryProvider } from '../context/AnalyticsSummaryContext';
 
 export function RestaurantMenuPage() {
   const { restaurantId } = useParams<{ restaurantId: string }>();
@@ -29,6 +31,26 @@ interface RestaurantMenuInnerProps {
 }
 
 function RestaurantMenuInner({ restaurantId }: RestaurantMenuInnerProps) {
+    const [analyticsSummary, setAnalyticsSummary] = useState<Record<string, number> | null>(null);
+    useEffect(() => {
+      if (!restaurantId) return;
+      fetch(`/api/analytics?restaurantId=${encodeURIComponent(restaurantId)}`)
+        .then(async (res) => {
+          if (!res.ok) throw new Error(`Analytics error ${res.status}`);
+          const data = await res.json();
+          setAnalyticsSummary(data);
+          console.debug('GA4 analytics summary:', data);
+          if (typeof window !== 'undefined' && window.console) {
+            window.console.log('GA4 analytics summary:', data);
+          }
+        })
+        .catch((err) => {
+          console.debug('Analytics fetch failed:', err?.message || err);
+          if (typeof window !== 'undefined' && window.console) {
+            window.console.error('Analytics fetch failed:', err?.message || err);
+          }
+        });
+    }, [restaurantId]);
   const {
     restaurant,
     menuSections,
@@ -79,7 +101,9 @@ function RestaurantMenuInner({ restaurantId }: RestaurantMenuInnerProps) {
         error,
       }}
     >
-      <App />
+      <AnalyticsSummaryProvider>
+        <App analyticsSummary={analyticsSummary} />
+      </AnalyticsSummaryProvider>
     </RestaurantProvider>
   );
 }

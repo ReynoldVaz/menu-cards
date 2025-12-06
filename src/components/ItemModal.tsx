@@ -17,6 +17,17 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
   const [tab, setTab] = useState<'description' | 'ingredients' | 'price'>('description');
   const [mounted, setMounted] = useState(false);
   const themeStyles = useThemeStyles();
+  // Portion selection logic
+  const portions = Array.isArray((item as any)?.portions) && (item as any).portions.length > 0
+    ? (item as any).portions
+    : [{
+        label: 'Full',
+        price: item?.price ?? 0,
+        currency: (item as any)?.currency ?? 'INR',
+        default: true,
+      }];
+  const defaultPortionIdx = portions.findIndex((p: any) => p.default) >= 0 ? portions.findIndex((p: any) => p.default) : 0;
+  const [selectedPortionIdx, setSelectedPortionIdx] = useState<number>(defaultPortionIdx);
 
   useEffect(() => {
     setIndex(0);
@@ -72,7 +83,24 @@ useEffect(() => {
             <h3 className="text-lg font-bold text-gray-800 break-words">
               {item.name}
             </h3>
-            <p className="text-sm font-semibold" style={{ color: themeStyles.primaryButtonBg }}>{formatPrice(item.price, (item as any).currency)}</p>
+            {/* Portions dropdown and price */}
+{/* {portions.length > 1 ? (
+  <div className="flex flex-wrap gap-2 mt-1">
+    {portions.map((portion: any, idx: number) => (
+      <span
+        key={idx}
+        className="inline-block text-xs sm:text-sm font-semibold px-2 py-1 rounded bg-gray-100"
+        style={{ color: themeStyles.primaryButtonBg }}
+      >
+        {portion.label} - {formatPrice(portion.price, portion.currency)}
+      </span>
+    ))}
+  </div>
+) : (
+  <p className="text-sm font-semibold mt-1" style={{ color: themeStyles.primaryButtonBg }}>
+    {formatPrice(portions[0].price, portions[0].currency)}
+  </p>
+)} */}
           </div>
           <button
             onClick={onClose}
@@ -97,7 +125,7 @@ useEffect(() => {
                 <>
                   <div
                     className="w-full h-[40vh] sm:h-[55vh] md:h-[60vh] rounded-lg overflow-hidden flex items-center justify-center shadow-md ring-1 ring-white/10 relative touch-pan-y"
-                    style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.95))' }}
+                    style={{ background: activeMedia?.type === 'image' ? 'transparent' : 'linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.95))' }}
                     onPointerDown={(e) => {
                       const startX = e.clientX;
                       const startY = e.clientY;
@@ -129,13 +157,12 @@ useEffect(() => {
                           <VideoPlayer src={activeMedia.src} autoPlayPreview className="w-full h-full object-contain" />
                         </div>
                       ) : (
-                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100">
-                          <ParallaxImage
+                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100 flex items-center justify-center">
+                          <img
                             src={activeMedia.src}
                             alt={`${item.name} image ${index + 1}`}
-                            fit="contain"
-                            intensity={0}
-                            backgroundClass="bg-black"
+                            className="w-full h-full object-contain"
+                            style={{ background: 'transparent' }}
                           />
                         </div>
                       )}
@@ -225,7 +252,23 @@ useEffect(() => {
                 {tab === 'price' && (
                   <div>
                     <h4 className="font-semibold text-gray-800">Price</h4>
-                    <p className="text-sm text-gray-600 mt-1">{formatPrice(item.price, (item as any).currency)}</p>
+                    {portions.length > 1 ? (
+  <div className="flex flex-wrap gap-2 mt-1">
+    {portions.map((portion: any, idx: number) => (
+      <span
+        key={idx}
+        className="inline-block text-xs sm:text-sm font-semibold px-2 py-1 rounded bg-gray-100"
+        style={{ color: themeStyles.primaryButtonBg }}
+      >
+        {portion.label} | {formatPrice(portion.price, portion.currency)}
+      </span>
+    ))}
+  </div>
+) : (
+  <p className="text-sm font-semibold mt-1" style={{ color: themeStyles.primaryButtonBg }}>
+    {formatPrice(portions[0].price, portions[0].currency)}
+  </p>
+)}
                   </div>
                 )}
               </div>

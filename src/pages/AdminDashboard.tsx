@@ -143,6 +143,7 @@ export function AdminDashboard() {
           createdAt: restaurantData.createdAt,
           updatedAt: restaurantData.updatedAt,
           captureCustomerPhone: restaurantData.captureCustomerPhone,
+          enableAnalytics: restaurantData.enableAnalytics ?? false,
         } as Restaurant);
       } else {
         setError('Restaurant not found');
@@ -845,6 +846,7 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
               is_unavailable: Boolean((editingItem as any).is_unavailable),
               spice_level: (editingItem as any).spice || (editingItem as any).spice_level,
               sweet_level: (editingItem as any).sweet || (editingItem as any).sweet_level,
+              portions: (editingItem as any).portions || [], // <-- Add this line
             } : undefined}
             onSubmit={editingItem ? handleUpdateItem : handleAddItem}
             onCancel={() => {
@@ -1068,6 +1070,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [website, setWebsite] = useState(restaurant.website || '');
   const [googleReviews, setGoogleReviews] = useState(restaurant.googleReviews || '');
   const [captureCustomerPhone, setCaptureCustomerPhone] = useState<boolean>(restaurant.captureCustomerPhone || false);
+  const [enableAnalytics, setEnableAnalytics] = useState<boolean>(restaurant.enableAnalytics ?? false);
   const [themeMode, setThemeMode] = useState(restaurant.theme?.mode || 'custom');
   const [primaryColor, setPrimaryColor] = useState(restaurant.theme?.primaryColor || '#EA580C');
   const [secondaryColor, setSecondaryColor] = useState(restaurant.theme?.secondaryColor || '#FB923C');
@@ -1216,6 +1219,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         googleReviews: googleReviews || null,
         contactPhone: contactPhone || null,
         captureCustomerPhone: Boolean(captureCustomerPhone),
+        enableAnalytics: Boolean(enableAnalytics),
       };
       if (logoFile && logoUrl) {
         updates.logo = logoUrl;
@@ -1290,6 +1294,23 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-24"
             />
+          </div>
+          {/* Enable Analytics Toggle */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Enable Analytics</label>
+            <div className="flex items-center gap-2">
+              <input
+                id="enableAnalytics"
+                type="checkbox"
+                checked={enableAnalytics}
+                onChange={e => setEnableAnalytics(e.target.checked)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                disabled={saving}
+              />
+              <label htmlFor="enableAnalytics" className="text-sm text-gray-700">
+                Track menu item clicks and show analytics for this restaurant
+              </label>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Admin Phone (private)</label>

@@ -6,7 +6,7 @@ import {
   signInWithPopup, 
   GoogleAuthProvider,
   linkWithCredential,
-  // sendEmailVerification // EMAIL VERIFICATION: on hold
+  sendEmailVerification
 } from 'firebase/auth';
 import { auth, db } from '../firebase.config';
 import { doc, getDoc } from 'firebase/firestore';
@@ -221,53 +221,51 @@ export function AdminAuthPage() {
   };
 
   // Handle checking email verification
-  // EMAIL VERIFICATION: on hold
-  // const handleCheckEmailVerification = async () => {
-  //   try {
-  //     setLoading(true);
-  //     setError('');
-  //     const currentUser = auth.currentUser;
-  //     if (!currentUser) {
-  //       setError('❌ Session expired. Please go back and sign up again.');
-  //       return;
-  //     }
-  //     await currentUser.reload();
-  //     if (currentUser.emailVerified) {
-  //       navigate('/admin/register-restaurant', {
-  //         state: { userId: currentUser.uid, email: currentUser.email },
-  //       });
-  //     } else {
-  //       setError('⏳ Email not verified yet. Please check your inbox and click the verification link.');
-  //     }
-  //   } catch (err: any) {
-  //     console.error('Verification check error:', err);
-  //     setError('❌ Error checking verification status. Please try again.');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const handleCheckEmailVerification = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        setError('❌ Session expired. Please go back and sign up again.');
+        return;
+      }
+      await currentUser.reload();
+      if (currentUser.emailVerified) {
+        navigate('/admin/register-restaurant', {
+          state: { userId: currentUser.uid, email: currentUser.email },
+        });
+      } else {
+        setError('⏳ Email not verified yet. Please check your inbox and click the verification link.');
+      }
+    } catch (err: any) {
+      console.error('Verification check error:', err);
+      setError('❌ Error checking verification status. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle resending verification email
-  // EMAIL VERIFICATION: on hold
-  // const handleResendVerificationEmail = async () => {
-  //   try {
-  //     setLoading(true);
-  //     setError('');
-  //     const currentUser = auth.currentUser;
-  //     if (!currentUser) {
-  //       setError('❌ Session expired. Please go back and sign up again.');
-  //       return;
-  //     }
-  //     await sendEmailVerification(currentUser);
-  //     setError('');
-  //     setError('📧 Verification email resent! Check your inbox.');
-  //   } catch (err: any) {
-  //     console.error('Resend error:', err);
-  //     setError('❌ Failed to resend verification email. Please try again.');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const handleResendVerificationEmail = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        setError('❌ Session expired. Please go back and sign up again.');
+        return;
+      }
+      await sendEmailVerification(currentUser);
+      setError('');
+      setError('📧 Verification email resent! Check your inbox.');
+    } catch (err: any) {
+      console.error('Resend error:', err);
+      setError('❌ Failed to resend verification email. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Helper function to route user after successful authentication
   const routeUserAfterAuth = async (uid: string) => {
@@ -350,24 +348,16 @@ export function AdminAuthPage() {
       setLoading(true);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log('✅ SignUp successful:', userCredential.user.uid);
-      
-      // EMAIL VERIFICATION: on hold
-      // console.log('📧 Sending verification email to:', email);
-      // await sendEmailVerification(userCredential.user);
-      // console.log('✅ Verification email sent!');
-      // setVerificationEmail(email);
-      // setEmail('');
-      // setPassword('');
-      // setConfirmPassword('');
-      // setMode('verify-email');
-      // Proceed directly to registration for now
-      navigate('/admin/register-restaurant', {
-        state: { userId: userCredential.user.uid, email: userCredential.user.email },
-      });
+      console.log('📧 Sending verification email to:', email);
+      await sendEmailVerification(userCredential.user);
+      console.log('✅ Verification email sent!');
+      setVerificationEmail(email);
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setMode('verify-email');
     } catch (err: any) {
       console.error('Signup error:', err.code, err.message);
-      
-      // Provide helpful error messages
       if (err.code === 'auth/email-already-in-use') {
         setError(
           '📧 This email is already registered!\n\n' +
@@ -404,24 +394,18 @@ export function AdminAuthPage() {
       setLoading(true);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log('✅ Login successful:', userCredential.user.uid);
-      
-      // EMAIL VERIFICATION: on hold (do not block login based on emailVerified)
-      // if (!userCredential.user.emailVerified) {
-      //   console.log('⚠️ Email not verified yet');
-      //   setVerificationEmail(userCredential.user.email || email);
-      //   setEmail('');
-      //   setPassword('');
-      //   setMode('verify-email');
-      //   setError('📧 Please verify your email first. We\'ve sent a verification link to your inbox.');
-      //   return;
-      // }
-      
-      // Route user using the same function
+      if (!userCredential.user.emailVerified) {
+        console.log('⚠️ Email not verified yet');
+        setVerificationEmail(userCredential.user.email || email);
+        setEmail('');
+        setPassword('');
+        setMode('verify-email');
+        setError('📧 Please verify your email first. We\'ve sent a verification link to your inbox.');
+        return;
+      }
       await routeUserAfterAuth(userCredential.user.uid);
     } catch (err: any) {
       console.error('Login error:', err.code, err.message);
-      
-      // Provide helpful error messages based on specific error codes
       if (err.code === 'auth/user-not-found') {
         setError('📧 No account found with this email.\n\nPlease sign up first or use "Continue with Google".');
       } else if (err.code === 'auth/invalid-credential') {
@@ -439,13 +423,39 @@ export function AdminAuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden font-body text-gray-100">
+      {/* Dynamic Galaxy Background Layers (from LandingPage) */}
+      <div className="absolute inset-0 -z-10">
+        {/* Deep Space Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#010111] via-[#05051a] to-[#010111]" />
+        {/* Animated Nebula Blobs */}
+        <div className="absolute -top-32 -left-16 sm:-top-40 sm:-left-24 w-[18rem] h-[18rem] sm:w-[28rem] sm:h-[28rem] rounded-full bg-purple-600/20 blur-3xl animate-[pulse_10s_ease-in-out_infinite] animate-float-slow" />
+        <div className="absolute top-16 -right-14 sm:top-24 sm:-right-20 w-[22rem] h-[22rem] sm:w-[34rem] sm:h-[34rem] rounded-full bg-indigo-600/15 blur-3xl animate-[pulse_15s_ease-in-out_infinite_reverse] animate-float-slow" />
+        {/* Scattered Stars/Cosmic Dust */}
+        <div
+          className="absolute inset-0 opacity-70"
+          style={{
+            backgroundImage:
+              'radial-gradient(0.5px 0.5px at 10% 90%, rgba(255,255,255,.6) 50%, transparent 50%),\
+               radial-gradient(1px 1px at 40% 10%, rgba(255,255,255,.35) 50%, transparent 50%),\
+               radial-gradient(1.5px 1.5px at 80% 50%, rgba(255,255,255,.45) 50%, transparent 50%),\
+               radial-gradient(0.75px 0.75px at 25% 40%, rgba(255,255,255,.8) 50%, transparent 50%),\
+               radial-gradient(1px 1px at 65% 75%, rgba(255,255,255,.3) 50%, transparent 50%)',
+            backgroundSize: 'auto',
+          }}
+        />
+        {/* Floating Stars */}
+        <div className="absolute" style={{top: '20%', left: '10%', width: '6px', height: '6px', background: 'rgba(255,255,255,0.7)', borderRadius: '50%', opacity: 0.5, filter: 'blur(2px)'}} />
+        <div className="absolute" style={{top: '70%', left: '85%', width: '8px', height: '8px', background: 'rgba(0,255,255,0.6)', borderRadius: '50%', opacity: 0.5, filter: 'blur(2px)'}} />
+        <div className="absolute" style={{top: '45%', left: '5%', width: '4px', height: '4px', background: 'rgba(255,255,255,0.7)', borderRadius: '50%', opacity: 0.5, filter: 'blur(2px)'}} />
+        <div className="absolute" style={{top: '10%', left: '50%', width: '10px', height: '10px', background: 'rgba(255,0,255,0.6)', borderRadius: '50%', opacity: 0.5, filter: 'blur(2px)'}} />
+      </div>
+      <div className="w-full max-w-md z-10">
         {/* Welcome Screen */}
         {mode === 'welcome' && (
-          <div className="bg-white rounded-lg shadow-xl p-8 text-center">
-            <h1 className="text-4xl font-bold text-orange-700 mb-2">🍽️ Menu Cards</h1>
-            <p className="text-gray-600 mb-8">Admin Portal</p>
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-8 text-center transition-all hover:shadow-[0_25px_80px_rgba(147,51,234,0.3)] animate-float-slow">
+            <h1 className="text-4xl font-bold text-orange-400 mb-2">🍽️ Menu Cards</h1>
+            <p className="text-gray-200 mb-8">Admin Portal</p>
 
             <div className="space-y-4">
               <button
@@ -493,8 +503,8 @@ export function AdminAuthPage() {
 
         {/* Login Screen */}
         {mode === 'login' && (
-          <div className="bg-white rounded-lg shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">🔓 Login</h2>
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-8 transition-all animate-float-slow">
+            <h2 className="text-2xl font-bold text-orange-200 mb-6">🔓 Login</h2>
 
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 whitespace-pre-line text-sm">
@@ -504,32 +514,32 @@ export function AdminAuthPage() {
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-white mb-1">Email</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-transparent text-white placeholder-white"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label className="block text-sm font-medium text-white mb-1">Password</label>
                 <div className="relative">
                   <input
                     type={showLoginPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-12"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-12 bg-transparent text-white placeholder-white"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPassword((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded text-white hover:bg-gray-100"
                     aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
                   >
                     {showLoginPassword ? 'Hide' : 'Show'}
@@ -585,8 +595,8 @@ export function AdminAuthPage() {
 
         {/* SignUp Screen */}
         {mode === 'signup' && (
-          <div className="bg-white rounded-lg shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">📝 Sign Up</h2>
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-8 transition-all animate-float-slow">
+            <h2 className="text-2xl font-bold text-green-200 mb-6">📝 Sign Up</h2>
 
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 whitespace-pre-line text-sm">
@@ -596,32 +606,32 @@ export function AdminAuthPage() {
 
             <form onSubmit={handleSignUp} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-white mb-1">Email</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-transparent text-white placeholder-white"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label className="block text-sm font-medium text-white mb-1">Password</label>
                 <div className="relative">
                   <input
                     type={showSignupPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent pr-12"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent pr-12 bg-transparent text-white placeholder-white"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowSignupPassword((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded text-white hover:bg-gray-100"
                     aria-label={showSignupPassword ? 'Hide password' : 'Show password'}
                   >
                     {showSignupPassword ? 'Hide' : 'Show'}
@@ -630,20 +640,20 @@ export function AdminAuthPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <label className="block text-sm font-medium text-white mb-1">Confirm Password</label>
                 <div className="relative">
                   <input
                     type={showSignupConfirm ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent pr-12"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent pr-12 bg-transparent text-white placeholder-white"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowSignupConfirm((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded text-gray-700 hover:bg-gray-100"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded text-white hover:bg-gray-100"
                     aria-label={showSignupConfirm ? 'Hide password' : 'Show password'}
                   >
                     {showSignupConfirm ? 'Hide' : 'Show'}
@@ -699,9 +709,9 @@ export function AdminAuthPage() {
 
         {/* Account Linking Screen */}
         {mode === 'link-account' && (
-          <div className="bg-white rounded-lg shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">🔗 Link Accounts</h2>
-            <p className="text-gray-600 text-sm mb-6">
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-8 transition-all animate-float-slow">
+            <h2 className="text-2xl font-bold text-blue-200 mb-2">🔗 Link Accounts</h2>
+            <p className="text-gray-200 text-sm mb-6">
               An account already exists with {pendingEmail}. You can:
             </p>
 
@@ -720,25 +730,25 @@ export function AdminAuthPage() {
 
               <form onSubmit={handleLinkAccountViaEmail} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-white mb-1">Email</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={pendingEmail}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-transparent text-white placeholder-white"
                     disabled={loading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <label className="block text-sm font-medium text-white mb-1">Password</label>
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus-border-transparent bg-transparent text-white placeholder-white"
                     disabled={loading}
                   />
                 </div>
@@ -762,37 +772,37 @@ export function AdminAuthPage() {
 
               <form onSubmit={handleLinkAccountViaSignup} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-white mb-1">Email</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-transparent text-white placeholder-white"
                     disabled={loading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <label className="block text-sm font-medium text-white mb-1">Password</label>
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-transparent text-white placeholder-white"
                     disabled={loading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                  <label className="block text-sm font-medium text-white mb-1">Confirm Password</label>
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-transparent text-gray-100 placeholder-gray-400"
                     disabled={loading}
                   />
                 </div>
@@ -819,11 +829,11 @@ export function AdminAuthPage() {
 
         {/* Email Verification Screen */}
         {mode === 'verify-email' && (
-          <div className="bg-white rounded-lg shadow-xl p-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">📧 Verify Your Email</h2>
-            <p className="text-gray-600 mb-6">
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-8 text-center transition-all animate-float-slow">
+            <h2 className="text-2xl font-bold text-blue-200 mb-2">📧 Verify Your Email</h2>
+            <p className="text-gray-200 mb-6">
               We've sent a verification link to:<br/>
-              <span className="font-semibold text-gray-800">{verificationEmail}</span>
+              <span className="font-semibold text-blue-100">{verificationEmail}</span>
             </p>
 
             {error && (
@@ -847,8 +857,6 @@ export function AdminAuthPage() {
               </ol>
             </div>
 
-            {/* EMAIL VERIFICATION: on hold — actions disabled */}
-            {/*
             <button
               onClick={handleCheckEmailVerification}
               disabled={loading}
@@ -864,7 +872,6 @@ export function AdminAuthPage() {
             >
               {loading ? '⏳ Resending...' : '📮 Resend Verification Email'}
             </button>
-            */}
 
             <button
               onClick={() => {

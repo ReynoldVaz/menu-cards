@@ -98,10 +98,20 @@ export function EventForm({
         return;
       }
 
-      await onSubmit({
-        ...formData,
-        image: imageUrl,
-      });
+      // await onSubmit({
+      //   ...formData,
+      //   image: imageUrl,
+      // });
+
+      const eventData = { ...formData };
+      if (imageUrl) {
+        eventData.image = imageUrl;
+      } else {
+        delete eventData.image;
+      }
+      await onSubmit(eventData);
+
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save event');
       setUploadingImage(false);

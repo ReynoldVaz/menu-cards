@@ -17,26 +17,59 @@ interface MenuSectionProps {
   items: MenuItem[];
   onOpen?: (item: MenuItem, images: string[]) => void;
   isLoading?: boolean;
+  enableAnalytics?: boolean;
+  restaurantId?: string;
+  analyticsSummary?: Record<string, number> | null;
 }
 
-export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSectionProps) {
+
+export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalytics, restaurantId, analyticsSummary }: MenuSectionProps) {
   const [open, setOpen] = useState(false);
   const themeStyles = useThemeStyles();
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [height, setHeight] = useState<string>("0px");
+  const [lastTracked, setLastTracked] = useState<string | null>(null);
+const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: string]: number }>({});
+
+  const sectionViews = analyticsSummary
+  ? items.reduce((sum, item) => sum + (analyticsSummary[item.name] || 0), 0)
+  : 0;
+
+  // Handle item click for analytics
+  const handleItemClick = (item: MenuItem) => {
+    if (enableAnalytics && restaurantId) {
+      // Send event name and label as before, but log the intended payload for custom GA4 param
+      trackEvent('menu_item_click', `${restaurantId}|${item.name}`);
+      setLastTracked(`Tracked click: ${item.name} (ID: ${item.id}) for restaurant ${restaurantId}`);
+      // Log the intended analytics payload for developer
+      console.log('[Analytics] menu_item_click', {
+        event_label: item.name,
+        restaurant_id: restaurantId,
+        item_id: item.id,
+      });
+    } else {
+      setLastTracked('Analytics not enabled or restaurantId missing.');
+    }
+  };
 
   function openModal(item: MenuItem) {
     const imgs = (item.images && item.images.length > 0)
       ? item.images
       : (item.image ? [item.image] : []);
 
-    trackEvent("Menu", "Click Item", item.name);
+    if (enableAnalytics && restaurantId) {
+      // Use a composite label for uniqueness: `${restaurantId}|${item.name}`
+      trackEvent("Menu", `Click Item - ${restaurantId}`, `${restaurantId}|${item.name}`);
+    }
     if (onOpen) onOpen(item, imgs);
   }
 
   const handleToggle = () => {
     const action = open ? "Collapse Section" : "Expand Section";
-    trackEvent("Menu Section", action, title);
+    if (enableAnalytics && restaurantId) {
+      // Use a composite label for uniqueness: `${restaurantId}|${title}`
+      trackEvent("Menu Section", action, `${restaurantId}|${title}`);
+    }
     setOpen((prev) => !prev);
   };
 
@@ -62,6 +95,9 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
     return () => window.removeEventListener("resize", onResize);
   }, [open]);
   const containerSpacing = open ? 'mb-4' : 'mb-1';
+
+  // Fetch GA4 analytics summary (event counts per item)
+  // Analytics summary is now passed as a prop from above; no fetch here.
 
   function LazyVideo({ src }: { src: string }) {
     const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -102,11 +138,37 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
       />
     );
   }
-
   return (
     <div id={id} className={containerSpacing}>
+
+
+      {/* Analytics status indicator and last tracked event message */}
+
+
+      {/* <div style={{ marginBottom: 8 }}>
+        <span style={{
+          color: enableAnalytics ? 'green' : 'red',
+          fontWeight: 'bold',
+          marginRight: 12,
+        }}>
+          Analytics: {enableAnalytics ? 'ENABLED' : 'DISABLED'}
+        </span>
+        {enableAnalytics && restaurantId && (
+          <span style={{ color: '#555', fontSize: 12 }}>
+            Restaurant ID: {restaurantId}
+          </span>
+        )}
+      </div>
+      {lastTracked && (
+        <div style={{ color: '#2563eb', fontSize: 13, marginBottom: 8 }}>
+          {lastTracked}
+        </div>
+      )} */}
+
+
+
       {/* HEADER — Collapsible */}
-      <button
+      {/* <button
         onClick={handleToggle}
         className="w-full flex items-center justify-between px-4 py-3 rounded-lg shadow-sm"
         style={{
@@ -115,12 +177,85 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
         }}
       >
         <h2 className="text-lg font-semibold">{title}</h2>
+              {enableAnalytics && sectionViews > 0 && (
+<span
+  style={{
+    color: '#374151', // Tailwind's text-gray-700 (darker)
+    fontSize: '10px',
+    marginTop: '4px',
+    whiteSpace: 'nowrap',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '2px',
+  }}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="14"
+    height="14"
+    fill="none"
+    viewBox="0 0 24 24"
+    style={{ display: 'inline', verticalAlign: 'middle' }}
+  >
+    <path
+      fill="currentColor"
+      d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z"
+    />
+  </svg>
+  {sectionViews}
+</span>
+
+)}
         <span className="text-xl">
           {open ? "−" : "+"}
         </span>
-      </button>
+      </button> */}
+
+      <button
+  onClick={handleToggle}
+  className="w-full flex items-center justify-between px-4 py-3 rounded-lg shadow-sm"
+  style={{
+    backgroundColor: themeStyles.accentBg,
+    color: themeStyles.primaryButtonBg,
+  }}
+>
+  <h2 className="text-lg font-semibold flex items-center gap-2">
+    {title}
+    {enableAnalytics && sectionViews > 0 && (
+      <span
+        style={{
+          color: '#374151',
+          fontSize: '10px',
+          marginLeft: '8px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '2px',
+        }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          fill="none"
+          viewBox="0 0 24 24"
+          style={{ display: 'inline', verticalAlign: 'middle' }}
+        >
+          <path
+            fill="currentColor"
+            d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z"
+          />
+        </svg>
+        {sectionViews}
+      </span>
+    )}
+  </h2>
+  <span className="text-xl">
+    {open ? "−" : "+"}
+  </span>
+</button>
 
       {/* COLLAPSIBLE CONTENT */}
+
       <div
         className={`overflow-hidden ${open ? "mt-4" : "mt-0"}`}
         style={{ height, transition: "height 320ms cubic-bezier(0.22, 1, 0.36, 1)" }}
@@ -142,7 +277,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
             >
               {/* Thumbnail: prefer video preview if available */}
               <button
-                onClick={() => openModal(item)}
+                onClick={() => { handleItemClick(item); openModal(item); }}
                 className="flex-shrink-0 rounded overflow-hidden border-2 hover:opacity-80"
                 style={{ borderColor: themeStyles.borderColor }}
               >
@@ -178,13 +313,13 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                 </div>
               </button>
 
-                {/* DETAILS */}
+              {/* DETAILS */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-4 mb-1">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <button
-                        onClick={() => openModal(item)}
+                        onClick={() => { handleItemClick(item); openModal(item); }}
                         className="text-left flex-1"
                       >
                         <h3 
@@ -218,41 +353,23 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                       </div>
                     )}
                     <div className="flex items-center gap-2 mt-1">
-
-                      {/* {item.spice > 0 && (
-                        <div className="flex text-red-500 text-sm">
+                      {/* Spice rating */}
+                      {typeof item.spice === "number" && item.spice > 0 && (
+                        <div className="flex items-center text-red-500 text-[10px] leading-none gap-0.5">
                           {Array.from({ length: item.spice }).map((_, i) => (
-                            <span key={i}>🌶️</span>
+                            <span key={i} className="leading-none">🌶️</span>
                           ))}
                         </div>
                       )}
 
-                      {item.sweet > 0 && (
-                        <div className="flex text-amber-600 text-sm">
+                      {/* Sweet rating */}
+                      {typeof item.sweet === "number" && item.sweet > 0 && (
+                        <div className="flex items-center text-amber-600 text-[10px] leading-none gap-0.5">
                           {Array.from({ length: item.sweet }).map((_, i) => (
-                            <span key={i}>🍯</span>
+                            <span key={i} className="leading-none">🍯</span>
                           ))}
                         </div>
-                      )} */}
-                        {/* Spice rating */}
-  {typeof item.spice === "number" && item.spice > 0 && (
-    <div className="flex items-center text-red-500 text-[10px] leading-none gap-0.5">
-      {Array.from({ length: item.spice }).map((_, i) => (
-        <span key={i} className="leading-none">🌶️</span>
-      ))}
-    </div>
-  )}
-
-  {/* Sweet rating */}
-  {typeof item.sweet === "number" && item.sweet > 0 && (
-    <div className="flex items-center text-amber-600 text-[10px] leading-none gap-0.5">
-      {Array.from({ length: item.sweet }).map((_, i) => (
-        <span key={i} className="leading-none">🍯</span>
-      ))}
-    </div>
-  )}
-
-
+                      )}
                     </div>
                   </div>
 
@@ -261,9 +378,47 @@ export function MenuSection({ id, title, items, onOpen, isLoading }: MenuSection
                     {isLoading ? (
                       <div className="h-5 w-12 bg-gray-200 animate-pulse rounded"></div>
                     ) : (
-                      <span className="font-bold text-base sm:text-lg whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
-                        {formatPrice(item.price, (item as any).currency)}
-                      </span>
+                      Array.isArray((item as any).portions) && (item as any).portions.length > 1 ? (
+                        <select
+                          value={selectedPortionIdxMap[item.id ?? item.name] ?? ((item as any).portions.findIndex((p: any) => p.default) >= 0 ? (item as any).portions.findIndex((p: any) => p.default) : 0)}
+                          onChange={e => {
+                            setSelectedPortionIdxMap(prev => ({
+                              ...prev,
+                              [item.id ?? item.name]: Number(e.target.value)
+                            }));
+                          }}
+                          className="font-bold text-xs sm:text-sm whitespace-nowrap rounded border border-gray-300 px-1 py-0.5 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[90px] min-w-[70px]"
+                          style={{ color: themeStyles.primaryButtonBg, backgroundColor: themeStyles.backgroundColor }}
+                        >
+                          {(item as any).portions.map((portion: any, idx: number) => (
+                            <option key={idx} value={idx} style={{ color: themeStyles.primaryButtonBg }}>
+                              {portion.label} ({formatPrice(portion.price, portion.currency)})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="font-bold text-base sm:text-lg whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
+                          {formatPrice(item.price, (item as any).currency)}
+                        </span>
+                      )
+                    )}
+                    {analyticsSummary && analyticsSummary[item.name] > 0 && (
+                      <div className="text-[10px] text-gray-700 mt-1 whitespace-nowrap flex items-center gap-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="13"
+                          height="13"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          style={{ display: 'inline', verticalAlign: 'middle' }}
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z"
+                          />
+                        </svg>
+                        {analyticsSummary[item.name]}
+                      </div>
                     )}
                   </div>
                 </div>
