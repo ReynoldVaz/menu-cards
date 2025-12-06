@@ -439,11 +439,37 @@ export function AdminAuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden font-body">
+      {/* Dynamic Galaxy Background Layers (from LandingPage) */}
+      <div className="absolute inset-0 -z-10">
+        {/* Deep Space Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#010111] via-[#05051a] to-[#010111]" />
+        {/* Animated Nebula Blobs */}
+        <div className="absolute -top-32 -left-16 sm:-top-40 sm:-left-24 w-[18rem] h-[18rem] sm:w-[28rem] sm:h-[28rem] rounded-full bg-purple-600/20 blur-3xl animate-[pulse_10s_ease-in-out_infinite] animate-float-slow" />
+        <div className="absolute top-16 -right-14 sm:top-24 sm:-right-20 w-[22rem] h-[22rem] sm:w-[34rem] sm:h-[34rem] rounded-full bg-indigo-600/15 blur-3xl animate-[pulse_15s_ease-in-out_infinite_reverse] animate-float-slow" />
+        {/* Scattered Stars/Cosmic Dust */}
+        <div
+          className="absolute inset-0 opacity-70"
+          style={{
+            backgroundImage:
+              'radial-gradient(0.5px 0.5px at 10% 90%, rgba(255,255,255,.6) 50%, transparent 50%),\
+               radial-gradient(1px 1px at 40% 10%, rgba(255,255,255,.35) 50%, transparent 50%),\
+               radial-gradient(1.5px 1.5px at 80% 50%, rgba(255,255,255,.45) 50%, transparent 50%),\
+               radial-gradient(0.75px 0.75px at 25% 40%, rgba(255,255,255,.8) 50%, transparent 50%),\
+               radial-gradient(1px 1px at 65% 75%, rgba(255,255,255,.3) 50%, transparent 50%)',
+            backgroundSize: 'auto',
+          }}
+        />
+        {/* Floating Stars */}
+        <div className="absolute" style={{top: '20%', left: '10%', width: '6px', height: '6px', background: 'rgba(255,255,255,0.7)', borderRadius: '50%', opacity: 0.5, filter: 'blur(2px)'}} />
+        <div className="absolute" style={{top: '70%', left: '85%', width: '8px', height: '8px', background: 'rgba(0,255,255,0.6)', borderRadius: '50%', opacity: 0.5, filter: 'blur(2px)'}} />
+        <div className="absolute" style={{top: '45%', left: '5%', width: '4px', height: '4px', background: 'rgba(255,255,255,0.7)', borderRadius: '50%', opacity: 0.5, filter: 'blur(2px)'}} />
+        <div className="absolute" style={{top: '10%', left: '50%', width: '10px', height: '10px', background: 'rgba(255,0,255,0.6)', borderRadius: '50%', opacity: 0.5, filter: 'blur(2px)'}} />
+      </div>
+      <div className="w-full max-w-md z-10">
         {/* Welcome Screen */}
         {mode === 'welcome' && (
-          <div className="bg-white rounded-lg shadow-xl p-8 text-center">
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-8 text-center transition-all hover:shadow-[0_25px_80px_rgba(147,51,234,0.3)] animate-float-slow">
             <h1 className="text-4xl font-bold text-orange-700 mb-2">🍽️ Menu Cards</h1>
             <p className="text-gray-600 mb-8">Admin Portal</p>
 
@@ -493,7 +519,7 @@ export function AdminAuthPage() {
 
         {/* Login Screen */}
         {mode === 'login' && (
-          <div className="bg-white rounded-lg shadow-xl p-8">
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-8 transition-all animate-float-slow">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">🔓 Login</h2>
 
             {error && (
@@ -585,7 +611,7 @@ export function AdminAuthPage() {
 
         {/* SignUp Screen */}
         {mode === 'signup' && (
-          <div className="bg-white rounded-lg shadow-xl p-8">
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-8 transition-all animate-float-slow">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">📝 Sign Up</h2>
 
             {error && (
@@ -699,7 +725,7 @@ export function AdminAuthPage() {
 
         {/* Account Linking Screen */}
         {mode === 'link-account' && (
-          <div className="bg-white rounded-lg shadow-xl p-8">
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-8 transition-all animate-float-slow">
             <h2 className="text-2xl font-bold text-gray-800 mb-2">🔗 Link Accounts</h2>
             <p className="text-gray-600 text-sm mb-6">
               An account already exists with {pendingEmail}. You can:
@@ -819,7 +845,7 @@ export function AdminAuthPage() {
 
         {/* Email Verification Screen */}
         {mode === 'verify-email' && (
-          <div className="bg-white rounded-lg shadow-xl p-8 text-center">
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-8 text-center transition-all animate-float-slow">
             <h2 className="text-2xl font-bold text-gray-800 mb-2">📧 Verify Your Email</h2>
             <p className="text-gray-600 mb-6">
               We've sent a verification link to:<br/>
