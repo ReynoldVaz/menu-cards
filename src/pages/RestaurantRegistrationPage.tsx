@@ -205,7 +205,7 @@ export function RestaurantRegistrationPage() {
                   setSuggestions([]);
                 }}
                 placeholder="e.g., juju, pizza-house"
-                className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${
+                className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent text-sm ${
                   codeStatus === 'available'
                     ? 'border-green-300 focus:ring-green-500 bg-green-50'
                     : codeStatus === 'taken'
@@ -218,7 +218,8 @@ export function RestaurantRegistrationPage() {
                 type="button"
                 onClick={handleCheckCode}
                 disabled={loading || checking || !restaurantCode}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors whitespace-nowrap"
+                className="px-2 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors whitespace-nowrap text-xs sm:text-sm"
+                style={{ minWidth: '48px' }}
               >
                 {checking ? '⏳' : '✓'} Check
               </button>

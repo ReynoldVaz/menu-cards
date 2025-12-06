@@ -113,20 +113,22 @@ export function MenuItemForm({
     // If replacing a specific image
     if (replacingImageIndex !== null) {
       const file = files[0]; // Take only the first file for replacement
-        if (!file.type.startsWith('image/')) {
-          setImageError('Please select an image file');
+      if (!file.type.startsWith('image/')) {
+        setImageError('Please select an image file');
         if (imageReplaceInputRef.current) {
           imageReplaceInputRef.current.value = '';
         }
         (e.target as HTMLInputElement).value = '';
+        setReplacingImageIndex(null);
         return;
       }
-        if (file.size > MAX_IMAGE_SIZE) {
-          setImageError('Each image must be under 2MB');
+      if (file.size > MAX_IMAGE_SIZE) {
+        setImageError('Each image must be under 2MB');
         if (imageReplaceInputRef.current) {
           imageReplaceInputRef.current.value = '';
         }
         (e.target as HTMLInputElement).value = '';
+        setReplacingImageIndex(null);
         return;
       }
 
@@ -167,20 +169,23 @@ export function MenuItemForm({
 
     // Normal add mode
     if (files.length + imageFiles.length > MAX_IMAGES) {
-        setImageError(`You can select up to ${MAX_IMAGES} images`);
+      setImageError(`You can select up to ${MAX_IMAGES} images`);
       (e.target as HTMLInputElement).value = '';
+      setReplacingImageIndex(null);
       return;
     }
 
     for (const file of files) {
       if (!file.type.startsWith('image/')) {
-          setImageError('Please select only image files');
+        setImageError('Please select only image files');
         (e.target as HTMLInputElement).value = '';
+        setReplacingImageIndex(null);
         return;
       }
       if (file.size > MAX_IMAGE_SIZE) {
-          setImageError('Each image must be under 2MB');
+        setImageError('Each image must be under 2MB');
         (e.target as HTMLInputElement).value = '';
+        setReplacingImageIndex(null);
         return;
       }
     }
@@ -188,8 +193,9 @@ export function MenuItemForm({
     try {
       validateTotalSize([...imageFiles, ...files], videoFiles);
     } catch (err) {
-        setImageError(err instanceof Error ? err.message : 'Total size too large');
+      setImageError(err instanceof Error ? err.message : 'Total size too large');
       (e.target as HTMLInputElement).value = '';
+      setReplacingImageIndex(null);
       return;
     }
 
@@ -236,6 +242,7 @@ export function MenuItemForm({
   const handleVideosChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+    setVideoError('');
 
     // If replacing a specific video
     if (replacingVideoIndex !== null) {
@@ -255,6 +262,8 @@ export function MenuItemForm({
           videoReplaceInputRef.current.value = '';
         }
         (e.target as HTMLInputElement).value = '';
+        setReplacingVideoIndex(null);
+        // Do not add the video to state
         return;
       }
       try {
@@ -322,11 +331,14 @@ export function MenuItemForm({
       if (!file.type.startsWith('video/')) {
         setVideoError('Please select only video files');
         (e.target as HTMLInputElement).value = '';
+        setReplacingVideoIndex(null);
         return;
       }
       if (file.size > MAX_VIDEO_SIZE) {
         setVideoError('Each video must be under 2.5MB');
         (e.target as HTMLInputElement).value = '';
+        setReplacingVideoIndex(null);
+        // Do not add the video to state
         return;
       }
       try {
@@ -334,11 +346,13 @@ export function MenuItemForm({
         if (duration < 4.5 || duration > 6.5) {
           setVideoError('Each video must be 5-6 seconds long');
           (e.target as HTMLInputElement).value = '';
+          setReplacingVideoIndex(null);
           return;
         }
       } catch (err) {
         setVideoError('Unable to validate video duration');
         (e.target as HTMLInputElement).value = '';
+        setReplacingVideoIndex(null);
         return;
       }
     }
@@ -355,14 +369,17 @@ export function MenuItemForm({
     }
 
     setVideoError('');
-    setVideoFiles((prev) => [...prev, ...files]);
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setVideoPreviews((prev) => [...prev, event.target?.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
+    // Only add files if there is no error
+    if (!videoError) {
+      setVideoFiles((prev) => [...prev, ...files]);
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setVideoPreviews((prev) => [...prev, event.target?.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
   };
 
   const startReplaceVideo = (index: number) => {
@@ -454,6 +471,14 @@ export function MenuItemForm({
     }
   };
 
+  // Only disable Save if there are files in error state, not just a lingering error message
+  // Save button should only be disabled if:
+  // - isLoading, uploadingImage, uploadingVideo
+  // - imageError and there are imageFiles selected
+  // - videoError and there are videoFiles selected
+  // Only disable Save if uploading or loading, not for error messages or failed file validations
+  const isSaveDisabled = isLoading || uploadingImage || uploadingVideo;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
@@ -461,8 +486,6 @@ export function MenuItemForm({
           {error}
         </div>
       )}
-
-      {/* Basic Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Item Name *</label>
@@ -718,6 +741,73 @@ export function MenuItemForm({
         </div>
       </div>
 
+            {/* Videos Upload */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Videos (up to 2, 5-6s, 2.5MB each)
+          <span className="text-xs text-gray-500 ml-2">({videoPreviews.length}/{MAX_VIDEOS})</span>
+        </label>
+        <p className="text-xs text-gray-500 mb-2">MP4/WebM/MOV. Each video 5–6 seconds. Total media under 10MB.</p>
+        
+        {videoError && (
+          <div className="mb-2 text-xs bg-red-100 border border-red-300 text-red-700 px-2 py-1 rounded">
+            {videoError}
+          </div>
+        )}
+        {videoPreviews.length < MAX_VIDEOS && (
+          <input
+            type="file"
+            accept="video/*"
+            multiple
+            onChange={handleVideosChange}
+            className="w-full mb-2"
+            disabled={isLoading || uploadingVideo || replacingVideoIndex !== null}
+          />
+        )}
+        {/* Hidden single-file input used for reliable replacement */}
+        <input
+          ref={videoReplaceInputRef}
+          type="file"
+          accept="video/*"
+          onChange={handleVideosChange}
+          className="hidden"
+        />
+        
+        {videoPreviews.length >= MAX_VIDEOS && (
+          <div className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded mb-2">
+            ⚠️ Maximum {MAX_VIDEOS} videos reached. Click on a video to replace it.
+          </div>
+        )}
+
+        {videoPreviews.length > 0 && (
+          <div className="mt-2 flex gap-2 flex-wrap">
+            {videoPreviews.slice(0, MAX_VIDEOS).map((src, idx) => (
+              <div key={idx} className="flex flex-col items-center">
+                <video src={src} className="w-20 h-20 object-cover rounded border-2 border-gray-300" />
+                <div className="flex gap-1 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => startReplaceVideo(idx)}
+                    className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
+                    disabled={isLoading || uploadingVideo}
+                  >
+                    Replace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeVideo(idx)}
+                    className="bg-red-600 text-white text-xs px-2 py-1 rounded"
+                    disabled={isLoading || uploadingVideo}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Images Upload */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -759,13 +849,13 @@ export function MenuItemForm({
         {imagePreviews.length > 0 && (
           <div className="mt-2 flex gap-2 flex-wrap">
             {imagePreviews.slice(0, MAX_IMAGES).map((src, idx) => (
-              <div key={idx} className="relative group">
+              <div key={idx} className="flex flex-col items-center">
                 <img src={src} alt={`Preview ${idx + 1}`} className="w-20 h-20 object-cover rounded border-2 border-gray-300" />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-opacity rounded flex items-center justify-center gap-1">
+                <div className="flex gap-1 mt-1">
                   <button
                     type="button"
                     onClick={() => startReplaceImage(idx)}
-                    className="opacity-0 group-hover:opacity-100 bg-blue-600 text-white text-xs px-2 py-1 rounded transition-opacity"
+                    className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
                     disabled={isLoading || uploadingImage}
                   >
                     Replace
@@ -773,7 +863,7 @@ export function MenuItemForm({
                   <button
                     type="button"
                     onClick={() => removeImage(idx)}
-                    className="opacity-0 group-hover:opacity-100 bg-red-600 text-white text-xs px-2 py-1 rounded transition-opacity ml-1"
+                    className="bg-red-600 text-white text-xs px-2 py-1 rounded"
                     disabled={isLoading || uploadingImage}
                   >
                     Remove
@@ -785,78 +875,13 @@ export function MenuItemForm({
         )}
       </div>
 
-      {/* Videos Upload */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Videos (up to 2, 5-6s, 2.5MB each)
-          <span className="text-xs text-gray-500 ml-2">({videoPreviews.length}/{MAX_VIDEOS})</span>
-        </label>
-        <p className="text-xs text-gray-500 mb-2">MP4/WebM/MOV. Each video 5–6 seconds. Total media under 10MB.</p>
-        
-        {videoError && (
-          <div className="mb-2 text-xs bg-red-100 border border-red-300 text-red-700 px-2 py-1 rounded">
-            {videoError}
-          </div>
-        )}
-        {videoPreviews.length < MAX_VIDEOS && (
-          <input
-            type="file"
-            accept="video/*"
-            multiple
-            onChange={handleVideosChange}
-            className="w-full mb-2"
-            disabled={isLoading || uploadingVideo || replacingVideoIndex !== null}
-          />
-        )}
-        {/* Hidden single-file input used for reliable replacement */}
-        <input
-          ref={videoReplaceInputRef}
-          type="file"
-          accept="video/*"
-          onChange={handleVideosChange}
-          className="hidden"
-        />
-        
-        {videoPreviews.length >= MAX_VIDEOS && (
-          <div className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded mb-2">
-            ⚠️ Maximum {MAX_VIDEOS} videos reached. Click on a video to replace it.
-          </div>
-        )}
 
-        {videoPreviews.length > 0 && (
-          <div className="mt-2 flex gap-2 flex-wrap">
-            {videoPreviews.slice(0, MAX_VIDEOS).map((src, idx) => (
-              <div key={idx} className="relative group">
-                <video src={src} className="w-20 h-20 object-cover rounded border-2 border-gray-300" />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-opacity rounded flex items-center justify-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => startReplaceVideo(idx)}
-                    className="opacity-0 group-hover:opacity-100 bg-blue-600 text-white text-xs px-2 py-1 rounded transition-opacity"
-                    disabled={isLoading || uploadingVideo}
-                  >
-                    Replace
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeVideo(idx)}
-                    className="opacity-0 group-hover:opacity-100 bg-red-600 text-white text-xs px-2 py-1 rounded transition-opacity ml-1"
-                    disabled={isLoading || uploadingVideo}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Form Actions */}
       <div className="flex gap-2 pt-4">
         <button
           type="submit"
-          disabled={isLoading || uploadingImage || uploadingVideo || !!imageError || !!videoError}
+          disabled={isSaveDisabled}
           className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded font-medium"
         >
           {isLoading
@@ -865,8 +890,6 @@ export function MenuItemForm({
             ? '⏳ Uploading images...'
             : uploadingVideo
             ? '⏳ Uploading videos...'
-            : (imageError || videoError)
-            ? '⚠️ Fix validation errors'
             : '✓ Save Item'}
         </button>
         <button
