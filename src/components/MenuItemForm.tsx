@@ -1087,8 +1087,11 @@ if (!hasValidPrice) {
           <span className="text-xs text-gray-500 ml-2">({videoPreviews.length}/{MAX_VIDEOS})</span>
         </label>
         <p className="text-xs text-gray-500 mb-2">
-          {`MP4/WebM/MOV.Total videos size must be under ${Math.round(MAX_VIDEOS_TOTAL_SIZE/1024/1024)}MB. Total media (images+videos) must be under ${Math.round(MAX_TOTAL_SIZE/1024/1024)}MB.`}
+          {`MP4/WebM/MOV.Total videos size must be under ${Math.round(MAX_VIDEOS_TOTAL_SIZE/1024/1024)}MB.`}
         </p>
+        {/* <p className="text-xs text-gray-500 mb-2">
+          {`MP4/WebM/MOV.Total videos size must be under ${Math.round(MAX_VIDEOS_TOTAL_SIZE/1024/1024)}MB. Total media (images+videos) must be under ${Math.round(MAX_TOTAL_SIZE/1024/1024)}MB.`}
+        </p> */}
         
         {videoError && (
           <div className="mb-2 text-xs bg-red-100 border border-red-300 text-red-700 px-2 py-1 rounded flex items-center gap-2">
@@ -1167,8 +1170,11 @@ if (!hasValidPrice) {
           <span className="text-xs text-gray-500 ml-2">({imagePreviews.length}/{MAX_IMAGES})</span>
         </label>
         <p className="text-xs text-gray-500 mb-2">
-          {`PNG/JPG preferred. Total images size must be under ${Math.round(MAX_IMAGES_TOTAL_SIZE/1024/1024)}MB. Total media (images+videos) must be under ${Math.round(MAX_TOTAL_SIZE/1024/1024)}MB.`}
+          {`PNG/JPG preferred. Total images size must be under ${Math.round(MAX_IMAGES_TOTAL_SIZE/1024/1024)}MB.`}
         </p>
+        {/* <p className="text-xs text-gray-500 mb-2">
+          {`PNG/JPG preferred. Total images size must be under ${Math.round(MAX_IMAGES_TOTAL_SIZE/1024/1024)}MB. Total media (images+videos) must be under ${Math.round(MAX_TOTAL_SIZE/1024/1024)}MB.`}
+        </p> */}
         
         {imageError && (
           <div className="mb-2 text-xs bg-red-100 border border-red-300 text-red-700 px-2 py-1 rounded flex items-center gap-2">
