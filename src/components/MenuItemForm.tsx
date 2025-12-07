@@ -1249,32 +1249,57 @@ if (!hasValidPrice) {
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">YouTube Video Links (max 2)</label>
           <p className="text-xs text-gray-500 mb-2">Paste YouTube video URLs to display in the menu. These will be added to the videos array.</p>
-          {ytLinks.map((link, idx) => (
-            <div key={idx} className="flex items-center gap-2 mb-2">
-              <input
-                type="url"
-                value={link}
-                onChange={e => {
-                  const updated = [...ytLinks];
-                  updated[idx] = e.target.value;
-                  setYtLinks(updated);
-                  setYtLinkError('');
-                }}
-                placeholder="https://www.youtube.com/watch?v=..."
-                className="flex-1 px-2 py-1 border border-gray-300 rounded"
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                className="px-2 py-1 bg-red-500 text-white rounded text-xs"
-                onClick={() => {
-                  setYtLinks(ytLinks.filter((_, i) => i !== idx));
-                  setYtLinkError('');
-                }}
-                disabled={isLoading}
-              >Remove</button>
-            </div>
-          ))}
+          {ytLinks.map((link, idx) => {
+            // Normalize YouTube link to https://www.youtube.com/watch?v=VIDEO_ID
+            let normalized = link;
+            const youtuMatch = link.match(/^https?:\/\/(?:www\.)?youtu\.be\/([\w-]+)/);
+            if (youtuMatch) {
+              normalized = `https://www.youtube.com/watch?v=${youtuMatch[1]}`;
+            } else {
+              // Also handle links like https://youtube.com/shorts/VIDEO_ID
+              const shortsMatch = link.match(/^https?:\/\/(?:www\.)?youtube\.com\/shorts\/([\w-]+)/);
+              if (shortsMatch) {
+                normalized = `https://www.youtube.com/watch?v=${shortsMatch[1]}`;
+              }
+            }
+            return (
+              <div key={idx} className="flex items-center gap-2 mb-2">
+                <input
+                  type="url"
+                  value={normalized}
+                  onChange={e => {
+                    let val = e.target.value;
+                    // Normalize on change as well
+                    const youtuMatch = val.match(/^https?:\/\/(?:www\.)?youtu\.be\/([\w-]+)/);
+                    if (youtuMatch) {
+                      val = `https://www.youtube.com/watch?v=${youtuMatch[1]}`;
+                    } else {
+                      const shortsMatch = val.match(/^https?:\/\/(?:www\.)?youtube\.com\/shorts\/([\w-]+)/);
+                      if (shortsMatch) {
+                        val = `https://www.youtube.com/watch?v=${shortsMatch[1]}`;
+                      }
+                    }
+                    const updated = [...ytLinks];
+                    updated[idx] = val;
+                    setYtLinks(updated);
+                    setYtLinkError('');
+                  }}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded"
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  className="px-2 py-1 bg-red-500 text-white rounded text-xs"
+                  onClick={() => {
+                    setYtLinks(ytLinks.filter((_, i) => i !== idx));
+                    setYtLinkError('');
+                  }}
+                  disabled={isLoading}
+                >Remove</button>
+              </div>
+            );
+          })}
           {ytLinks.length < 2 && (
             <button
               type="button"

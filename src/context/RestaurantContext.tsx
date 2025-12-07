@@ -6,7 +6,7 @@ export interface RestaurantContextType {
   restaurant: Restaurant | null;
   theme: Theme | null;
   menuSections: MenuSection[];
-  todaysSpecial: MenuItem | null;
+  todaysSpecial: MenuItem[];
   upcomingEvents: Event[];
   loading: boolean;
   error?: string;
