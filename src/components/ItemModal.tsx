@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
 import type { MenuItem } from '../data/menuData';
 import { SmartImage } from './SmartImage';
 import { ParallaxImage } from './ParallaxImage';
@@ -18,6 +19,11 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
   const [mounted, setMounted] = useState(false);
   const themeStyles = useThemeStyles();
   // Portion selection logic
+
+    // For dynamic aspect ratio
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  
   const portions = Array.isArray((item as any)?.portions) && (item as any).portions.length > 0
     ? (item as any).portions
     : [{
@@ -72,6 +78,19 @@ useEffect(() => {
     ...modalImages.map((s) => ({ type: 'image' as const, src: s })),
   ];
   const activeMedia = modalMedia[index];
+
+  // When activeMedia changes and is a video, reset aspect ratio
+  useEffect(() => {
+    setVideoAspectRatio(null);
+  }, [activeMedia?.type, activeMedia?.src]);
+
+  // When video loads, set aspect ratio
+  const handleVideoLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (video.videoWidth && video.videoHeight) {
+      setVideoAspectRatio(video.videoWidth / video.videoHeight);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -134,8 +153,13 @@ useEffect(() => {
               ) : (
                 <>
                   <div
-                    className="w-full h-[40vh] sm:h-[55vh] md:h-[60vh] rounded-lg overflow-hidden flex items-center justify-center shadow-md ring-1 ring-white/10 relative touch-pan-y"
-                    style={{ background: activeMedia?.type === 'image' ? 'transparent' : 'linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.95))' }}
+                    className="w-full rounded-lg overflow-hidden flex items-center justify-center shadow-md ring-1 ring-white/10 relative touch-pan-y"
+                    style={{
+                      background: activeMedia?.type === 'image' ? 'transparent' : '#000',
+                      aspectRatio: activeMedia?.type === 'video' && videoAspectRatio ? `${videoAspectRatio}` : undefined,
+                      minHeight: '240px',
+                      maxHeight: '60vh',
+                    }}
                     onPointerDown={(e) => {
                       const startX = e.clientX;
                       const startY = e.clientY;
@@ -163,8 +187,19 @@ useEffect(() => {
                     {/* Crossfade for media */}
                     <div className="w-full h-full flex items-center justify-center">
                       {activeMedia?.type === 'video' ? (
-                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100">
-                          <VideoPlayer src={activeMedia.src} autoPlayPreview className="w-full h-full object-contain" />
+                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100 flex items-center justify-center">
+                          <video
+                            ref={videoRef}
+                            src={activeMedia.src}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            controls
+                            className="w-full h-full object-cover rounded"
+                            onLoadedMetadata={handleVideoLoadedMetadata}
+                            style={{ maxHeight: '60vh', maxWidth: '100%' }}
+                          />
                         </div>
                       ) : activeMedia?.type === 'youtube' ? (
                         <div className="w-full h-full flex items-center justify-center bg-black">
@@ -194,8 +229,8 @@ useEffect(() => {
                           <img
                             src={activeMedia.src}
                             alt={`${item.name} image ${index + 1}`}
-                            className="w-full h-full object-contain"
-                            style={{ background: 'transparent' }}
+                            className="w-full h-full object-cover rounded"
+                            style={{ background: 'transparent', maxHeight: '60vh', maxWidth: '100%' }}
                           />
                         </div>
                       )}
