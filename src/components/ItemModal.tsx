@@ -50,15 +50,25 @@ useEffect(() => {
 
   if (!item) return null;
 
-  // Prepare media arrays for modal
-  const modalVideos = item.videos?.length
+  // Prepare media arrays for modal: combine uploaded videos and YouTube links
+  const uploadedVideos = item.videos?.length
     ? item.videos
     : item.video
     ? [item.video]
     : [];
+  const youtubeLinks = (item as any).youtubeLinks && Array.isArray((item as any).youtubeLinks)
+    ? (item as any).youtubeLinks
+    : [];
+  const allVideos = [...uploadedVideos, ...youtubeLinks];
   const modalImages = images && images.length > 0 ? images : [];
   const modalMedia = [
-    ...modalVideos.map((v) => ({ type: 'video' as const, src: v })),
+    ...allVideos.map((v) => {
+      if (typeof v === 'string' && v.includes('youtube.com')) {
+        // YouTube link
+        return { type: 'youtube' as const, src: v };
+      }
+      return { type: 'video' as const, src: v };
+    }),
     ...modalImages.map((s) => ({ type: 'image' as const, src: s })),
   ];
   const activeMedia = modalMedia[index];
@@ -156,6 +166,29 @@ useEffect(() => {
                         <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100">
                           <VideoPlayer src={activeMedia.src} autoPlayPreview className="w-full h-full object-contain" />
                         </div>
+                      ) : activeMedia?.type === 'youtube' ? (
+                        <div className="w-full h-full flex items-center justify-center bg-black">
+                          {/* Extract YouTube video ID and embed */}
+                          {(() => {
+                            const match = activeMedia.src.match(/[?&]v=([^&#]+)/);
+                            const vid = match ? match[1] : null;
+                            if (vid) {
+                              return (
+                                <iframe
+                                  width="100%"
+                                  height="100%"
+                                  src={`https://www.youtube.com/embed/${vid}`}
+                                  title="YouTube video preview"
+                                  frameBorder="0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  className="w-full h-full object-contain rounded"
+                                />
+                              );
+                            }
+                            return <span className="text-gray-400">Invalid YouTube link</span>;
+                          })()}
+                        </div>
                       ) : (
                         <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100 flex items-center justify-center">
                           <img
@@ -181,9 +214,32 @@ useEffect(() => {
                           boxShadow: i === index ? `0 2px 8px ${themeStyles.accentBg}30` : 'none',
                         }}
                       >
-                        <div className="w-20 h-14 overflow-hidden rounded bg-black/60 flex items-center justify-center">
+                        <div className="w-20 h-14 overflow-hidden rounded bg-black/60 flex items-center justify-center relative">
                           {m.type === 'image' ? (
                             <SmartImage src={m.src} alt={`${item.name} thumb ${i + 1}`} className="w-full h-full" fit="cover" />
+                          ) : m.type === 'youtube' ? (
+                            (() => {
+                              const match = m.src.match(/[?&]v=([^&#]+)/);
+                              const vid = match ? match[1] : null;
+                              if (vid) {
+                                return (
+                                  <>
+                                    <img
+                                      src={`https://img.youtube.com/vi/${vid}/hqdefault.jpg`}
+                                      alt="YouTube thumbnail"
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <span className="absolute inset-0 flex items-center justify-center">
+                                      <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="19" cy="19" r="19" fill="rgba(0,0,0,0.45)" />
+                                        <polygon points="15,12 28,19 15,26" fill="#fff" />
+                                      </svg>
+                                    </span>
+                                  </>
+                                );
+                              }
+                              return <span className="text-red-600 text-xs font-bold">YT</span>;
+                            })()
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
                               ▶ Video

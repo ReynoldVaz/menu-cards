@@ -20,6 +20,7 @@ export interface MenuItemFormData {
   images?: string[] | null;
   video?: string | null;
   videos?: string[] | null;
+  youtubeLinks?: string[] | null; // NEW: separate YouTube links
   dietType?: 'veg' | 'non-veg' | 'vegan';
   is_todays_special: boolean;
   is_unavailable?: boolean;
@@ -54,7 +55,16 @@ export function MenuItemForm({
   availableSections = DEFAULT_SECTIONS,
   onSectionsUpdate,
 }: MenuItemFormProps) {
-
+  // YouTube video links state (separate from videos)
+  const [ytLinks, setYtLinks] = useState<string[]>(
+    initialData?.youtubeLinks && Array.isArray(initialData.youtubeLinks)
+      ? initialData.youtubeLinks
+      : []
+  );
+  const [ytLinkError, setYtLinkError] = useState<string>('');
+  
+  const [imageInputKey, setImageInputKey] = useState<number>(0);
+  const [videoInputKey, setVideoInputKey] = useState<number>(0);
   // Portions state: default to single portion if none
   const defaultPortion: Portion = {
     label: 'Full',
@@ -140,11 +150,14 @@ export function MenuItemForm({
   initialData?.portions && initialData.portions.length > 1
 );
 
-  const MAX_IMAGES = 3;
-  const MAX_VIDEOS = 2;
-  const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB per image
-  const MAX_VIDEO_SIZE = 2.5 * 1024 * 1024; // 2.5MB per video
-  const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB combined
+  const MAX_IMAGES = Number(import.meta.env.VITE_MAX_IMAGES) || 3;
+  const MAX_VIDEOS = Number(import.meta.env.VITE_MAX_VIDEOS) || 2;
+  const MAX_IMAGE_SIZE = Number(import.meta.env.VITE_MAX_IMAGE_SIZE) || 3 * 1024 * 1024; // 2MB per image
+  const MAX_VIDEO_SIZE = Number(import.meta.env.VITE_MAX_VIDEO_SIZE) || 9 * 1024 * 1024; // 2.5MB per video
+  const MAX_TOTAL_SIZE = Number(import.meta.env.VITE_MAX_TOTAL_SIZE) || 30 * 1024 * 1024; // 10MB combined
+  const MAX_IMAGES_TOTAL_SIZE = MAX_IMAGES * MAX_IMAGE_SIZE;
+  const MAX_VIDEOS_TOTAL_SIZE = MAX_VIDEOS * MAX_VIDEO_SIZE;
+  const MAX_VIDEO_DURATION = Number(import.meta.env.VITE_MAX_VIDEO_DURATION) || 6.5; // seconds
 
   const validateTotalSize = (imgs: File[], vids: File[]) => {
     const total = [...imgs, ...vids]
@@ -158,6 +171,7 @@ export function MenuItemForm({
   const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+    setImageInputKey((k: number) => k + 1);
 
     // If replacing a specific image
     if (replacingImageIndex !== null) {
@@ -221,23 +235,46 @@ export function MenuItemForm({
       setImageError(`You can select up to ${MAX_IMAGES} images`);
       (e.target as HTMLInputElement).value = '';
       setReplacingImageIndex(null);
+      setImageInputKey((k) => k + 1);
       return;
     }
+
 
     for (const file of files) {
       if (!file.type.startsWith('image/')) {
         setImageError('Please select only image files');
-        (e.target as HTMLInputElement).value = '';
+        if (e.target) {
+          (e.target as HTMLInputElement).value = '';
+        }
         setReplacingImageIndex(null);
-        return;
-      }
-      if (file.size > MAX_IMAGE_SIZE) {
-        setImageError('Each image must be under 2MB');
-        (e.target as HTMLInputElement).value = '';
-        setReplacingImageIndex(null);
+        setImageInputKey((k) => k + 1);
         return;
       }
     }
+
+    // Check total size for images (across all selected)
+    const totalImageSize = [...imageFiles, ...files].reduce((sum, f) => sum + (f?.size || 0), 0);
+      if (totalImageSize > MAX_IMAGES_TOTAL_SIZE) {
+        // Find the first file that causes the overflow
+        let accumulated = imageFiles.reduce((sum, f) => sum + (f?.size || 0), 0);
+        let offendingFile: File | null = null;
+        for (const file of files) {
+          if (accumulated + file.size > MAX_IMAGES_TOTAL_SIZE) {
+            offendingFile = file;
+            break;
+          }
+          accumulated += file.size;
+        }
+        const existingSizeMB = Math.round(imageFiles.reduce((sum, f) => sum + (f?.size || 0), 0) / 1024 / 1024);
+        const newFileSizeMB = offendingFile ? Math.round(offendingFile.size / 1024 / 1024) : Math.round(files[0].size / 1024 / 1024);
+        setImageError(`This image is ${newFileSizeMB}MB. Combined with your existing image(s) (${existingSizeMB}MB), the total would exceed the allowed ${Math.round(MAX_IMAGES_TOTAL_SIZE/1024/1024)}MB. Please choose a smaller file or remove an existing image.`);
+        if (e.target) {
+          (e.target as HTMLInputElement).value = '';
+        }
+        setReplacingImageIndex(null);
+        setImageInputKey((k) => k + 1);
+        return;
+      }
 
     try {
       validateTotalSize([...imageFiles, ...files], videoFiles);
@@ -245,6 +282,7 @@ export function MenuItemForm({
       setImageError(err instanceof Error ? err.message : 'Total size too large');
       (e.target as HTMLInputElement).value = '';
       setReplacingImageIndex(null);
+      setImageInputKey((k) => k + 1);
       return;
     }
 
@@ -257,6 +295,10 @@ export function MenuItemForm({
       };
       reader.readAsDataURL(file);
     });
+    if (e.target) {
+      (e.target as HTMLInputElement).value = '';
+    }
+    setImageInputKey((k) => k + 1);
   };
 
   const getVideoDuration = (file: File): Promise<number> => {
@@ -291,6 +333,7 @@ export function MenuItemForm({
   const handleVideosChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+    setVideoInputKey((k: number) => k + 1);
     setVideoError('');
 
     // If replacing a specific video
@@ -305,7 +348,7 @@ export function MenuItemForm({
         return;
       }
       if (file.size > MAX_VIDEO_SIZE) {
-        setVideoError('Each video must be under 2.5MB');
+        setVideoError(`This video is ${Math.round(file.size/1024/1024)}MB. Combined with your existing video(s), the total would exceed the allowed ${Math.round(MAX_VIDEOS_TOTAL_SIZE/1024/1024)}MB. Please choose a smaller file or remove an existing video.`);
         // Reset input so user can re-select
         if (videoReplaceInputRef.current) {
           videoReplaceInputRef.current.value = '';
@@ -317,14 +360,15 @@ export function MenuItemForm({
       }
       try {
         const duration = await getVideoDuration(file);
-        if (duration < 4.5 || duration > 6.5) {
-          setVideoError('Each video must be 5-6 seconds long');
-          if (videoReplaceInputRef.current) {
-            videoReplaceInputRef.current.value = '';
-          }
-          (e.target as HTMLInputElement).value = '';
-          return;
-        }
+        // Duration check temporarily commented out
+        // if (duration > MAX_VIDEO_DURATION) {
+        //   setVideoError(`Each video must be ≤${MAX_VIDEO_DURATION} seconds long`);
+        //   if (videoReplaceInputRef.current) {
+        //     videoReplaceInputRef.current.value = '';
+        //   }
+        //   (e.target as HTMLInputElement).value = '';
+        //   return;
+        // }
       } catch (err) {
         setVideoError('Unable to validate video duration');
         if (videoReplaceInputRef.current) {
@@ -373,38 +417,54 @@ export function MenuItemForm({
     if (files.length + videoFiles.length > MAX_VIDEOS) {
       setVideoError(`You can select up to ${MAX_VIDEOS} videos`);
       (e.target as HTMLInputElement).value = '';
+      setVideoInputKey((k) => k + 1);
       return;
     }
+
 
     for (const file of files) {
       if (!file.type.startsWith('video/')) {
         setVideoError('Please select only video files');
-        (e.target as HTMLInputElement).value = '';
-        setReplacingVideoIndex(null);
-        return;
-      }
-      if (file.size > MAX_VIDEO_SIZE) {
-        setVideoError('Each video must be under 2.5MB');
-        (e.target as HTMLInputElement).value = '';
-        setReplacingVideoIndex(null);
-        // Do not add the video to state
-        return;
-      }
-      try {
-        const duration = await getVideoDuration(file);
-        if (duration < 4.5 || duration > 6.5) {
-          setVideoError('Each video must be 5-6 seconds long');
+        if (e.target) {
           (e.target as HTMLInputElement).value = '';
-          setReplacingVideoIndex(null);
-          return;
         }
-      } catch (err) {
-        setVideoError('Unable to validate video duration');
-        (e.target as HTMLInputElement).value = '';
         setReplacingVideoIndex(null);
+        setVideoInputKey((k) => k + 1);
         return;
       }
+      // Duration check temporarily commented out
+      // const duration = await getVideoDuration(file);
+      // if (duration > MAX_VIDEO_DURATION) {
+      //   setVideoError(`Each video must be ≤${MAX_VIDEO_DURATION} seconds long`);
+      //   (e.target as HTMLInputElement).value = '';
+      //   setReplacingVideoIndex(null);
+      //   return;
+      // }
     }
+
+    // Check total size for videos (across all selected)
+    const totalVideoSize = [...videoFiles, ...files].reduce((sum, f) => sum + (f?.size || 0), 0);
+      if (totalVideoSize > MAX_VIDEOS_TOTAL_SIZE) {
+        // Find the first file that causes the overflow
+        let accumulated = videoFiles.reduce((sum, f) => sum + (f?.size || 0), 0);
+        let offendingFile: File | null = null;
+        for (const file of files) {
+          if (accumulated + file.size > MAX_VIDEOS_TOTAL_SIZE) {
+            offendingFile = file;
+            break;
+          }
+          accumulated += file.size;
+        }
+        const existingSizeMB = Math.round(videoFiles.reduce((sum, f) => sum + (f?.size || 0), 0) / 1024 / 1024);
+        const newFileSizeMB = offendingFile ? Math.round(offendingFile.size / 1024 / 1024) : Math.round(files[0].size / 1024 / 1024);
+        setVideoError(`This video is ${newFileSizeMB}MB. Combined with your existing video(s) (${existingSizeMB}MB), the total would exceed the allowed ${Math.round(MAX_VIDEOS_TOTAL_SIZE/1024/1024)}MB. Please choose a smaller file or remove an existing video.`);
+        if (e.target) {
+          (e.target as HTMLInputElement).value = '';
+        }
+        setReplacingVideoIndex(null);
+        setVideoInputKey((k) => k + 1);
+        return;
+      }
 
     try {
       validateTotalSize(imageFiles, [...videoFiles, ...files]);
@@ -414,6 +474,7 @@ export function MenuItemForm({
         videoReplaceInputRef.current.value = '';
       }
       (e.target as HTMLInputElement).value = '';
+      setVideoInputKey((k) => k + 1);
       return;
     }
 
@@ -429,6 +490,10 @@ export function MenuItemForm({
         reader.readAsDataURL(file);
       });
     }
+    if (e.target) {
+      (e.target as HTMLInputElement).value = '';
+    }
+    setVideoInputKey((k) => k + 1);
   };
 
   const startReplaceVideo = (index: number) => {
@@ -540,7 +605,10 @@ if (!hasValidPrice) {
       if (imageUrl) submitData.image = imageUrl;
       if (videoUrl) submitData.video = videoUrl;
       if (uploadedImageUrls && uploadedImageUrls.length > 0) submitData.images = uploadedImageUrls.slice(0, MAX_IMAGES);
-      if (uploadedVideoUrls && uploadedVideoUrls.length > 0) submitData.videos = uploadedVideoUrls.slice(0, MAX_VIDEOS);
+      // Only uploaded video files go in videos
+      if (uploadedVideoUrls.length > 0) submitData.videos = uploadedVideoUrls.slice(0, MAX_VIDEOS);
+      // YouTube links go in a separate field
+      if (ytLinks.length > 0) submitData.youtubeLinks = ytLinks.slice(0, 2);
       if (formData.spice_level) submitData.spice_level = formData.spice_level;
       if (formData.sweet_level) submitData.sweet_level = formData.sweet_level;
 
@@ -1026,18 +1094,31 @@ if (!hasValidPrice) {
             {/* Videos Upload */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Videos (up to 2, 5-6s, 2.5MB each)
+          {`Videos (up to ${MAX_VIDEOS}, any combination, max ${Math.round(MAX_VIDEO_SIZE/1024/1024)}MB per file, total ${Math.round(MAX_VIDEOS_TOTAL_SIZE/1024/1024)}MB)`}
           <span className="text-xs text-gray-500 ml-2">({videoPreviews.length}/{MAX_VIDEOS})</span>
         </label>
-        <p className="text-xs text-gray-500 mb-2">MP4/WebM/MOV. Each video 5–6 seconds. Total media under 10MB.</p>
+        <p className="text-xs text-gray-500 mb-2">
+          {`MP4/WebM/MOV.Total videos size must be under ${Math.round(MAX_VIDEOS_TOTAL_SIZE/1024/1024)}MB. Total media (images+videos) must be under ${Math.round(MAX_TOTAL_SIZE/1024/1024)}MB.`}
+        </p>
         
         {videoError && (
-          <div className="mb-2 text-xs bg-red-100 border border-red-300 text-red-700 px-2 py-1 rounded">
-            {videoError}
+          <div className="mb-2 text-xs bg-red-100 border border-red-300 text-red-700 px-2 py-1 rounded flex items-center gap-2">
+            <span>{videoError}</span>
+            <button
+              type="button"
+              className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-700 rounded text-xs border border-gray-300 hover:bg-gray-300"
+              onClick={() => {
+                setVideoError('');
+                setVideoInputKey((k: number) => k + 1);
+              }}
+            >
+              Clear Error
+            </button>
           </div>
         )}
         {videoPreviews.length < MAX_VIDEOS && (
           <input
+            key={videoInputKey}
             type="file"
             accept="video/*"
             multiple
@@ -1093,18 +1174,31 @@ if (!hasValidPrice) {
       {/* Images Upload */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Images (up to 3, 2MB each) 
+          {`Images (up to ${MAX_IMAGES}, any combination, max ${Math.round(MAX_IMAGE_SIZE/1024/1024)}MB per file, total ${Math.round(MAX_IMAGES_TOTAL_SIZE/1024/1024)}MB)`}
           <span className="text-xs text-gray-500 ml-2">({imagePreviews.length}/{MAX_IMAGES})</span>
         </label>
-        <p className="text-xs text-gray-500 mb-2">PNG/JPG preferred. Total media (images+videos) must be under 10MB.</p>
+        <p className="text-xs text-gray-500 mb-2">
+          {`PNG/JPG preferred. Total images size must be under ${Math.round(MAX_IMAGES_TOTAL_SIZE/1024/1024)}MB. Total media (images+videos) must be under ${Math.round(MAX_TOTAL_SIZE/1024/1024)}MB.`}
+        </p>
         
         {imageError && (
-          <div className="mb-2 text-xs bg-red-100 border border-red-300 text-red-700 px-2 py-1 rounded">
-            {imageError}
+          <div className="mb-2 text-xs bg-red-100 border border-red-300 text-red-700 px-2 py-1 rounded flex items-center gap-2">
+            <span>{imageError}</span>
+            <button
+              type="button"
+              className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-700 rounded text-xs border border-gray-300 hover:bg-gray-300"
+              onClick={() => {
+                setImageError('');
+                setImageInputKey((k: number) => k + 1);
+              }}
+            >
+              Clear Error
+            </button>
           </div>
         )}
         {imagePreviews.length < MAX_IMAGES && (
           <input
+            key={imageInputKey}
             type="file"
             accept="image/*"
             multiple
@@ -1155,6 +1249,52 @@ if (!hasValidPrice) {
             ))}
           </div>
         )}
+
+        {/* YouTube Video Links */}
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">YouTube Video Links (max 2)</label>
+          <p className="text-xs text-gray-500 mb-2">Paste YouTube video URLs to display in the menu. These will be added to the videos array.</p>
+          {ytLinks.map((link, idx) => (
+            <div key={idx} className="flex items-center gap-2 mb-2">
+              <input
+                type="url"
+                value={link}
+                onChange={e => {
+                  const updated = [...ytLinks];
+                  updated[idx] = e.target.value;
+                  setYtLinks(updated);
+                  setYtLinkError('');
+                }}
+                placeholder="https://www.youtube.com/watch?v=..."
+                className="flex-1 px-2 py-1 border border-gray-300 rounded"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                className="px-2 py-1 bg-red-500 text-white rounded text-xs"
+                onClick={() => {
+                  setYtLinks(ytLinks.filter((_, i) => i !== idx));
+                  setYtLinkError('');
+                }}
+                disabled={isLoading}
+              >Remove</button>
+            </div>
+          ))}
+          {ytLinks.length < 2 && (
+            <button
+              type="button"
+              className="px-3 py-1 bg-blue-500 text-white rounded text-xs mb-2"
+              onClick={() => {
+                setYtLinks([...ytLinks, '']);
+                setYtLinkError('');
+              }}
+              disabled={isLoading}
+            >+ Add YouTube Link</button>
+          )}
+          {ytLinkError && (
+            <div className="text-xs text-red-600 mt-1">{ytLinkError}</div>
+          )}
+        </div>
       </div>
 
 

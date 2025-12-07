@@ -283,17 +283,42 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
               >
                 <div className="w-20 h-16 overflow-hidden">
                   {(() => {
-                    const videos = (item as any).videos && (item as any).videos.length > 0
-                      ? (item as any).videos
+                    // Combine uploaded videos and YouTube links (if present)
+                    const uploadedVideos = (item as any).videos && Array.isArray((item as any).videos)
+                      ? (item as any).videos.filter((v: string) => !((item as any).youtubeLinks && Array.isArray((item as any).youtubeLinks) && (item as any).youtubeLinks.includes(v)))
                       : ((item as any).video ? [(item as any).video] : []);
+                    const youtubeLinks = (item as any).youtubeLinks && Array.isArray((item as any).youtubeLinks)
+                      ? (item as any).youtubeLinks
+                      : [];
+                    const videos = [...uploadedVideos, ...youtubeLinks];
                     const images = item.images && item.images.length > 0
                       ? item.images
                       : (item.image ? [item.image] : []);
                     // Prefer showing a video preview if available
                     if (videos.length > 0) {
-                      return (
-                        <LazyVideo src={videos[0]} />
-                      );
+                      // If YouTube link, embed iframe, else use LazyVideo
+                      const first = videos[0];
+                      if (first && typeof first === 'string' && first.includes('youtube.com')) {
+                        // Extract video ID
+                        const match = first.match(/[?&]v=([^&#]+)/);
+                        const vid = match ? match[1] : null;
+                        if (vid) {
+                          return (
+                            <iframe
+                              width="100%"
+                              height="100%"
+                              src={`https://www.youtube.com/embed/${vid}`}
+                              title="YouTube video preview"
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              className="w-20 h-16 object-cover rounded"
+                            />
+                          );
+                        }
+                      }
+                      // Not a YouTube link, use LazyVideo
+                      return <LazyVideo src={first} />;
                     }
                     if (images.length > 0) {
                       return (
