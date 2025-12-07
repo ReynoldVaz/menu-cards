@@ -14,6 +14,7 @@ export function PendingApprovalPage() {
   const state = location.state as LocationState;
   const [approvalStatus, setApprovalStatus] = useState<'pending' | 'approved' | 'rejected' | 'checking'>('checking');
   const [checkCount, setCheckCount] = useState(0);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     // Check approval status periodically
@@ -23,18 +24,25 @@ export function PendingApprovalPage() {
         const userDoc = await getDoc(userRef);
 
         if (userDoc.exists()) {
-          const status = userDoc.data().approvalStatus || 'pending';
-          setApprovalStatus(status);
-
+          const status = userDoc.data().approvalStatus;
           if (status === 'approved') {
-            // Navigate to dashboard after 2 seconds to show success message
+            setApprovalStatus('approved');
             setTimeout(() => {
               navigate('/admin/dashboard');
             }, 2000);
+          } else if (status === 'rejected') {
+            setApprovalStatus('rejected');
+          } else {
+            setApprovalStatus('pending');
           }
+        } else {
+          setApprovalStatus('pending');
         }
       } catch (err) {
         console.error('Error checking approval status:', err);
+        setApprovalStatus('pending');
+      } finally {
+        setInitialized(true);
       }
     };
 
@@ -50,6 +58,17 @@ export function PendingApprovalPage() {
     return () => clearInterval(interval);
   }, [state?.userId, navigate]);
 
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-8 text-center">
+          <div className="text-6xl mb-4 animate-spin">⏳</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Checking Approval Status...</h2>
+          <p className="text-gray-600 mb-6">Please wait while we check your registration status.</p>
+        </div>
+      </div>
+    );
+  }
   if (!state?.restaurantCode) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
@@ -62,6 +81,18 @@ export function PendingApprovalPage() {
           >
             ← Back to Auth
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (approvalStatus === 'checking') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-8 text-center">
+          <div className="text-6xl mb-4 animate-spin">⏳</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Checking Approval Status...</h2>
+          <p className="text-gray-600 mb-6">Please wait while we check your registration status.</p>
         </div>
       </div>
     );
@@ -143,6 +174,7 @@ export function PendingApprovalPage() {
             >
               ← Back to Login
             </button>
+            
           </>
         )}
       </div>

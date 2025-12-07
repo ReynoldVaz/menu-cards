@@ -841,6 +841,7 @@ function MenuTab({ restaurantId }: { restaurantId: string }) {
               images: (editingItem as any).images,
               video: editingItem.video,
               videos: (editingItem as any).videos,
+              youtubeLinks: (editingItem as any).youtubeLinks,
               dietType: (editingItem as any).dietType,
               is_todays_special: editingItem.is_todays_special || false,
               is_unavailable: Boolean((editingItem as any).is_unavailable),
@@ -1242,8 +1243,8 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Logo must be less than 2MB');
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Logo must be less than 5MB');
       return;
     }
 
@@ -1328,6 +1329,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
             <input
               type="email"
               value={email}
+              disabled
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
@@ -1508,7 +1510,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Logo (Optional, max 2MB)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Logo (Optional, max 5MB)</label>
             <input
               type="file"
               accept="image/*"

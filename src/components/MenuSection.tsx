@@ -283,17 +283,42 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
               >
                 <div className="w-20 h-16 overflow-hidden">
                   {(() => {
-                    const videos = (item as any).videos && (item as any).videos.length > 0
-                      ? (item as any).videos
+                    // Combine uploaded videos and YouTube links (if present)
+                    const uploadedVideos = (item as any).videos && Array.isArray((item as any).videos)
+                      ? (item as any).videos.filter((v: string) => !((item as any).youtubeLinks && Array.isArray((item as any).youtubeLinks) && (item as any).youtubeLinks.includes(v)))
                       : ((item as any).video ? [(item as any).video] : []);
+                    const youtubeLinks = (item as any).youtubeLinks && Array.isArray((item as any).youtubeLinks)
+                      ? (item as any).youtubeLinks
+                      : [];
+                    const videos = [...uploadedVideos, ...youtubeLinks];
                     const images = item.images && item.images.length > 0
                       ? item.images
                       : (item.image ? [item.image] : []);
                     // Prefer showing a video preview if available
                     if (videos.length > 0) {
-                      return (
-                        <LazyVideo src={videos[0]} />
-                      );
+                      // If YouTube link, embed iframe, else use LazyVideo
+                      const first = videos[0];
+                      if (first && typeof first === 'string' && first.includes('youtube.com')) {
+                        // Extract video ID
+                        const match = first.match(/[?&]v=([^&#]+)/);
+                        const vid = match ? match[1] : null;
+                        if (vid) {
+                          return (
+                            <iframe
+                              width="100%"
+                              height="100%"
+                              src={`https://www.youtube.com/embed/${vid}`}
+                              title="YouTube video preview"
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              className="w-20 h-16 object-cover rounded"
+                            />
+                          );
+                        }
+                      }
+                      // Not a YouTube link, use LazyVideo
+                      return <LazyVideo src={first} />;
                     }
                     if (images.length > 0) {
                       return (
@@ -390,11 +415,17 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
                           className="font-bold text-xs sm:text-sm whitespace-nowrap rounded border border-gray-300 px-1 py-0.5 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[90px] min-w-[70px]"
                           style={{ color: themeStyles.primaryButtonBg, backgroundColor: themeStyles.backgroundColor }}
                         >
-                          {(item as any).portions.map((portion: any, idx: number) => (
-                            <option key={idx} value={idx} style={{ color: themeStyles.primaryButtonBg }}>
-                              {portion.label} ({formatPrice(portion.price, portion.currency)})
-                            </option>
-                          ))}
+                          {(item as any).portions.map((portion: any, idx: number) => {
+                            let shortLabel = portion.label;
+                            if (shortLabel === 'Small') shortLabel = 'S';
+                            else if (shortLabel === 'Medium') shortLabel = 'M';
+                            else if (shortLabel === 'Large') shortLabel = 'L';
+                            return (
+                              <option key={idx} value={idx} style={{ color: themeStyles.primaryButtonBg }}>
+                                {shortLabel} ({formatPrice(portion.price, portion.currency)})
+                              </option>
+                            );
+                          })}
                         </select>
                       ) : (
                         <span className="font-bold text-base sm:text-lg whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
