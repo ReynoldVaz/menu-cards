@@ -15,6 +15,7 @@ interface ThemePreviewProps {
     secondaryColor: string;
     accentColor: string;
     backgroundColor: string;
+    fontFamily?: string;
   };
   restaurantName?: string;
   logoUrl?: string;
@@ -26,9 +27,8 @@ export function ThemePreview({ theme, restaurantName = 'Flames', logoUrl }: Them
 
   return (
     <div className="rounded-lg overflow-hidden" style={{
-      // Remove outer border to avoid any dark lines at top/bottom
       border: 'none',
-      // boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+      fontFamily: theme.fontFamily || 'sans-serif',
     }}>
       {/* HEADER - Premium hero (matches actual UI) */}
       <div

@@ -40,9 +40,31 @@ export function TodaysSpecial({ items }: TodaysSpecialProps) {
         borderWidth: '2px',
       }}
     >
+      <style>{`
+        .shimmer-text {
+          display: inline-block;
+          background: linear-gradient(90deg, var(--primary-color, #2563eb) 0%, #c0c0c0 50%, var(--primary-color, #2563eb) 100%);
+          background-size: 200% 100%;
+          background-position: -100% 0;
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer-letters 1.5s infinite linear;
+        }
+        @keyframes shimmer-letters {
+          0% { background-position: -100% 0; }
+          100% { background-position: 100% 0; }
+        }
+      `}</style>
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="w-5 h-5" style={{ color: themeStyles.primaryButtonBg }} />
-        <h2 className="text-xl sm:text-2xl font-bold" style={{ color: themeStyles.primaryButtonBg }}>Today's Special</h2>
+        <h2
+          className="text-xl sm:text-2xl font-bold shimmer-text"
+          style={{ '--primary-color': themeStyles.primaryButtonBg } as React.CSSProperties }
+        >
+          Today's Special
+        </h2>
       </div>
 
       <div className="group">

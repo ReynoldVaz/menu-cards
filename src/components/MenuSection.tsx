@@ -140,9 +140,25 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
   }
   return (
     <div id={id} className={containerSpacing}>
-
-
-      {/* Analytics status indicator and last tracked event message */}
+      {/* Ripple effect styles for tap feedback */}
+      <style>{`
+        /* Only shimmer effect remains */
+        .shimmer-text {
+          display: inline-block;
+          background: linear-gradient(90deg, var(--primary-color, #2563eb) 0%, #c0c0c0 50%, var(--primary-color, #2563eb) 100%);
+          background-size: 200% 100%;
+          background-position: -100% 0;
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer-letters 1.5s infinite linear;
+        }
+        @keyframes shimmer-letters {
+          0% { background-position: -100% 0; }
+          100% { background-position: 100% 0; }
+        }
+      `}</style>
 
 
       {/* <div style={{ marginBottom: 8 }}>
@@ -219,12 +235,13 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
     color: themeStyles.primaryButtonBg,
   }}
 >
-  <h2 className="text-lg font-semibold flex items-center gap-2">
+  <h2 className="text-lg flex items-center gap-2" style={{ fontFamily: 'cursive, sans-serif', color: themeStyles.backgroundColor }}>
     {title}
     {enableAnalytics && sectionViews > 0 && (
       <span
         style={{
-          color: '#374151',
+          // color: '#374151',
+          color: themeStyles.backgroundColor,
           fontSize: '10px',
           marginLeft: '8px',
           display: 'inline-flex',
@@ -284,6 +301,9 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
                 <div className="w-20 h-16 overflow-hidden">
                   {(() => {
                     // Combine uploaded videos and YouTube links (if present)
+                              <span className="shimmer-text">
+                                <span className="shimmer-inner">{item.name}</span>
+                              </span>
                     const uploadedVideos = (item as any).videos && Array.isArray((item as any).videos)
                       ? (item as any).videos.filter((v: string) => !((item as any).youtubeLinks && Array.isArray((item as any).youtubeLinks) && (item as any).youtubeLinks.includes(v)))
                       : ((item as any).video ? [(item as any).video] : []);
@@ -344,16 +364,26 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <button
-                        onClick={() => { handleItemClick(item); openModal(item); }}
+                        onClick={() => {
+                          handleItemClick(item);
+                          openModal(item);
+                        }}
                         className="text-left flex-1"
+                        style={{ cursor: 'pointer' }}
                       >
                         <h3 
                           className="text-base sm:text-lg font-semibold text-gray-800 break-words whitespace-normal leading-snug"
-                          style={{
-                            color: 'inherit',
-                          }}
+                          style={{ color: 'inherit' }}
                         >
-                          {item.name}
+                          <span
+                            className="shimmer-text"
+                            style={{
+                              // Use themeStyles.primaryButtonBg for text color
+                              '--primary-color': themeStyles.primaryButtonBg,
+                            } as React.CSSProperties}
+                          >
+                            {item.name}
+                          </span>
                           {(item as any).dietType && (
                             <span className="ml-2 inline-flex items-center gap-1 leading-none">
                               {((item as any).dietType === 'veg') && (

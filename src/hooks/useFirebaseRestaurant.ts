@@ -38,6 +38,7 @@ export interface Theme {
   accentColor: string;
   backgroundColor: string;
   template?: 'modern' | 'classic' | 'minimal' | 'vibrant' | 'custom';
+  fontFamily?: string;
   typography?: {
     restaurantName?: TypographyStyle;
     sectionHeader?: TypographyStyle;

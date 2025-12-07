@@ -15,6 +15,7 @@ interface Theme {
   secondaryColor: string;
   accentColor: string;
   backgroundColor: string;
+    fontFamily?: string;
 }
 
 const PRESET_THEMES: Record<string, Theme> = {
@@ -69,10 +70,10 @@ export function ThemeSelectionPage() {
 
   const [loading, setLoading] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<string>('orange');
-  const [customTheme, setCustomTheme] = useState<Theme>(PRESET_THEMES.orange);
+  const [customTheme, setCustomTheme] = useState<Theme>({ ...PRESET_THEMES.orange, fontFamily: 'sans-serif' });
   const [useCustom, setUseCustom] = useState(false);
 
-  const currentTheme = useCustom ? customTheme : PRESET_THEMES[selectedPreset];
+  const currentTheme = useCustom ? customTheme : { ...PRESET_THEMES[selectedPreset], fontFamily: customTheme.fontFamily };
 
   const handleColorChange = (colorKey: keyof Omit<Theme, 'mode'>, value: string) => {
     setCustomTheme((prev) => ({
@@ -184,6 +185,19 @@ export function ThemeSelectionPage() {
 
                 {useCustom && (
                   <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Font Style</label>
+                      <select
+                        value={customTheme.fontFamily}
+                        onChange={e => setCustomTheme(prev => ({ ...prev, fontFamily: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                      >
+                        <option value="sans-serif">Sans-serif (Modern)</option>
+                        <option value="serif">Serif (Classic)</option>
+                        <option value="cursive">Cursive (Handwritten)</option>
+                        <option value="monospace">Monospace (Code)</option>
+                      </select>
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Primary Color</label>
                       <div className="flex gap-2 items-center">

@@ -996,6 +996,19 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>(
     (restaurant.theme?.template as TemplateType) || 'modern'
   );
+  // Font selection state
+  const FONT_OPTIONS = [
+    { label: 'Default (Sans)', value: 'inherit' },
+    { label: 'Cursive', value: 'cursive' },
+    { label: 'Serif', value: 'serif' },
+    { label: 'Monospace', value: 'monospace' },
+    { label: 'Quicksand', value: 'Quicksand, sans-serif' },
+    { label: 'Pacifico', value: 'Pacifico, cursive' },
+    { label: 'Roboto', value: 'Roboto, sans-serif' },
+    { label: 'Lobster', value: 'Lobster, cursive' },
+    { label: 'Playfair Display', value: 'Playfair Display, serif' },
+  ];
+  const [fontFamily, setFontFamily] = useState(restaurant.theme?.fontFamily || 'inherit');
   const [saving, setSaving] = useState(false);
   const [savedNotice, setSavedNotice] = useState<string>('');
   const [approvedThemes, setApprovedThemes] = useState<any[]>([]);
@@ -1060,6 +1073,7 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
     accentColor,
     backgroundColor,
     template: selectedTemplate,
+    fontFamily,
     ...TEMPLATES[selectedTemplate],
   };
 
@@ -1084,7 +1098,10 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         description,
         phone,
         email,
-        theme: currentTheme,
+        theme: {
+          ...currentTheme,
+          fontFamily,
+        },
       };
       if (logoFile && logoUrl) {
         updates.logo = logoUrl;
@@ -1474,7 +1491,22 @@ function SettingsTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdat
         <div className="pt-8">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">🎨 Theme Customization</h3>
           <p className="text-sm text-gray-600 mb-6">Choose a template style and customize colors. Changes update instantly in the preview below.</p>
-          
+
+          {/* Font Selection Section */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-3">🖋️ Font Style</label>
+            <p className="text-xs text-gray-600 mb-4">Choose a font style for your menu and headings</p>
+            <select
+              className="w-full sm:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              value={fontFamily}
+              onChange={e => setFontFamily(e.target.value)}
+            >
+              {FONT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value} style={{ fontFamily: opt.value }}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Templates Selection */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-700 mb-3">📱 Design Templates</label>
