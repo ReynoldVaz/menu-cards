@@ -202,7 +202,7 @@ useEffect(() => {
                           />
                         </div>
                       ) : activeMedia?.type === 'youtube' ? (
-                        <div className="w-full h-full flex items-center justify-center bg-black">
+                        <div className="w-full h-full flex items-center justify-center bg-black" style={{ aspectRatio: '16/9', minHeight: '240px', maxHeight: '60vh' }}>
                           {/* Extract YouTube video ID and embed */}
                           {(() => {
                             const match = activeMedia.src.match(/[?&]v=([^&#]+)/);
@@ -210,14 +210,13 @@ useEffect(() => {
                             if (vid) {
                               return (
                                 <iframe
-                                  width="100%"
-                                  height="100%"
                                   src={`https://www.youtube.com/embed/${vid}`}
                                   title="YouTube video preview"
                                   frameBorder="0"
                                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                   allowFullScreen
-                                  className="w-full h-full object-contain rounded"
+                                  className="w-full h-full object-cover rounded"
+                                  style={{ width: '100%', height: '100%', aspectRatio: '16/9', background: '#000' }}
                                 />
                               );
                             }
