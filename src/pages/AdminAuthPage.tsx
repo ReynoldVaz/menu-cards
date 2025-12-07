@@ -409,7 +409,7 @@ export function AdminAuthPage() {
       if (err.code === 'auth/user-not-found') {
         setError('📧 No account found with this email.\n\nPlease sign up first or use "Continue with Google".');
       } else if (err.code === 'auth/invalid-credential') {
-        setError('❌ Email or password is incorrect.\n\nIf you signed up with Google, please use "Continue with Google" instead.');
+        setError('❌ Email or password is incorrect.\n\nIf you signed up with Google, please use "Continue with Google" instead or if account is not created, please use Sign Up.');
       } else if (err.code === 'auth/wrong-password') {
         setError('🔐 Password is incorrect. Please try again.');
       } else if (err.code === 'auth/too-many-requests') {

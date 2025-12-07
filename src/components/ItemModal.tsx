@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
 import type { MenuItem } from '../data/menuData';
 import { SmartImage } from './SmartImage';
 import { ParallaxImage } from './ParallaxImage';
@@ -18,6 +19,11 @@ export function ItemModal({ item, images = [], onClose }: ItemModalProps) {
   const [mounted, setMounted] = useState(false);
   const themeStyles = useThemeStyles();
   // Portion selection logic
+
+    // For dynamic aspect ratio
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  
   const portions = Array.isArray((item as any)?.portions) && (item as any).portions.length > 0
     ? (item as any).portions
     : [{
@@ -50,18 +56,41 @@ useEffect(() => {
 
   if (!item) return null;
 
-  // Prepare media arrays for modal
-  const modalVideos = item.videos?.length
+  // Prepare media arrays for modal: combine uploaded videos and YouTube links
+  const uploadedVideos = item.videos?.length
     ? item.videos
     : item.video
     ? [item.video]
     : [];
+  const youtubeLinks = (item as any).youtubeLinks && Array.isArray((item as any).youtubeLinks)
+    ? (item as any).youtubeLinks
+    : [];
+  const allVideos = [...uploadedVideos, ...youtubeLinks];
   const modalImages = images && images.length > 0 ? images : [];
   const modalMedia = [
-    ...modalVideos.map((v) => ({ type: 'video' as const, src: v })),
+    ...allVideos.map((v) => {
+      if (typeof v === 'string' && v.includes('youtube.com')) {
+        // YouTube link
+        return { type: 'youtube' as const, src: v };
+      }
+      return { type: 'video' as const, src: v };
+    }),
     ...modalImages.map((s) => ({ type: 'image' as const, src: s })),
   ];
   const activeMedia = modalMedia[index];
+
+  // When activeMedia changes and is a video, reset aspect ratio
+  useEffect(() => {
+    setVideoAspectRatio(null);
+  }, [activeMedia?.type, activeMedia?.src]);
+
+  // When video loads, set aspect ratio
+  const handleVideoLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (video.videoWidth && video.videoHeight) {
+      setVideoAspectRatio(video.videoWidth / video.videoHeight);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -124,8 +153,13 @@ useEffect(() => {
               ) : (
                 <>
                   <div
-                    className="w-full h-[40vh] sm:h-[55vh] md:h-[60vh] rounded-lg overflow-hidden flex items-center justify-center shadow-md ring-1 ring-white/10 relative touch-pan-y"
-                    style={{ background: activeMedia?.type === 'image' ? 'transparent' : 'linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.95))' }}
+                    className="w-full rounded-lg overflow-hidden flex items-center justify-center shadow-md ring-1 ring-white/10 relative touch-pan-y"
+                    style={{
+                      background: activeMedia?.type === 'image' ? 'transparent' : '#000',
+                      aspectRatio: activeMedia?.type === 'video' && videoAspectRatio ? `${videoAspectRatio}` : undefined,
+                      minHeight: '240px',
+                      maxHeight: '60vh',
+                    }}
                     onPointerDown={(e) => {
                       const startX = e.clientX;
                       const startY = e.clientY;
@@ -153,16 +187,50 @@ useEffect(() => {
                     {/* Crossfade for media */}
                     <div className="w-full h-full flex items-center justify-center">
                       {activeMedia?.type === 'video' ? (
-                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100">
-                          <VideoPlayer src={activeMedia.src} autoPlayPreview className="w-full h-full object-contain" />
+                        <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100 flex items-center justify-center">
+                          <video
+                            ref={videoRef}
+                            src={activeMedia.src}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            controls
+                            className="w-full h-full object-cover rounded"
+                            onLoadedMetadata={handleVideoLoadedMetadata}
+                            style={{ maxHeight: '60vh', maxWidth: '100%' }}
+                          />
+                        </div>
+                      ) : activeMedia?.type === 'youtube' ? (
+                        <div className="w-full h-full flex items-center justify-center bg-black">
+                          {/* Extract YouTube video ID and embed */}
+                          {(() => {
+                            const match = activeMedia.src.match(/[?&]v=([^&#]+)/);
+                            const vid = match ? match[1] : null;
+                            if (vid) {
+                              return (
+                                <iframe
+                                  width="100%"
+                                  height="100%"
+                                  src={`https://www.youtube.com/embed/${vid}`}
+                                  title="YouTube video preview"
+                                  frameBorder="0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  className="w-full h-full object-contain rounded"
+                                />
+                              );
+                            }
+                            return <span className="text-gray-400">Invalid YouTube link</span>;
+                          })()}
                         </div>
                       ) : (
                         <div className="w-full h-full transition-opacity duration-300 ease-out opacity-100 flex items-center justify-center">
                           <img
                             src={activeMedia.src}
                             alt={`${item.name} image ${index + 1}`}
-                            className="w-full h-full object-contain"
-                            style={{ background: 'transparent' }}
+                            className="w-full h-full object-cover rounded"
+                            style={{ background: 'transparent', maxHeight: '60vh', maxWidth: '100%' }}
                           />
                         </div>
                       )}
@@ -181,9 +249,32 @@ useEffect(() => {
                           boxShadow: i === index ? `0 2px 8px ${themeStyles.accentBg}30` : 'none',
                         }}
                       >
-                        <div className="w-20 h-14 overflow-hidden rounded bg-black/60 flex items-center justify-center">
+                        <div className="w-20 h-14 overflow-hidden rounded bg-black/60 flex items-center justify-center relative">
                           {m.type === 'image' ? (
                             <SmartImage src={m.src} alt={`${item.name} thumb ${i + 1}`} className="w-full h-full" fit="cover" />
+                          ) : m.type === 'youtube' ? (
+                            (() => {
+                              const match = m.src.match(/[?&]v=([^&#]+)/);
+                              const vid = match ? match[1] : null;
+                              if (vid) {
+                                return (
+                                  <>
+                                    <img
+                                      src={`https://img.youtube.com/vi/${vid}/hqdefault.jpg`}
+                                      alt="YouTube thumbnail"
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <span className="absolute inset-0 flex items-center justify-center">
+                                      <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="19" cy="19" r="19" fill="rgba(0,0,0,0.45)" />
+                                        <polygon points="15,12 28,19 15,26" fill="#fff" />
+                                      </svg>
+                                    </span>
+                                  </>
+                                );
+                              }
+                              return <span className="text-red-600 text-xs font-bold">YT</span>;
+                            })()
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
                               ▶ Video
@@ -254,15 +345,21 @@ useEffect(() => {
                     <h4 className="font-semibold text-gray-800">Price</h4>
                     {portions.length > 1 ? (
   <div className="flex flex-wrap gap-2 mt-1">
-    {portions.map((portion: any, idx: number) => (
-      <span
-        key={idx}
-        className="inline-block text-xs sm:text-sm font-semibold px-2 py-1 rounded bg-gray-100"
-        style={{ color: themeStyles.primaryButtonBg }}
-      >
-        {portion.label} | {formatPrice(portion.price, portion.currency)}
-      </span>
-    ))}
+    {portions.map((portion: any, idx: number) => {
+      let shortLabel = portion.label;
+      if (shortLabel === 'Small') shortLabel = 'S';
+      else if (shortLabel === 'Medium') shortLabel = 'M';
+      else if (shortLabel === 'Large') shortLabel = 'L';
+      return (
+        <span
+          key={idx}
+          className="inline-block text-xs sm:text-sm font-semibold px-2 py-1 rounded bg-gray-100"
+          style={{ color: themeStyles.primaryButtonBg }}
+        >
+          {shortLabel} | {formatPrice(portion.price, portion.currency)}
+        </span>
+      );
+    })}
   </div>
 ) : (
   <p className="text-sm font-semibold mt-1" style={{ color: themeStyles.primaryButtonBg }}>
