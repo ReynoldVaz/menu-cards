@@ -1,40 +1,11 @@
-import nodemailer from 'nodemailer';
 
-// Determine which email service to use
-const USE_SENDGRID = !!process.env.SENDGRID_API_KEY;
-const USE_GMAIL = !!process.env.EMAIL_USER && !!process.env.EMAIL_PASSWORD;
+import { Resend } from 'resend';
 
-let transporter = null;
-
-if (USE_SENDGRID) {
-  console.log(`[Email API] Using SendGrid for email delivery`);
-  // Use SendGrid via Nodemailer SMTP relay
-  transporter = nodemailer.createTransport({
-    host: 'smtp.sendgrid.net',
-    port: 587,
-    secure: false,
-    auth: {
-      user: 'apikey',
-      pass: process.env.SENDGRID_API_KEY,
-    },
-  });
-} else if (USE_GMAIL) {
-  console.log(`[Email API] Using Gmail SMTP for email delivery`);
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
-} else {
-  console.warn(`[Email API] ⚠️ No email service configured!`);
-  console.warn(`[Email API] Set either SENDGRID_API_KEY or (EMAIL_USER + EMAIL_PASSWORD)`);
-}
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 console.log(`[Email API] ✓ Module loaded - ${new Date().toISOString()}`);
-console.log(`[Email API] Email service type: ${USE_SENDGRID ? 'SendGrid' : USE_GMAIL ? 'Gmail' : 'NONE'}`);
-console.log(`[Email API] Email service configured: ${!!transporter}`);
+console.log(`[Email API] Email service type: Resend`);
+console.log(`[Email API] Email service configured: ${!!resend}`);
 
 // Email template generator
 function getEmailTemplate(type, data) {
@@ -222,110 +193,35 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ 
-      success: false, 
-      message: 'Method not allowed. Use POST.' 
-    });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const { to, subject, html } = req.body;
+  if (!to || !subject || !html) {
+    res.status(400).json({ error: 'Missing required fields: to, subject, html' });
+    return;
   }
 
   try {
-    const { type, to, restaurantName, restaurantCode, rejectionReason } = req.body;
-
-    console.log(`[Email] === RECEIVED REQUEST ===`);
-    console.log(`[Email] Type:`, type);
-    console.log(`[Email] To:`, to);
-    console.log(`[Email] Restaurant:`, restaurantName);
-    console.log(`[Email] Configured EMAIL_USER:`, process.env.EMAIL_USER);
-    console.log(`[Email] Configured EMAIL_PASSWORD:`, process.env.EMAIL_PASSWORD ? '✓ SET' : '✗ NOT SET');
-    console.log(`[Email] Sending ${type} email to:`, to);
-
-    // Validate required fields
-    if (!type || !to || !restaurantName) {
-      console.warn('[Email] Missing required fields:', { type, to, restaurantName });
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: type, to, restaurantName',
-      });
-    }
-
-    // Validate email format
-    if (!isValidEmail(to)) {
-      console.warn('[Email] Invalid email format:', to);
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid email address format',
-      });
-    }
-
-    // Check for dummy email patterns
-    if (isDummyEmail(to)) {
-      console.warn('[Email] Rejected dummy email pattern:', to);
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid email address (dummy/test email)',
-      });
-    }
-
-    // Get email template
-    const template = getEmailTemplate(type, {
-      restaurantName,
-      restaurantCode,
-      rejectionReason: rejectionReason || 'Your application does not meet our current requirements.',
+    const result = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'noreply@menucards.app',
+      to,
+      subject,
+      html,
+      reply_to: 'support@menucards.app',
     });
-
-    if (!template.html) {
-      console.warn('[Email] Unknown email type:', type);
-      return res.status(400).json({
-        success: false,
-        message: 'Unknown email type',
-      });
-    }
-
-    // Send email
-    const mailOptions = {
-      from: USE_SENDGRID 
-        ? (process.env.SENDGRID_FROM_EMAIL || 'noreply@menucards.app')
-        : (process.env.EMAIL_USER || 'noreply@menucards.app'),
-      to: to,
-      subject: type === 'approval' 
-        ? `Welcome to Menu Cards - ${restaurantName}!` 
-        : `Update on Your Menu Cards Registration`,
-      html: template.html,
-      text: template.text,
-      replyTo: 'support@menucards.app',
-    };
-
-    console.log('[Email] Sending with options:', {
-      from: mailOptions.from,
-      to: mailOptions.to,
-      subject: mailOptions.subject,
-      service: USE_SENDGRID ? 'SendGrid' : 'Gmail',
-    });
-
-    const info = await transporter.sendMail(mailOptions);
-
-    console.log(`[Email] ✓ ${type} email sent successfully:`, info.messageId);
-
-    return res.status(200).json({
-      success: true,
-      message: `${type} email sent successfully`,
-      messageId: info.messageId,
-    });
+    res.status(200).json({ success: true, result });
+    return;
   } catch (error) {
-    console.error('[Email] ✗ CRITICAL ERROR:');
-    console.error('[Email] Error name:', error.name);
-    console.error('[Email] Error message:', error.message);
-    console.error('[Email] Error code:', error.code);
-    console.error('[Email] Full error:', error);
-    
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to send email: ' + (error.message || 'Unknown error'),
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
+    res.status(500).json({ success: false, error: error.message });
+    return;
   }
 }
+
+

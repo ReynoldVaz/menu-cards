@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase.config';
 import { collection, getDocs, doc, updateDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
+// Removed sendResendEmail import; use sendEmailClient only
+import { sendEmailClient } from '../utils/sendEmailClient'; // Corrected import statement
 // import { sendApprovalEmail, sendRejectionEmail } from '../utils/emailService'; // TODO: Enable after SendGrid domain authentication
 
 interface Restaurant {
@@ -174,6 +176,16 @@ export function MasterAdminDashboard() {
         updatedAt: new Date().toISOString(),
       });
 
+
+      // Send approval email to restaurant owner using sendEmailClient
+      await sendEmailClient({
+        to: 'reynold5.nic0684@gmail.com',
+        subject: 'Your restaurant registration is approved!',
+        html: `<p>Hi, your restaurant <b>${request.restaurantName}</b> has been approved. Welcome aboard!</p>`
+      });
+
+
+
       // Send approval email to restaurant owner
       // TODO: Enable after SendGrid domain authentication is complete
       /*
@@ -228,6 +240,15 @@ export function MasterAdminDashboard() {
         updatedAt: new Date().toISOString(),
       });
 
+
+
+            // Send rejection email to restaurant owner using sendEmailClient
+            await sendEmailClient({
+              to: 'reynold5.nic0684@gmail.com',
+              subject: 'Your restaurant registration was rejected',
+              html: `<p>Hi, your restaurant <b>${request.restaurantName}</b> was rejected. Reason: ${rejectionReason}</p>`
+            });
+
       // Send rejection email to restaurant owner
       // TODO: Enable after SendGrid domain authentication is complete
       /*
@@ -266,11 +287,19 @@ export function MasterAdminDashboard() {
         approvalStatus: 'deregistered',
       });
 
+
       // Delete approval request
       const approvalDocRef = doc(db, 'approval_requests', request.id);
       await updateDoc(approvalDocRef, {
         status: 'rejected',
         updatedAt: new Date().toISOString(),
+      });
+
+      // Send deregister email to restaurant owner using sendEmailClient
+      await sendEmailClient({
+        to: request.ownerEmail,
+        subject: 'Your restaurant registration was deregistered',
+        html: `<p>Hi, your restaurant <b>${request.restaurantName}</b> has been deregistered. Please contact support for more information.</p>`
       });
 
       // Reload data
