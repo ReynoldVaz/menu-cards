@@ -206,7 +206,7 @@ function App({ analyticsSummary }: AppProps) {
               )}
 
               <div id="todays-special">
-                <TodaysSpecial item={todaysSpecial} />
+                <TodaysSpecial items={todaysSpecial} />
               </div>
 
               {menuSections.map((section, idx) => {

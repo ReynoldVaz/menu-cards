@@ -6,8 +6,12 @@ import { useThemeStyles } from '../context/useThemeStyles';
 import { hexToRgba } from '../utils/themeUtils';
 import { formatPrice } from '../utils/formatPrice';
 
+// interface TodaysSpecialProps {
+//   item: MenuItem | null;
+// }
+
 interface TodaysSpecialProps {
-  item: MenuItem | null;
+  items: MenuItem[];
 }
 
 function modalImagesFor(name: string) {
@@ -19,19 +23,16 @@ function modalImagesFor(name: string) {
   ];
 }
 
-export function TodaysSpecial({ item }: TodaysSpecialProps) {
-  if (!item) {
+export function TodaysSpecial({ items }: TodaysSpecialProps) {
+  if (!items || items.length === 0) {
     return null;
   }
 
-  const [open, setOpen] = useState(false);
-  const images = item.images && item.images.length > 0
-    ? item.images
-    : (item.image ? [item.image] : modalImagesFor(item.name));
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
   const themeStyles = useThemeStyles();
 
   return (
-    <div 
+    <div
       className="mb-12 p-4 sm:p-6 rounded-lg"
       style={{
         background: `linear-gradient(to right, ${hexToRgba(themeStyles.accentBg, 0.5)}, ${hexToRgba(themeStyles.accentBg, 0.3)})`,
@@ -45,25 +46,34 @@ export function TodaysSpecial({ item }: TodaysSpecialProps) {
       </div>
 
       <div className="group">
-        <div className="flex justify-between items-start gap-4 mb-2">
-          <button onClick={() => setOpen(true)} className="text-left">
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
-              {item.name}
-            </h3>
-          </button>
-          <span className="font-bold text-lg sm:text-xl whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
-            {formatPrice(item.price)}
-          </span>
-        </div>
-        <button onClick={() => setOpen(true)} className="text-sm text-gray-600 hover:text-gray-800">
-          View more
-        </button>
-        <p className="text-gray-600 text-sm leading-relaxed mt-3">
-          {item.description}
-        </p>
+        {items.map((item, idx) => {
+          const images = item.images && item.images.length > 0
+            ? item.images
+            : (item.image ? [item.image] : modalImagesFor(item.name));
+          return (
+            <div key={item.id ?? item.name} className="flex justify-between items-center gap-4 mb-2">
+              <button onClick={() => setOpenIdx(idx)} className="text-left hover:underline">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
+                  {item.name}
+                </h3>
+              </button>
+              <span className="font-bold text-lg sm:text-xl whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
+                {formatPrice(item.price)}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
-      {open && <ItemModal item={item} images={images} onClose={() => setOpen(false)} />}
+      {openIdx !== null && (
+        <ItemModal
+          item={items[openIdx]}
+          images={items[openIdx].images && items[openIdx].images.length > 0
+            ? items[openIdx].images
+            : (items[openIdx].image ? [items[openIdx].image] : modalImagesFor(items[openIdx].name))}
+          onClose={() => setOpenIdx(null)}
+        />
+      )}
     </div>
   );
 }

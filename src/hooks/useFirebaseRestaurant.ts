@@ -82,11 +82,10 @@ export interface Restaurant {
   captureCustomerPhone?: boolean;
   enableAnalytics?: boolean;
 }
-
 export interface UseFirebaseRestaurantResult {
   restaurant: Restaurant | null;
   menuSections: MenuSection[];
-  todaysSpecial: MenuItem | null;
+  todaysSpecial: MenuItem[];
   upcomingEvents: Event[];
   loading: boolean;
   error?: string;
@@ -98,7 +97,7 @@ export function useFirebaseRestaurant(
 ): UseFirebaseRestaurantResult {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menuSections, setMenuSections] = useState<MenuSection[]>([]);
-  const [todaysSpecial, setTodaysSpecial] = useState<MenuItem | null>(null);
+  const [todaysSpecial, setTodaysSpecial] = useState<MenuItem[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
@@ -118,10 +117,9 @@ export function useFirebaseRestaurant(
         ...docSnap.data(),
       })) as MenuItem[];
 
-      // Find today's special
-      const special =
-        items.find((item) => item.is_todays_special) || null;
-      setTodaysSpecial(special || null);
+      // Find all today's specials
+      const specials = items.filter((item) => item.is_todays_special);
+      setTodaysSpecial(specials);
 
       // Group items by section
       const sectionMap = new Map<string, MenuItem[]>();
