@@ -415,11 +415,17 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
                           className="font-bold text-xs sm:text-sm whitespace-nowrap rounded border border-gray-300 px-1 py-0.5 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[90px] min-w-[70px]"
                           style={{ color: themeStyles.primaryButtonBg, backgroundColor: themeStyles.backgroundColor }}
                         >
-                          {(item as any).portions.map((portion: any, idx: number) => (
-                            <option key={idx} value={idx} style={{ color: themeStyles.primaryButtonBg }}>
-                              {portion.label} ({formatPrice(portion.price, portion.currency)})
-                            </option>
-                          ))}
+                          {(item as any).portions.map((portion: any, idx: number) => {
+                            let shortLabel = portion.label;
+                            if (shortLabel === 'Small') shortLabel = 'S';
+                            else if (shortLabel === 'Medium') shortLabel = 'M';
+                            else if (shortLabel === 'Large') shortLabel = 'L';
+                            return (
+                              <option key={idx} value={idx} style={{ color: themeStyles.primaryButtonBg }}>
+                                {shortLabel} ({formatPrice(portion.price, portion.currency)})
+                              </option>
+                            );
+                          })}
                         </select>
                       ) : (
                         <span className="font-bold text-base sm:text-lg whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>

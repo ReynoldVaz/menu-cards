@@ -147,8 +147,26 @@ export function MenuItemForm({
   const imageReplaceInputRef = useRef<HTMLInputElement>(null);
 
   const [portionWise, setPortionWise] = useState(
-  initialData?.portions && initialData.portions.length > 1
-);
+    initialData?.portions && initialData.portions.length > 1
+  );
+
+  // When enabling portionWise, if previously single price, map price to Large
+  const handlePortionWiseToggle = (checked: boolean) => {
+    setPortionWise(checked);
+    if (checked && (!initialData?.portions || initialData.portions.length <= 1)) {
+      // Map single price to Large
+      setPortions([
+        { label: 'Small', price: 0, currency: formData.currency || 'INR', default: false },
+        { label: 'Medium', price: 0, currency: formData.currency || 'INR', default: false },
+        { label: 'Large', price: formData.price, currency: formData.currency || 'INR', default: true },
+      ]);
+      setFormData({ ...formData, portions: [
+        { label: 'Small', price: 0, currency: formData.currency || 'INR', default: false },
+        { label: 'Medium', price: 0, currency: formData.currency || 'INR', default: false },
+        { label: 'Large', price: formData.price, currency: formData.currency || 'INR', default: true },
+      ] });
+    }
+  };
 
   const MAX_IMAGES = Number(import.meta.env.VITE_MAX_IMAGES) || 3;
   const MAX_VIDEOS = Number(import.meta.env.VITE_MAX_VIDEOS) || 2;
@@ -561,7 +579,7 @@ export function MenuItemForm({
 let submitPortions = formData.portions;
 if (!portionWise) {
   submitPortions = [{
-    label: 'Full',
+    label: 'Large',
     price: formData.price,
     currency: formData.currency || 'INR',
     default: true,
@@ -585,7 +603,11 @@ if (!hasValidPrice) {
 }
 
       // Use default portion for legacy price/currency
-      const defaultPortion = validPortions.find(p => p.default) || validPortions[0];
+      let defaultPortion = validPortions.find(p => p.default);
+      if (!defaultPortion) {
+        // Prefer 'Large' if present, else fallback to first
+        defaultPortion = validPortions.find(p => p.label === 'Large') || validPortions[0];
+      }
 
       const submitData: any = {
         name: formData.name,
@@ -746,7 +768,7 @@ if (!hasValidPrice) {
     <input
       type="checkbox"
       checked={portionWise}
-      onChange={e => setPortionWise(e.target.checked)}
+      onChange={e => handlePortionWiseToggle(e.target.checked)}
       className="form-checkbox"
     />
     <span className="text-sm">Enable portion-wise pricing</span>
@@ -757,94 +779,61 @@ if (!hasValidPrice) {
 
 {portionWise ? (
   <div className="flex flex-col gap-2 w-full">
-    {portions.map((portion, idx) => (
-      <div key={idx} className="flex flex-wrap gap-2 items-center w-full">
-  <input
-    type="text"
-    value={portion.label}
-    onChange={e => {
-      const updated = [...portions];
-      updated[idx].label = e.target.value;
-      setPortions(updated);
-      setFormData({ ...formData, portions: updated });
-    }}
-    className="min-w-[80px] max-w-[120px] flex-1 px-2 py-1 border border-gray-300 rounded"
-    disabled={isLoading}
-    placeholder="Full/Half/250ml"
-  />
-  <input
-    type="number"
-    value={portion.price}
-    min="0"
-    step="0.01"
-    onChange={e => {
-      const updated = [...portions];
-      updated[idx].price = parseFloat(e.target.value);
-      setPortions(updated);
-      setFormData({ ...formData, portions: updated });
-    }}
-    className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded"
-    disabled={isLoading}
-    placeholder="Price"
-  />
-  <select
-    value={portion.currency || 'INR'}
-    onChange={e => {
-      const updated = [...portions];
-      updated[idx].currency = e.target.value as Portion['currency'];
-      setPortions(updated);
-      setFormData({ ...formData, portions: updated });
-    }}
-    className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded bg-white"
-    disabled={isLoading}
-  >
-    <option value="INR">₹ INR</option>
-    <option value="USD">$ USD</option>
-    <option value="EUR">€ EUR</option>
-    <option value="GBP">£ GBP</option>
-  </select>
-  <div className="flex items-center gap-1">
-    <input
-      type="radio"
-      checked={portion.default === true}
-      onChange={() => {
-        const updated = portions.map((p, i) => ({ ...p, default: i === idx }));
-        setPortions(updated);
-        setFormData({ ...formData, portions: updated });
-      }}
-      name="defaultPortion"
-      disabled={isLoading}
-    />
-    <span className="text-xs">Default</span>
-  </div>
-  {portions.length > 1 && (
-    <button
-      type="button"
-      onClick={() => {
-        const updated = portions.filter((_, i) => i !== idx);
-        setPortions(updated);
-        setFormData({ ...formData, portions: updated });
-      }}
-      className="px-2 py-1 bg-red-500 text-white rounded text-xs"
-      disabled={isLoading}
-    >Remove</button>
-  )}
-</div>
+    {['Small', 'Medium', 'Large'].map((size, idx) => (
+      <div key={size} className="flex flex-wrap gap-2 items-center w-full">
+        <input
+          type="text"
+          value={size}
+          disabled
+          className="min-w-[80px] max-w-[120px] flex-1 px-2 py-1 border border-gray-300 rounded bg-gray-100 text-gray-700 font-semibold"
+        />
+        <input
+          type="number"
+          value={portions[idx]?.price ?? ''}
+          min="0"
+          step="0.01"
+          onChange={e => {
+            const updated = [...portions];
+            if (!updated[idx]) {
+              updated[idx] = { label: size, price: 0, currency: 'INR', default: idx === 2 };
+            }
+            updated[idx].price = parseFloat(e.target.value);
+            updated[idx].label = size;
+            updated[idx].default = idx === 2; // Large is default
+            setPortions(updated);
+            setFormData({ ...formData, portions: updated });
+          }}
+          className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded"
+          disabled={isLoading}
+          placeholder="Price"
+        />
+        <select
+          value={portions[idx]?.currency || 'INR'}
+          onChange={e => {
+            const updated = [...portions];
+            if (!updated[idx]) {
+              updated[idx] = { label: size, price: 0, currency: 'INR', default: idx === 2 };
+            }
+            updated[idx].currency = e.target.value as Portion['currency'];
+            updated[idx].label = size;
+            updated[idx].default = idx === 2;
+            setPortions(updated);
+            setFormData({ ...formData, portions: updated });
+          }}
+          className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded bg-white"
+          disabled={isLoading}
+        >
+          <option value="INR">₹ INR</option>
+          <option value="USD">$ USD</option>
+          <option value="EUR">€ EUR</option>
+          <option value="GBP">£ GBP</option>
+        </select>
+        {idx === 2 && (
+          <span className="text-xs text-blue-700 font-semibold ml-2">Default</span>
+        )}
+      </div>
     ))}
-
-    {portions.length < 5 && (
-  <button
-    type="button"
-    onClick={() => {
-      setPortions([...portions, { label: '', price: 0, currency: 'INR', default: false }]);
-      setFormData({ ...formData, portions: [...portions, { label: '', price: 0, currency: 'INR', default: false }] });
-    }}
-    className="px-3 py-1 bg-blue-500 text-white rounded text-xs w-fit"
-    disabled={isLoading}
-  >+ Add Portion/Size</button>
-)}
-<div className="text-xs text-gray-500">E.g., Full/Half for food, 250ml/500ml for drinks. Mark one as default.</div>
-
+    <div className="text-xs text-gray-500">Set price and currency for each size. Large is default.</div>
   </div>
 ) : (
   <div className="flex gap-2 items-center">

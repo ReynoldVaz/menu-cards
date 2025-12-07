@@ -310,15 +310,21 @@ useEffect(() => {
                     <h4 className="font-semibold text-gray-800">Price</h4>
                     {portions.length > 1 ? (
   <div className="flex flex-wrap gap-2 mt-1">
-    {portions.map((portion: any, idx: number) => (
-      <span
-        key={idx}
-        className="inline-block text-xs sm:text-sm font-semibold px-2 py-1 rounded bg-gray-100"
-        style={{ color: themeStyles.primaryButtonBg }}
-      >
-        {portion.label} | {formatPrice(portion.price, portion.currency)}
-      </span>
-    ))}
+    {portions.map((portion: any, idx: number) => {
+      let shortLabel = portion.label;
+      if (shortLabel === 'Small') shortLabel = 'S';
+      else if (shortLabel === 'Medium') shortLabel = 'M';
+      else if (shortLabel === 'Large') shortLabel = 'L';
+      return (
+        <span
+          key={idx}
+          className="inline-block text-xs sm:text-sm font-semibold px-2 py-1 rounded bg-gray-100"
+          style={{ color: themeStyles.primaryButtonBg }}
+        >
+          {shortLabel} | {formatPrice(portion.price, portion.currency)}
+        </span>
+      );
+    })}
   </div>
 ) : (
   <p className="text-sm font-semibold mt-1" style={{ color: themeStyles.primaryButtonBg }}>
