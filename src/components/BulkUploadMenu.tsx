@@ -184,6 +184,28 @@ export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuPr
 
       {step === 'upload' && (
         <div className="space-y-4">
+          {errors.length > 0 && (
+            <div className="bg-red-50 border border-red-300 rounded-lg p-4 mb-2">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-semibold text-red-900">❌ Errors:</h4>
+                <button
+                  onClick={() => {
+                    setErrors([]);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="bg-red-200 hover:bg-red-300 text-red-900 px-2 py-1 rounded text-xs font-semibold"
+                >
+                  Clear
+                </button>
+              </div>
+              <ul className="text-sm text-red-800 space-y-1">
+                {errors.map((error, idx) => (
+                  <li key={idx}>• {error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition"
                onClick={() => fileInputRef.current?.click()}>
             <input
@@ -225,9 +247,22 @@ export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuPr
             </ul>
           </div>
 
+        </div>
+      )}
+
+      {step === 'preview' && preview.length > 0 && (
+        <div className="space-y-4">
           {errors.length > 0 && (
-            <div className="bg-red-50 border border-red-300 rounded-lg p-4">
-              <h4 className="font-semibold text-red-900 mb-2">❌ Errors:</h4>
+            <div className="bg-red-50 border border-red-300 rounded-lg p-4 mb-2">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-semibold text-red-900">❌ Errors:</h4>
+                <button
+                  onClick={() => setErrors([])}
+                  className="bg-red-200 hover:bg-red-300 text-red-900 px-2 py-1 rounded text-xs font-semibold"
+                >
+                  Clear
+                </button>
+              </div>
               <ul className="text-sm text-red-800 space-y-1">
                 {errors.map((error, idx) => (
                   <li key={idx}>• {error}</li>
@@ -235,11 +270,7 @@ export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuPr
               </ul>
             </div>
           )}
-        </div>
-      )}
 
-      {step === 'preview' && preview.length > 0 && (
-        <div className="space-y-4">
           <div className="bg-green-50 border border-green-300 rounded-lg p-4">
             <p className="text-green-900 font-medium">
               ✅ {preview.length} items ready to import
@@ -294,17 +325,6 @@ export function BulkUploadMenu({ onUpload, isLoading = false }: BulkUploadMenuPr
               {isLoading ? '⏳ Uploading...' : '✅ Import All Items'}
             </button>
           </div>
-
-          {errors.length > 0 && (
-            <div className="bg-red-50 border border-red-300 rounded-lg p-4">
-              <h4 className="font-semibold text-red-900 mb-2">❌ Errors:</h4>
-              <ul className="text-sm text-red-800 space-y-1">
-                {errors.map((error, idx) => (
-                  <li key={idx}>• {error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       )}
 
