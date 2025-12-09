@@ -178,10 +178,14 @@ export function MasterAdminDashboard() {
 
 
       // Send approval email to restaurant owner using sendEmailClient
+      const companyName = import.meta.env.VITE_COMPANY_NAME || 'Our Team';
+      const appUrl = import.meta.env.VITE_APP_URL || 'https://menu-cards-ten.vercel.app';
       await sendEmailClient({
-        to: 'reynold5.nic0684@gmail.com',
-        subject: 'Your restaurant registration is approved!',
-        html: `<p>Hi, your restaurant <b>${request.restaurantName}</b> has been approved. Welcome aboard!</p>`
+        to: request.ownerEmail,
+        subject: `Your restaurant registration is approved!`,
+        html: `<p>Hi, your restaurant <b>${request.restaurantName}</b> has been approved. Welcome aboard!</p>
+        <p>You can now <a href="${appUrl}/login" target="_blank">log in to your dashboard</a> to manage your restaurant.</p>
+        <p>Best regards,<br/>${companyName}</p>`
       });
 
 
@@ -243,11 +247,16 @@ export function MasterAdminDashboard() {
 
 
             // Send rejection email to restaurant owner using sendEmailClient
-            await sendEmailClient({
-              to: 'reynold5.nic0684@gmail.com',
-              subject: 'Your restaurant registration was rejected',
-              html: `<p>Hi, your restaurant <b>${request.restaurantName}</b> was rejected. Reason: ${rejectionReason}</p>`
-            });
+      const companyName = import.meta.env.VITE_COMPANY_NAME || 'Our Team';
+      const companyEmail = import.meta.env.VITE_COMPANY_EMAIL || 'support@example.com';
+      const companyPhone = import.meta.env.VITE_COMPANY_PHONE || '';
+      await sendEmailClient({
+        to: request.ownerEmail,
+        subject: 'Your restaurant registration was rejected',
+        html: `<p>Hi, your restaurant <b>${request.restaurantName}</b> was rejected. Reason: ${rejectionReason}</p>
+        <p>For more details or support, contact us at <a href="mailto:${companyEmail}">${companyEmail}</a>${companyPhone ? ` or call ${companyPhone}` : ''}.</p>
+        <p>Best regards,<br/>${companyName}</p>`
+      });
 
       // Send rejection email to restaurant owner
       // TODO: Enable after SendGrid domain authentication is complete
