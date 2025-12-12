@@ -2,6 +2,10 @@
  * Twilio Subaccount Creation API
  * Creates a new Twilio subaccount for a restaurant and registers WhatsApp sender
  * 
+ * Supports two setup types:
+ * 1. new_number: Provisions a new WhatsApp number from Twilio
+ * 2. existing_number: Ports existing business number (BYON)
+ * 
  * PLACEHOLDERS:
  * - TWILIO_ACCOUNT_SID: Master Twilio account SID
  * - TWILIO_AUTH_TOKEN: Master Twilio auth token
@@ -15,7 +19,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { restaurantCode, restaurantName, ownerEmail, ownerPhone } = req.body;
+    const { 
+      restaurantCode, 
+      restaurantName, 
+      ownerEmail, 
+      ownerPhone,
+      setupType = 'new_number',
+      existingPhone = null
+    } = req.body;
 
     if (!restaurantCode || !restaurantName) {
       return res.status(400).json({ 
@@ -37,6 +48,17 @@ export default async function handler(req, res) {
 
     console.log('[Twilio] Creating subaccount for:', restaurantName);
     console.log('[Twilio] Master SID:', TWILIO_ACCOUNT_SID);
+    console.log('[Twilio] Setup type:', setupType);
+    
+    if (setupType === 'existing_number') {
+      console.log('[Twilio] BYON - Porting existing number:', existingPhone);
+      if (!existingPhone) {
+        return res.status(400).json({
+          success: false,
+          message: 'existingPhone is required for BYON setup'
+        });
+      }
+    }
 
     // Simulate subaccount creation
     const simulatedSubaccount = {
@@ -47,8 +69,19 @@ export default async function handler(req, res) {
       dateCreated: new Date().toISOString(),
     };
 
-    // Simulate WhatsApp number assignment
-    const simulatedWhatsAppNumber = `whatsapp:+1${Math.floor(Math.random() * 9000000000 + 1000000000)}`;
+    // Determine WhatsApp number based on setup type
+    let simulatedWhatsAppNumber;
+    if (setupType === 'existing_number' && existingPhone) {
+      // BYON: Use the verified existing number
+      simulatedWhatsAppNumber = existingPhone.startsWith('whatsapp:') 
+        ? existingPhone 
+        : `whatsapp:${existingPhone}`;
+      console.log('[Twilio] BYON - Using verified number:', simulatedWhatsAppNumber);
+    } else {
+      // New number: Provision from Twilio pool
+      simulatedWhatsAppNumber = `whatsapp:+1${Math.floor(Math.random() * 9000000000 + 1000000000)}`;
+      console.log('[Twilio] New number provisioned:', simulatedWhatsAppNumber);
+    }
 
     // TODO: In production, register WhatsApp sender with Twilio
     // const messagingService = await client.messaging.services.create({
@@ -63,11 +96,14 @@ export default async function handler(req, res) {
     // Return credentials to be stored in Firestore by frontend
     return res.status(200).json({
       success: true,
-      message: 'Subaccount created successfully (SIMULATED)',
+      message: setupType === 'existing_number' 
+        ? 'Subaccount created with BYON successfully (SIMULATED)'
+        : 'Subaccount created successfully (SIMULATED)',
       data: {
         subaccountSid: simulatedSubaccount.sid,
         authToken: simulatedSubaccount.authToken,
         whatsappNumber: simulatedWhatsAppNumber,
+        setupType,
         status: 'pending', // Change to 'active' after real Twilio approval
         createdAt: simulatedSubaccount.dateCreated,
         isSimulated: true, // Flag to indicate this is placeholder data

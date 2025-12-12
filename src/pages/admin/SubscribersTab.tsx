@@ -3,6 +3,11 @@ import { db } from '../../firebase.config';
 import { collection, getDocs, addDoc, query, where } from 'firebase/firestore';
 import type { Restaurant } from '../../hooks/useFirebaseRestaurant';
 
+// FEATURE FLAG: BYON (Bring Your Own Number)
+// Set to true when ready to enable number porting feature
+// Currently disabled pending proper Twilio porting integration
+const BYON_ENABLED = false;
+
 interface SubscribersTabProps {
   restaurant: Restaurant;
   onUpdate: () => void;
@@ -183,7 +188,7 @@ export function SubscribersTab({ restaurant }: SubscribersTabProps) {
     setSavingSettings(true);
     
     try {
-      // Create WhatsApp request
+      // Create WhatsApp request (NO OTP sent automatically - Admin will send on-demand)
       await addDoc(collection(db, 'whatsapp_requests'), {
         restaurantId: restaurant.id,
         restaurantCode: restaurant.restaurantCode,
@@ -200,6 +205,7 @@ export function SubscribersTab({ restaurant }: SubscribersTabProps) {
         sampleMessage: requestForm.sampleMessage,
         status: 'pending',
         requestedAt: new Date().toISOString(),
+        otpSentAt: null, // OTP sent on-demand by Master Admin during approval
       });
 
       // Send email notification
@@ -628,23 +634,24 @@ export function SubscribersTab({ restaurant }: SubscribersTabProps) {
             </div>
 
             <div className="space-y-4">
-              {/* Setup Type Selection */}
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 rounded-lg p-4">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={requestForm.useExistingNumber}
-                    onChange={(e) => setRequestForm({
-                      ...requestForm, 
-                      useExistingNumber: e.target.checked,
-                      businessPhone: e.target.checked ? requestForm.businessPhone : ''
-                    })}
-                    className="mt-1 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                  />
-                  <div className="flex-1">
-                    <span className="text-sm font-semibold text-purple-900">
-                      I have an existing business number and want to use it for WhatsApp
-                    </span>
+              {/* Setup Type Selection - HIDDEN WHEN BYON_ENABLED = false */}
+              {BYON_ENABLED && (
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 rounded-lg p-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={requestForm.useExistingNumber}
+                      onChange={(e) => setRequestForm({
+                        ...requestForm, 
+                        useExistingNumber: e.target.checked,
+                        businessPhone: e.target.checked ? requestForm.businessPhone : ''
+                      })}
+                      className="mt-1 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm font-semibold text-purple-900">
+                        I have an existing business number and want to use it for WhatsApp
+                      </span>
                     <div className="mt-2 space-y-2">
                       <p className="text-xs text-purple-800 bg-purple-100 rounded px-2 py-1 border border-purple-300">
                         ✅ <strong>Ideal if:</strong> Your business number is already printed on menus, signage, business cards, 
@@ -666,9 +673,10 @@ export function SubscribersTab({ restaurant }: SubscribersTabProps) {
                   </div>
                 </label>
               </div>
+              )}
 
               {/* Conditional Phone Input */}
-              {requestForm.useExistingNumber && (
+              {BYON_ENABLED && requestForm.useExistingNumber && (
                 <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Your Existing Number <span className="text-red-500">*</span>
@@ -687,10 +695,11 @@ export function SubscribersTab({ restaurant }: SubscribersTabProps) {
                 </div>
               )}
 
-              {!requestForm.useExistingNumber && (
+              {/* Show standard setup message when BYON disabled or not selected */}
+              {(!BYON_ENABLED || !requestForm.useExistingNumber) && (
                 <div className="bg-green-50 border border-green-300 rounded-lg p-3">
                   <p className="text-sm text-green-800">
-                    ✅ <strong>Standard Setup Selected:</strong> We'll provide a new dedicated WhatsApp number via Twilio. 
+                    ✅ <strong>Standard Setup:</strong> We'll provide a new dedicated WhatsApp number via Twilio. 
                     Setup takes 1-2 days and you keep using your personal WhatsApp normally.
                   </p>
                 </div>

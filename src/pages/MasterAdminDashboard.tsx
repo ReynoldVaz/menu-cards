@@ -7,6 +7,20 @@ import { signOut } from 'firebase/auth';
 import { sendEmailClient } from '../utils/sendEmailClient'; // Corrected import statement
 // import { sendApprovalEmail, sendRejectionEmail } from '../utils/emailService'; // TODO: Enable after SendGrid domain authentication
 
+/**
+ * BYON (Bring Your Own Number) Feature Status: DISABLED
+ * 
+ * The BYON verification code (handleSendOTPAndApprove) is preserved but inactive.
+ * Feature is hidden in SubscribersTab via BYON_ENABLED flag.
+ * 
+ * To re-enable:
+ * 1. Set BYON_ENABLED = true in SubscribersTab.tsx
+ * 2. Implement proper Twilio number porting (see BYON_IMPLEMENTATION_ANALYSIS.md)
+ * 3. Replace OTP flow with carrier authorization (Option B or C)
+ * 
+ * Current implementation uses placeholder OTP which doesn't match real porting process.
+ */
+
 interface Restaurant {
   id: string;
   name: string;
@@ -105,11 +119,113 @@ export function MasterAdminDashboard() {
     }
   }
 
-  async function handleApproveWhatsAppRequest(request: any) {
-    if (!window.confirm(`Approve WhatsApp request for ${request.restaurantName}?`)) {
+  async function handleSendOTPAndApprove(request: any) {
+    // Step 1: Confirm the workflow
+    if (!window.confirm(
+      `📞 BYON Verification Workflow:\n\n` +
+      `1. Click OK to send OTP to ${request.businessPhone}\n` +
+      `2. Call the owner and stay on the line\n` +
+      `3. Ask owner for the 6-digit code they receive\n` +
+      `4. Enter the code to complete verification\n\n` +
+      `Ready to start?`
+    )) {
       return;
     }
 
+    try {
+      console.log('[BYON] Sending OTP to:', request.businessPhone);
+      
+      // Send OTP
+      const otpResponse = await fetch('/api/twilio/send-byon-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: request.businessPhone,
+          restaurantName: request.restaurantName,
+          restaurantCode: request.restaurantCode,
+        }),
+      });
+
+      const otpResult = await otpResponse.json();
+
+      if (!otpResponse.ok || !otpResult.success) {
+        alert(`❌ Failed to send OTP: ${otpResult.message}`);
+        return;
+      }
+
+      // Update Firestore with timestamp
+      const requestRef = doc(db, 'whatsapp_requests', request.id);
+      await updateDoc(requestRef, {
+        otpSentAt: new Date().toISOString(),
+      });
+
+      console.log('[BYON] OTP sent successfully');
+      
+      // Step 2: Get verification code from admin
+      const verificationCode = window.prompt(
+        `✅ OTP sent to ${request.businessPhone}\n\n` +
+        `Call owner: "${request.ownerEmail}" and ask:\n` +
+        `"What's the 6-digit code you just received?"\n\n` +
+        `Enter the code:`
+      );
+      
+      if (!verificationCode) {
+        alert('⚠️ Approval cancelled. OTP was sent but not verified.');
+        return;
+      }
+      
+      // Validate format
+      if (!/^\d{6}$/.test(verificationCode.trim())) {
+        alert('❌ Invalid code format. Must be 6 digits.');
+        return;
+      }
+      
+      // Step 3: Verify code
+      console.log('[BYON] Verifying code...');
+      const verifyResponse = await fetch('/api/twilio/verify-byon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: request.businessPhone,
+          verificationCode: verificationCode.trim(),
+          restaurantCode: request.restaurantCode,
+        }),
+      });
+      
+      const verifyResult = await verifyResponse.json();
+      
+      if (!verifyResponse.ok || !verifyResult.success) {
+        alert(`❌ Verification failed: ${verifyResult.message || 'Invalid code'}`);
+        return;
+      }
+      
+      console.log('[BYON] Verification successful');
+      
+      // Continue with approval
+      await completeApproval(request);
+      
+    } catch (error) {
+      console.error('[BYON] Error:', error);
+      alert(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async function handleApproveWhatsAppRequest(request: any) {
+    // BYON requires on-demand OTP verification
+    if (request.setupType === 'existing_number') {
+      await handleSendOTPAndApprove(request);
+      return;
+    }
+    
+    // New number: No OTP needed
+    if (!window.confirm(`Approve WhatsApp request for ${request.restaurantName}?`)) {
+      return;
+    }
+    
+    await completeApproval(request);
+  }
+
+  async function completeApproval(request: any) {
     try {
       // Update request status
       const requestRef = doc(db, 'whatsapp_requests', request.id);
@@ -132,8 +248,8 @@ export function MasterAdminDashboard() {
         updatedAt: new Date().toISOString(),
       });
 
-      // Create Twilio subaccount
-      await handleCreateTwilioSubaccount(restaurant);
+      // Create Twilio subaccount (handles both new number and BYON)
+      await handleCreateTwilioSubaccount(restaurant, request.setupType, request.businessPhone);
 
       // Send approval email
       await fetch('/api/send-email', {
@@ -563,7 +679,11 @@ export function MasterAdminDashboard() {
     navigate(`/admin/dashboard?restaurant=${restaurantCode}`);
   }
 
-  async function handleCreateTwilioSubaccount(restaurant: Restaurant) {
+  async function handleCreateTwilioSubaccount(
+    restaurant: Restaurant, 
+    setupType?: 'new_number' | 'existing_number',
+    businessPhone?: string | null
+  ) {
     if (!window.confirm(`Create Twilio subaccount for ${restaurant.name}?`)) {
       return;
     }
@@ -581,6 +701,8 @@ export function MasterAdminDashboard() {
           restaurantName: restaurant.name,
           ownerEmail: restaurant.email,
           ownerPhone: restaurant.phone,
+          setupType: setupType || 'new_number',
+          existingPhone: businessPhone || null,
         }),
       });
 
@@ -1056,12 +1178,28 @@ export function MasterAdminDashboard() {
                             <p className="text-sm font-medium">{request.ownerEmail}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-600">Business Phone</p>
-                            <p className="text-sm font-medium">{request.businessPhone}</p>
+                            <p className="text-xs text-gray-600">Setup Type</p>
+                            <p className="text-sm font-medium">
+                              {request.setupType === 'existing_number' ? (
+                                <span className="text-orange-600">🔄 Use Existing Number (BYON)</span>
+                              ) : (
+                                <span className="text-green-600">✨ New Number</span>
+                              )}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-600">Message Volume</p>
-                            <p className="text-sm font-medium capitalize">{request.messageVolume}</p>
+                            <p className="text-xs text-gray-600">Business Phone</p>
+                            <p className="text-sm font-medium">{request.businessPhone || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Broadcast Limits</p>
+                            <p className="text-sm font-medium">
+                              {request.broadcastLimits?.perWeek || 'N/A'}/week, {request.broadcastLimits?.perMonth || 'N/A'}/month
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Est. Recipients</p>
+                            <p className="text-sm font-medium">{request.broadcastLimits?.estimatedRecipients || 'N/A'}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-600">Requested</p>
@@ -1079,12 +1217,28 @@ export function MasterAdminDashboard() {
                           <p className="text-sm bg-white p-2 rounded italic">"{request.sampleMessage}"</p>
                         </div>
 
+                        {/* BYON Warning */}
+                        {request.setupType === 'existing_number' && (
+                          <div className="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+                            <div className="flex items-start gap-2">
+                              <span className="text-blue-600 text-lg">📞</span>
+                              <div>
+                                <p className="text-sm font-semibold text-blue-800 mb-1">BYON Setup - Call Owner First</p>
+                                <p className="text-xs text-blue-700">
+                                  When you click approve, OTP will be sent to <strong>{request.businessPhone}</strong>.
+                                  Call the owner first and stay on the line while verifying.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex gap-3">
                           <button
                             onClick={() => handleApproveWhatsAppRequest(request)}
                             className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
                           >
-                            ✓ Approve & Create Subaccount
+                            {request.setupType === 'existing_number' ? '📞 Call & Verify' : '✓ Approve & Create Subaccount'}
                           </button>
                           <button
                             onClick={() => handleRejectWhatsAppRequest(request)}
