@@ -102,12 +102,12 @@ useEffect(() => {
 
       {/* Modal card with scale/opacity entrance */}
       <div
-        className={`relative max-w-3xl w-full mx-0 sm:mx-0 rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transform transition-all duration-300 ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
-        style={{ backgroundColor: themeStyles.backgroundColor }}
+        className={`relative max-w-3xl w-full mx-0 sm:mx-0 rounded-2xl shadow-[16px_16px_32px_rgba(0,0,0,0.2),-8px_-8px_24px_rgba(255,255,255,0.7)] overflow-hidden max-h-[90vh] flex flex-col transform transition-all duration-300 ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f5)` }}
       >
         
         {/* Header */}
-        <div className="flex justify-between items-start p-4 flex-shrink-0" style={{ backgroundColor: themeStyles.backgroundColor, borderBottomColor: themeStyles.borderColor, borderBottomWidth: '1px' }}>
+        <div className="flex justify-between items-start p-4 flex-shrink-0 shadow-[inset_0_-1px_2px_rgba(0,0,0,0.05)]" style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f8)`, borderBottomColor: themeStyles.borderColor + '40', borderBottomWidth: '1px' }}>
           <div className="min-w-0 flex-1">
             <h3 className="text-lg font-bold text-gray-800 break-words">
               {item.name}
@@ -134,7 +134,7 @@ useEffect(() => {
           <button
             onClick={onClose}
             aria-label="Close"
-            className="text-gray-500 hover:text-gray-800"
+            className="text-gray-500 hover:text-gray-800 w-8 h-8 rounded-full flex items-center justify-center shadow-[3px_3px_6px_rgba(0,0,0,0.1),-3px_-3px_6px_rgba(255,255,255,0.9)] hover:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1)] active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.15)] transition-all text-xl"
           >
             ✕
           </button>
@@ -153,7 +153,7 @@ useEffect(() => {
               ) : (
                 <>
                   <div
-                    className="w-full rounded-lg overflow-hidden flex items-center justify-center shadow-md ring-1 ring-white/10 relative touch-pan-y"
+                    className="w-full rounded-2xl overflow-hidden flex items-center justify-center shadow-[8px_8px_16px_rgba(0,0,0,0.15),-4px_-4px_12px_rgba(255,255,255,0.1)] ring-1 ring-white/10 relative touch-pan-y"
                     style={{
                       background: activeMedia?.type === 'image' ? 'transparent' : '#000',
                       aspectRatio: activeMedia?.type === 'video' && videoAspectRatio ? `${videoAspectRatio}` : undefined,
@@ -241,11 +241,14 @@ useEffect(() => {
                       <button
                         key={`${m.type}:${m.src}`}
                         onClick={() => setIndex(i)}
-                        className="flex-shrink-0 rounded-md overflow-hidden border bg-black/40 hover:scale-[1.03] transition-transform duration-200"
+                        className={`flex-shrink-0 rounded-xl overflow-hidden border bg-black/40 hover:scale-[1.03] transition-all duration-200 ${
+                          i === index 
+                            ? 'shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)]' 
+                            : 'shadow-[3px_3px_6px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.1)]'
+                        }`}
                         style={{
                           borderWidth: i === index ? '2px' : '1px',
                           borderColor: i === index ? themeStyles.accentBg : themeStyles.borderColor + '40',
-                          boxShadow: i === index ? `0 2px 8px ${themeStyles.accentBg}30` : 'none',
                         }}
                       >
                         <div className="w-20 h-14 overflow-hidden rounded bg-black/60 flex items-center justify-center relative">
@@ -295,15 +298,19 @@ useEffect(() => {
                   <button
                     key={t}
                     onClick={() => setTab(t as any)}
-                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors`}
+                    className={`px-3 py-1 rounded-xl text-sm font-medium transition-all ${
+                      tab === t 
+                        ? 'shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12),inset_-2px_-2px_4px_rgba(255,255,255,0.5)]' 
+                        : 'shadow-[3px_3px_6px_rgba(0,0,0,0.08),-3px_-3px_6px_rgba(255,255,255,0.8)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.08),-2px_-2px_4px_rgba(255,255,255,0.8)]'
+                    }`}
                     style={
                       tab === t
                         ? {
-                            backgroundColor: themeStyles.accentBg,
+                            background: `linear-gradient(to bottom, ${themeStyles.accentBg}, ${themeStyles.accentBg}dd)`,
                             color: themeStyles.primaryButtonBg,
                           }
                         : {
-                            backgroundColor: '#f3f4f6',
+                            background: 'linear-gradient(to bottom, #f9fafb, #f3f4f6)',
                             color: '#374151',
                           }
                     }
@@ -315,14 +322,14 @@ useEffect(() => {
 
               <div className="mt-4">
                 {tab === 'description' && (
-                  <div>
+                  <div className="p-4 rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.06),inset_-2px_-2px_4px_rgba(255,255,255,0.5)]" style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}f8, ${themeStyles.backgroundColor})` }}>
                     <h4 className="font-semibold text-gray-800">Description</h4>
                     <p className="text-sm text-gray-600 mt-1">{item.description}</p>
                   </div>
                 )}
 
                 {tab === 'ingredients' && (
-                  <div>
+                  <div className="p-4 rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.06),inset_-2px_-2px_4px_rgba(255,255,255,0.5)]" style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}f8, ${themeStyles.backgroundColor})` }}>
                     <h4 className="font-semibold text-gray-800">Ingredients</h4>
                     {item.ingredients && (
                       <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
@@ -340,7 +347,7 @@ useEffect(() => {
                 )}
 
                 {tab === 'price' && (
-                  <div>
+                  <div className="p-4 rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.06),inset_-2px_-2px_4px_rgba(255,255,255,0.5)]" style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}f8, ${themeStyles.backgroundColor})` }}>
                     <h4 className="font-semibold text-gray-800">Price</h4>
                     {portions.length > 1 ? (
   <div className="flex flex-wrap gap-2 mt-1">
@@ -352,8 +359,11 @@ useEffect(() => {
       return (
         <span
           key={idx}
-          className="inline-block text-xs sm:text-sm font-semibold px-2 py-1 rounded bg-gray-100"
-          style={{ color: themeStyles.primaryButtonBg }}
+          className="inline-block text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-xl shadow-[3px_3px_6px_rgba(0,0,0,0.08),-3px_-3px_6px_rgba(255,255,255,0.8)]"
+          style={{ 
+            color: themeStyles.primaryButtonBg,
+            background: 'linear-gradient(to bottom, #f9fafb, #f3f4f6)'
+          }}
         >
           {shortLabel} | {formatPrice(portion.price, portion.currency)}
         </span>

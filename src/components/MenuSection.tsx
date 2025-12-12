@@ -30,6 +30,7 @@ export function MenuSection({ id, title, items, onOpen, isLoading, enableAnalyti
   const [height, setHeight] = useState<string>("0px");
   const [lastTracked, setLastTracked] = useState<string | null>(null);
 const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: string]: number }>({});
+  const [openDropdowns, setOpenDropdowns] = useState<{ [itemId: string]: boolean }>({});
 
   const sectionViews = analyticsSummary
   ? items.reduce((sum, item) => sum + (analyticsSummary[item.name] || 0), 0)
@@ -213,10 +214,13 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
 
       <button
   onClick={handleToggle}
-  className="w-full flex items-center justify-between px-4 py-3 rounded-lg shadow-sm"
+  className="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-200"
   style={{
     backgroundColor: themeStyles.accentBg,
     color: themeStyles.primaryButtonBg,
+    boxShadow: open 
+      ? 'inset 3px 3px 6px rgba(0,0,0,0.1), inset -3px -3px 6px rgba(255,255,255,0.7)'
+      : '6px 6px 12px rgba(0,0,0,0.1), -6px -6px 12px rgba(255,255,255,0.9)'
   }}
 >
   <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -272,14 +276,19 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
           {items.map((item) => (
             <div
               key={item.name}
-              className="group p-3 sm:p-4 rounded-lg flex items-center gap-4"
-              style={{ backgroundColor: `${themeStyles.accentBg}20` }}
+              className="group p-3 sm:p-4 rounded-2xl flex items-center gap-4 transition-all hover:shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.5)]"
+              style={{ 
+                backgroundColor: `${themeStyles.accentBg}20`,
+                boxShadow: '6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.5)'
+              }}
             >
               {/* Thumbnail: prefer video preview if available */}
               <button
                 onClick={() => { handleItemClick(item); openModal(item); }}
-                className="flex-shrink-0 rounded overflow-hidden border-2 hover:opacity-80"
-                style={{ borderColor: themeStyles.borderColor }}
+                className="flex-shrink-0 rounded-xl overflow-hidden transition-all hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15)]"
+                style={{ 
+                  boxShadow: '4px 4px 8px rgba(0,0,0,0.1), -2px -2px 6px rgba(255,255,255,0.5)'
+                }}
               >
                 <div className="w-20 h-16 overflow-hidden">
                   {(() => {
@@ -399,34 +408,98 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
                   </div>
 
                   {/* PRICE */}
-                  <div className="flex-none ml-2">
+                  <div className="flex-none ml-2 relative">
                     {isLoading ? (
                       <div className="h-5 w-12 bg-gray-200 animate-pulse rounded"></div>
                     ) : (
                       Array.isArray((item as any).portions) && (item as any).portions.length > 1 ? (
-                        <select
-                          value={selectedPortionIdxMap[item.id ?? item.name] ?? ((item as any).portions.findIndex((p: any) => p.default) >= 0 ? (item as any).portions.findIndex((p: any) => p.default) : 0)}
-                          onChange={e => {
-                            setSelectedPortionIdxMap(prev => ({
-                              ...prev,
-                              [item.id ?? item.name]: Number(e.target.value)
-                            }));
-                          }}
-                          className="font-bold text-xs sm:text-sm whitespace-nowrap rounded border border-gray-300 px-1 py-0.5 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[90px] min-w-[70px]"
-                          style={{ color: themeStyles.primaryButtonBg, backgroundColor: themeStyles.backgroundColor }}
-                        >
-                          {(item as any).portions.map((portion: any, idx: number) => {
-                            let shortLabel = portion.label;
-                            if (shortLabel === 'Small') shortLabel = 'S';
-                            else if (shortLabel === 'Medium') shortLabel = 'M';
-                            else if (shortLabel === 'Large') shortLabel = 'L';
-                            return (
-                              <option key={idx} value={idx} style={{ color: themeStyles.primaryButtonBg }}>
-                                {shortLabel} ({formatPrice(portion.price, portion.currency)})
-                              </option>
-                            );
-                          })}
-                        </select>
+                        <div className="relative">
+                          <button
+                            onClick={() => {
+                              setOpenDropdowns(prev => ({
+                                ...prev,
+                                [item.id ?? item.name]: !prev[item.id ?? item.name]
+                              }));
+                            }}
+                            className="font-bold text-xs sm:text-sm whitespace-nowrap rounded-xl px-2 py-1 pr-6 max-w-[90px] min-w-[70px] transition-all cursor-pointer hover:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.08),inset_-3px_-3px_6px_rgba(255,255,255,0.6)] flex items-center justify-between"
+                            style={{ 
+                              color: themeStyles.primaryButtonBg, 
+                              background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f5)`,
+                              boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.06), inset -2px -2px 4px rgba(255,255,255,0.5)'
+                            }}
+                          >
+                            {(() => {
+                              const selectedIdx = selectedPortionIdxMap[item.id ?? item.name] ?? ((item as any).portions.findIndex((p: any) => p.default) >= 0 ? (item as any).portions.findIndex((p: any) => p.default) : 0);
+                              const portion = (item as any).portions[selectedIdx];
+                              let shortLabel = portion.label;
+                              if (shortLabel === 'Small') shortLabel = 'S';
+                              else if (shortLabel === 'Medium') shortLabel = 'M';
+                              else if (shortLabel === 'Large') shortLabel = 'L';
+                              return `${shortLabel} (${formatPrice(portion.price, portion.currency)})`;
+                            })()}
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="10"
+                              height="10"
+                              viewBox="0 0 12 12"
+                              className="absolute right-2"
+                              style={{ fill: themeStyles.primaryButtonBg }}
+                            >
+                              <path d="M6 9L2 5h8z" />
+                            </svg>
+                          </button>
+                          
+                          {openDropdowns[item.id ?? item.name] && (
+                            <>
+                              <div 
+                                className="fixed inset-0 z-10" 
+                                onClick={() => {
+                                  setOpenDropdowns(prev => ({
+                                    ...prev,
+                                    [item.id ?? item.name]: false
+                                  }));
+                                }}
+                              />
+                              <div
+                                className="absolute right-0 mt-1 rounded-xl overflow-hidden z-20 shadow-[6px_6px_12px_rgba(0,0,0,0.15),-4px_-4px_10px_rgba(255,255,255,0.8)] min-w-[110px]"
+                                style={{ 
+                                  background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f8)`
+                                }}
+                              >
+                                {(item as any).portions.map((portion: any, idx: number) => {
+                                  let shortLabel = portion.label;
+                                  if (shortLabel === 'Small') shortLabel = 'S';
+                                  else if (shortLabel === 'Medium') shortLabel = 'M';
+                                  else if (shortLabel === 'Large') shortLabel = 'L';
+                                  const isSelected = (selectedPortionIdxMap[item.id ?? item.name] ?? ((item as any).portions.findIndex((p: any) => p.default) >= 0 ? (item as any).portions.findIndex((p: any) => p.default) : 0)) === idx;
+                                  return (
+                                    <button
+                                      key={idx}
+                                      onClick={() => {
+                                        setSelectedPortionIdxMap(prev => ({
+                                          ...prev,
+                                          [item.id ?? item.name]: idx
+                                        }));
+                                        setOpenDropdowns(prev => ({
+                                          ...prev,
+                                          [item.id ?? item.name]: false
+                                        }));
+                                      }}
+                                      className="w-full px-3 py-2 text-xs sm:text-sm text-left transition-all hover:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08)]"
+                                      style={{
+                                        color: themeStyles.primaryButtonBg,
+                                        backgroundColor: isSelected ? `${themeStyles.accentBg}40` : 'transparent',
+                                        fontWeight: isSelected ? 'bold' : 'normal'
+                                      }}
+                                    >
+                                      {shortLabel} ({formatPrice(portion.price, portion.currency)})
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       ) : (
                         <span className="font-bold text-base sm:text-lg whitespace-nowrap" style={{ color: themeStyles.primaryButtonBg }}>
                           {formatPrice(item.price, (item as any).currency)}

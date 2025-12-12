@@ -33,10 +33,13 @@ export function SocialLinksCard({ restaurant }: SocialLinksCardProps) {
 
   return (
     <div
-      className="mx-6 sm:mx-10 mb-8 rounded-lg shadow p-4"
-      style={{ backgroundColor: themeStyles.backgroundColor, border: `1px solid ${themeStyles.borderColor}` }}
+      className="mx-auto max-w-md rounded-2xl shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.8)] p-4"
+      style={{ 
+        background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f5)`,
+        border: `1px solid ${themeStyles.borderColor}60` 
+      }}
     >
-      <div className="mb-2 text-center font-medium text-gray-600 text-sm">
+      <div className="mb-3 text-center font-medium text-gray-600 text-sm">
         Connect with {restaurant.name}
       </div>
       <div className="flex flex-nowrap items-center justify-center gap-3 overflow-x-auto no-scrollbar">
@@ -46,11 +49,11 @@ export function SocialLinksCard({ restaurant }: SocialLinksCardProps) {
             href={l.url!}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center w-9 h-9 rounded-full text-base"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full text-base shadow-[3px_3px_6px_rgba(0,0,0,0.1),-3px_-3px_6px_rgba(255,255,255,0.9)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.1),-2px_-2px_4px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.15)] transition-all"
             style={{
-              backgroundColor: l.bg,
+              background: `linear-gradient(to bottom, ${l.bg}, ${l.bg}dd)`,
               color: themeStyles.primaryButtonBg,
-              border: `1px solid ${themeStyles.borderColor}`,
+              border: `1px solid ${themeStyles.borderColor}40`,
             }}
           >
             <span aria-label={l.label} title={l.label}>{l.icon}</span>

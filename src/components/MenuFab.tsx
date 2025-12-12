@@ -12,16 +12,15 @@ export function MenuFab({ onClick }: { onClick: () => void }) {
   // Use consistent size 'lg' (36px) for all floating buttons
   const iconSize = getIconSize('lg');
   const borderRadiusClass = fabIcon?.shape === 'circle' ? 'rounded-full' : 'rounded-lg';
-  const shadowClass = fabIcon?.shadow || 'shadow-lg';
   const animationClass = fabIcon?.animated ? 'hover:scale-110 transition-transform' : '';
 
   return (
     <button
       onClick={onClick}
       aria-label="Open menu"
-      className={`fixed right-4 bottom-6 z-40 text-white ${borderRadiusClass} ${shadowClass} ${animationClass}`}
+      className={`fixed right-4 bottom-6 z-40 text-white ${borderRadiusClass} shadow-[6px_6px_12px_rgba(0,0,0,0.2),-4px_-4px_10px_rgba(255,255,255,0.1)] hover:shadow-[4px_4px_8px_rgba(0,0,0,0.2),-2px_-2px_6px_rgba(255,255,255,0.1)] active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.3)] ${animationClass} transition-all`}
       style={{ 
-        backgroundColor: hexToRgba(themeStyles.primaryButtonBg, 0.9),
+        background: `linear-gradient(145deg, ${hexToRgba(themeStyles.primaryButtonBg, 0.95)}, ${hexToRgba(themeStyles.primaryButtonBg, 0.85)})`,
         padding: `${iconSize / 8}px`
       }}
       title="Open navigation"

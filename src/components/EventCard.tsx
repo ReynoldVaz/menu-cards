@@ -10,12 +10,12 @@ export function EventCard({ event }: EventCardProps) {
   const themeStyles = useThemeStyles();
   return (
     <div 
-      className="rounded-lg p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow duration-300" 
+      className="rounded-2xl p-4 sm:p-6 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.8)] hover:shadow-[8px_8px_16px_rgba(0,0,0,0.12),-8px_-8px_16px_rgba(255,255,255,0.9)] transition-all duration-300" 
       style={{ 
-        backgroundColor: themeStyles.backgroundColor, 
-        borderColor: themeStyles.borderColor, 
+        background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f5)`,
+        borderColor: themeStyles.borderColor + '40', 
         borderWidth: '1px',
-        borderRadius: '12px'
+        borderRadius: '16px'
       }}
     >
       <div className="flex items-start gap-3 mb-3">
@@ -54,7 +54,8 @@ export function EventCard({ event }: EventCardProps) {
             src={(event as any).image}
             alt={event.title}
             loading="lazy"
-            className="w-32 h-24 object-cover rounded border"
+            className="w-32 h-24 object-cover rounded-xl border shadow-[4px_4px_8px_rgba(0,0,0,0.08),-2px_-2px_4px_rgba(255,255,255,0.5)]"
+            style={{ borderColor: themeStyles.borderColor + '50' }}
           />
         )}
       </div>
