@@ -6,13 +6,15 @@ import {
   signInWithPopup, 
   GoogleAuthProvider,
   linkWithCredential,
-  sendEmailVerification
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { auth, db } from '../firebase.config';
 import { doc, getDoc } from 'firebase/firestore';
 
 // EMAIL VERIFICATION: on hold (keeping type but commenting usage)
-type AuthMode = 'welcome' | 'login' | 'signup' | 'link-account' | 'verify-email';
+type AuthMode = 'welcome' | 'login' | 'signup' | 'link-account' | 'verify-email' | 'forgot-password';
 
 // Email validation helper
 const isValidEmail = (email: string): boolean => {
@@ -58,16 +60,20 @@ export function AdminAuthPage() {
   // Email verification state
   // EMAIL VERIFICATION: on hold
   const [verificationEmail, setVerificationEmail] = useState<string>('');
+  
+  // Forgot password state
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   // When switching into signup mode from welcome, ensure stale login state is cleared
   // This avoids carrying over login error and prefilled email/password into signup.
   // Also clear when returning to welcome.
   useEffect(() => {
-    if (mode === 'signup' || mode === 'welcome' || mode === 'login') {
+    if (mode === 'signup' || mode === 'welcome' || mode === 'login' || mode === 'forgot-password') {
       setError('');
       setEmail('');
       setPassword('');
       setConfirmPassword('');
+      setResetEmailSent(false);
     }
   }, [mode]);
 
@@ -375,6 +381,50 @@ export function AdminAuthPage() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setResetEmailSent(false);
+
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    // Validate email format
+    if (!isValidEmail(email)) {
+      setError('❌ Please enter a valid email address');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Just send the password reset email - Firebase will handle it
+      // If the user doesn't exist, Firebase will fail silently (security feature)
+      // If the user exists with password auth, they'll get the email
+      // If the user only has Google auth, Firebase will send an informative email
+      console.log('📧 Attempting to send password reset email to:', email);
+      await sendPasswordResetEmail(auth, email);
+      console.log('✅ Password reset email request processed for:', email);
+      setResetEmailSent(true);
+      setError('');
+    } catch (err: any) {
+      console.error('Password reset error:', err.code, err.message);
+      if (err.code === 'auth/user-not-found') {
+        setError('📧 No account found with this email.\n\nPlease check your email or sign up for a new account.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('❌ Please enter a valid email address');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('⏱️ Too many password reset attempts. Please try again later.');
+      } else {
+        setError(err.message || 'Failed to send password reset email. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -553,6 +603,14 @@ export function AdminAuthPage() {
                 className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
               >
                 {loading ? '⏳ Logging in...' : '🔓 Login'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMode('forgot-password')}
+                className="w-full text-orange-300 hover:text-orange-400 font-medium text-sm underline"
+              >
+                Forgot Password?
               </button>
 
               <div className="relative">
@@ -824,6 +882,92 @@ export function AdminAuthPage() {
             >
               ✕ Cancel
             </button>
+          </div>
+        )}
+
+        {/* Forgot Password Screen */}
+        {mode === 'forgot-password' && (
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-8 transition-all animate-float-slow">
+            <h2 className="text-2xl font-bold text-purple-200 mb-2">🔑 Forgot Password</h2>
+            <p className="text-gray-200 text-sm mb-6">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 whitespace-pre-line text-sm">
+                {error}
+              </div>
+            )}
+
+            {resetEmailSent ? (
+              <div className="text-center">
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+                  <p className="font-semibold mb-2">✅ Password Reset Email Sent!</p>
+                  <p className="text-sm mb-2">
+                    If an account exists with <strong>{email}</strong>, you'll receive instructions to reset your password.
+                  </p>
+                  <p className="text-xs text-green-600">
+                    💡 Didn't receive an email? Check your spam folder or verify the email address is correct.
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
+                  <p className="text-sm text-blue-900 mb-3">
+                    <strong>📝 Next steps:</strong>
+                  </p>
+                  <ol className="list-decimal list-inside text-sm text-blue-900 space-y-2">
+                    <li>Check your email inbox (and spam folder)</li>
+                    <li>Click the "Reset Password" link in the email</li>
+                    <li>Create a new password</li>
+                    <li>Come back here and log in with your new password</li>
+                  </ol>
+                </div>
+
+                <button
+                  onClick={() => setMode('login')}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors mb-3"
+                >
+                  ← Back to Login
+                </button>
+
+                <button
+                  onClick={() => setMode('welcome')}
+                  className="w-full text-purple-300 hover:text-purple-400 font-medium text-sm"
+                >
+                  ← Go to Welcome
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-white mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-transparent text-white placeholder-white"
+                    disabled={loading}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                >
+                  {loading ? '⏳ Sending...' : '📧 Send Reset Link'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setMode('login')}
+                  className="w-full text-purple-300 hover:text-purple-400 font-medium text-sm"
+                >
+                  ← Back to Login
+                </button>
+              </form>
+            )}
           </div>
         )}
 
