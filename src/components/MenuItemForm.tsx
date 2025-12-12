@@ -27,6 +27,11 @@ export interface MenuItemFormData {
   spice_level?: number;
   sweet_level?: number;
   portions?: Portion[]; // New: array of portions/sizes with prices
+  // Pending state media (not uploaded yet)
+  _imageFiles?: File[];
+  _videoFiles?: File[];
+  _imagePreviews?: string[];
+  _videoPreviews?: string[];
 }
 
 interface MenuItemFormProps {
@@ -124,18 +129,36 @@ export function MenuItemForm({
   const [newSection, setNewSection] = useState('');
   const [showNewSectionInput, setShowNewSectionInput] = useState(false);
 
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [videoFiles, setVideoFiles] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>(
-    (initialData?.images && initialData.images.length > 0)
-      ? initialData.images
-      : (initialData?.image ? [initialData.image] : [])
-  );
-  const [videoPreviews, setVideoPreviews] = useState<string[]>(
-    (initialData?.videos && initialData.videos.length > 0)
-      ? initialData.videos
-      : (initialData?.video ? [initialData.video] : [])
-  );
+  const [imageFiles, setImageFiles] = useState<File[]>(() => {
+    return (initialData?._imageFiles && Array.isArray(initialData._imageFiles)) ? initialData._imageFiles : [];
+  });
+  const [videoFiles, setVideoFiles] = useState<File[]>(() => {
+    return (initialData?._videoFiles && Array.isArray(initialData._videoFiles)) ? initialData._videoFiles : [];
+  });
+  const [imagePreviews, setImagePreviews] = useState<string[]>(() => {
+    if (initialData?._imagePreviews && Array.isArray(initialData._imagePreviews) && initialData._imagePreviews.length > 0) {
+      return initialData._imagePreviews;
+    }
+    if (initialData?.images && Array.isArray(initialData.images) && initialData.images.length > 0) {
+      return initialData.images;
+    }
+    if (initialData?.image) {
+      return [initialData.image];
+    }
+    return [];
+  });
+  const [videoPreviews, setVideoPreviews] = useState<string[]>(() => {
+    if (initialData?._videoPreviews && Array.isArray(initialData._videoPreviews) && initialData._videoPreviews.length > 0) {
+      return initialData._videoPreviews;
+    }
+    if (initialData?.videos && Array.isArray(initialData.videos) && initialData.videos.length > 0) {
+      return initialData.videos;
+    }
+    if (initialData?.video) {
+      return [initialData.video];
+    }
+    return [];
+  });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [error, setError] = useState<string>('');
@@ -529,40 +552,11 @@ export function MenuItemForm({
     setError('');
 
     try {
+      // Don't upload files yet - store them in pending state
       let imageUrl = formData.image || (formData.images?.[0] ?? undefined);
       let videoUrl = formData.video || (formData.videos?.[0] ?? undefined);
       let uploadedImageUrls: string[] = formData.images ? [...formData.images] : [];
       let uploadedVideoUrls: string[] = formData.videos ? [...formData.videos] : [];
-
-      if (imageFiles.length > 0) {
-        setUploadingImage(true);
-        const newUrls: string[] = [];
-        for (const file of imageFiles) {
-          const result = await uploadToCloudinary(file, {
-            restaurantCode,
-            fileType: 'image',
-          });
-          newUrls.push(result.url);
-        }
-        uploadedImageUrls = [...uploadedImageUrls, ...newUrls].slice(0, MAX_IMAGES);
-        imageUrl = uploadedImageUrls[0];
-        setUploadingImage(false);
-      }
-
-      if (videoFiles.length > 0) {
-        setUploadingVideo(true);
-        const newUrls: string[] = [];
-        for (const file of videoFiles) {
-          const result = await uploadToCloudinary(file, {
-            restaurantCode,
-            fileType: 'video',
-          });
-          newUrls.push(result.url);
-        }
-        uploadedVideoUrls = [...uploadedVideoUrls, ...newUrls].slice(0, MAX_VIDEOS);
-        videoUrl = uploadedVideoUrls[0];
-        setUploadingVideo(false);
-      }
 
       // Validate form
       if (!formData.name.trim()) {
@@ -633,6 +627,16 @@ if (!hasValidPrice) {
       if (ytLinks.length > 0) submitData.youtubeLinks = ytLinks.slice(0, 2);
       if (formData.spice_level) submitData.spice_level = formData.spice_level;
       if (formData.sweet_level) submitData.sweet_level = formData.sweet_level;
+
+      // Store File objects and previews for pending state
+      if (imageFiles.length > 0) {
+        submitData._imageFiles = imageFiles;
+        submitData._imagePreviews = imagePreviews;
+      }
+      if (videoFiles.length > 0) {
+        submitData._videoFiles = videoFiles;
+        submitData._videoPreviews = videoPreviews;
+      }
 
       await onSubmit(submitData as MenuItemFormData);
     } catch (err) {
@@ -1244,7 +1248,7 @@ if (!hasValidPrice) {
             ? '⏳ Uploading images...'
             : uploadingVideo
             ? '⏳ Uploading videos...'
-            : '✓ Save Item'}
+            : '✓ Add to Pending'}
         </button>
         <button
           type="button"

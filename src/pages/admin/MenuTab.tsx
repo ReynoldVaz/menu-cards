@@ -12,7 +12,8 @@ interface MenuTabProps {
 }
 
 export function MenuTab({ restaurantId }: MenuTabProps) {
-  const [items, setItems] = useState<MenuItem[]>([]);
+  const [items, setItems] = useState<MenuItem[]>([]); // Published items from Firebase
+  const [pendingItems, setPendingItems] = useState<MenuItem[]>([]); // Local pending changes
   const [searchQuery, setSearchQuery] = useState('');
   const [sections, setSectionsState] = useState<string[]>(['Appetizers', 'Main Course', 'Desserts', 'Beverages', 'Salads', 'Soups', 'Breads']);
   const [loading, setLoading] = useState(false);
@@ -21,6 +22,7 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showSmartImport, setShowSmartImport] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     loadMenuItems();
@@ -92,17 +94,14 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
         delete menuItemData.sweet_level;
       }
       
-      const docRef = await addDoc(
-        collection(db, `restaurants/${restaurantId}/menu_items`),
-        menuItemData
-      );
-      
-      // Add to local state
-      setItems([
-        ...items,
+      // Add to pending items with temporary ID
+      const tempId = `pending_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setPendingItems([
+        ...pendingItems,
         {
-          id: docRef.id,
+          id: tempId,
           ...menuItemData,
+          _isPending: true,
         } as unknown as MenuItem,
       ]);
       
@@ -137,19 +136,39 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
         delete menuItemData.sweet_level;
       }
 
-      await updateDoc(
-        doc(db, `restaurants/${restaurantId}/menu_items/${editingItem.id}`),
-        menuItemData
-      );
-
-      // Update local state
-      setItems(
-        items.map((item) =>
-          item.id === editingItem.id
-            ? ({ ...item, ...menuItemData } as unknown as MenuItem)
-            : item
-        )
-      );
+      // Check if editing a pending item
+      const isPendingItem = editingItem.id.startsWith('pending_');
+      
+      if (isPendingItem) {
+        // Update in pending items
+        setPendingItems(
+          pendingItems.map((item) =>
+            item.id === editingItem.id
+              ? ({ ...item, ...menuItemData, _isPending: true } as unknown as MenuItem)
+              : item
+          )
+        );
+      } else {
+        // Update existing published item - add to pending as modified
+        const updatedItem = {
+          ...editingItem,
+          ...menuItemData,
+          _isPending: true,
+          _isModified: true,
+        } as unknown as MenuItem;
+        
+        // Check if already in pending (being re-edited)
+        const existingPendingIndex = pendingItems.findIndex(p => p.id === editingItem.id);
+        if (existingPendingIndex >= 0) {
+          setPendingItems(
+            pendingItems.map((item, idx) =>
+              idx === existingPendingIndex ? updatedItem : item
+            )
+          );
+        } else {
+          setPendingItems([...pendingItems, updatedItem]);
+        }
+      }
 
       setEditingItem(null);
       setShowForm(false);
@@ -160,8 +179,11 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
     }
   }
 
+  // Combine published and pending items for display
+  const allItems = [...items, ...pendingItems];
+  
   // Global search: substring match across key fields
-  const filteredItems = items.filter((item) => {
+  const filteredItems = allItems.filter((item) => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
     const fields = [
@@ -175,14 +197,188 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
   });
 
   async function handleDeleteItem(itemId: string | undefined) {
-    if (!itemId || !confirm('Are you sure you want to delete this item?')) return;
+    if (!itemId) return;
+
+    const isPendingItem = itemId.startsWith('pending_');
+    const pendingItem = pendingItems.find(item => item.id === itemId);
+    const isAlreadyMarkedDeleted = pendingItem && (pendingItem as any)._isDeleted;
+    
+    // If already marked for deletion, undo it
+    if (isAlreadyMarkedDeleted) {
+      setPendingItems(pendingItems.filter((item) => item.id !== itemId));
+      return;
+    }
+    
+    if (!confirm('Are you sure you want to delete this item?')) return;
+    
+    if (isPendingItem) {
+      // Just remove from pending items (it was never published)
+      setPendingItems(pendingItems.filter((item) => item.id !== itemId));
+    } else {
+      // Mark published item for deletion
+      const itemToDelete = items.find(item => item.id === itemId);
+      if (itemToDelete) {
+        // Check if item is already in pending (being modified)
+        const existingPending = pendingItems.find(p => p.id === itemId);
+        if (existingPending) {
+          // Update existing pending to mark as deleted
+          setPendingItems(
+            pendingItems.map(p => 
+              p.id === itemId 
+                ? { ...p, _isPending: true, _isDeleted: true } as unknown as MenuItem
+                : p
+            )
+          );
+        } else {
+          // Add to pending as deleted
+          setPendingItems([
+            ...pendingItems,
+            { ...itemToDelete, _isPending: true, _isDeleted: true } as unknown as MenuItem
+          ]);
+        }
+      }
+    }
+  }
+
+  async function handlePublishToMenu() {
+    if (pendingItems.length === 0) return;
+    
+    if (!confirm(`Publish ${pendingItems.length} changes to Firebase?`)) return;
 
     try {
-      await deleteDoc(doc(db, `restaurants/${restaurantId}/menu_items/${itemId}`));
-      setItems(items.filter((item) => item.id !== itemId));
+      setPublishing(true);
+      let createdCount = 0;
+      let updatedCount = 0;
+      let deletedCount = 0;
+
+      for (const item of pendingItems) {
+        const isNewItem = item.id?.startsWith('pending_') || false;
+        const isDeleted = (item as any)._isDeleted;
+        const isModified = (item as any)._isModified;
+
+        // Upload media files if present
+        let uploadedImageUrls: string[] = (item as any).images || [];
+        let uploadedVideoUrls: string[] = (item as any).videos || [];
+        
+        if ((item as any)._imageFiles && (item as any)._imageFiles.length > 0) {
+          console.log(`Uploading ${(item as any)._imageFiles.length} images for ${item.name}...`);
+          const { uploadToCloudinary } = await import('../../utils/cloudinaryUpload');
+          const newUrls: string[] = [];
+          for (const file of (item as any)._imageFiles) {
+            const result = await uploadToCloudinary(file, {
+              restaurantCode: restaurantId,
+              fileType: 'image',
+            });
+            newUrls.push(result.url);
+          }
+          uploadedImageUrls = [...uploadedImageUrls, ...newUrls];
+        }
+        
+        if ((item as any)._videoFiles && (item as any)._videoFiles.length > 0) {
+          console.log(`Uploading ${(item as any)._videoFiles.length} videos for ${item.name}...`);
+          const { uploadToCloudinary } = await import('../../utils/cloudinaryUpload');
+          const newUrls: string[] = [];
+          for (const file of (item as any)._videoFiles) {
+            const result = await uploadToCloudinary(file, {
+              restaurantCode: restaurantId,
+              fileType: 'video',
+            });
+            newUrls.push(result.url);
+          }
+          uploadedVideoUrls = [...uploadedVideoUrls, ...newUrls];
+        }
+
+        // Remove metadata fields before saving
+        const cleanItem = { ...item };
+        delete (cleanItem as any)._isPending;
+        delete (cleanItem as any)._isModified;
+        delete (cleanItem as any)._isDeleted;
+        delete (cleanItem as any)._imageFiles;
+        delete (cleanItem as any)._videoFiles;
+        delete (cleanItem as any)._imagePreviews;
+        delete (cleanItem as any)._videoPreviews;
+        delete (cleanItem as any).id; // Remove temp ID for new items
+        
+        // Update with uploaded URLs
+        if (uploadedImageUrls.length > 0) {
+          (cleanItem as any).images = uploadedImageUrls;
+          (cleanItem as any).image = uploadedImageUrls[0];
+        }
+        if (uploadedVideoUrls.length > 0) {
+          (cleanItem as any).videos = uploadedVideoUrls;
+          (cleanItem as any).video = uploadedVideoUrls[0];
+        }
+
+        if (isDeleted) {
+          // Delete from Firebase
+          await deleteDoc(doc(db, `restaurants/${restaurantId}/menu_items/${item.id}`));
+          deletedCount++;
+        } else if (isNewItem) {
+          // Create new in Firebase
+          await addDoc(
+            collection(db, `restaurants/${restaurantId}/menu_items`),
+            cleanItem
+          );
+          createdCount++;
+        } else if (isModified) {
+          // Update existing in Firebase
+          await updateDoc(
+            doc(db, `restaurants/${restaurantId}/menu_items/${item.id}`),
+            cleanItem
+          );
+          updatedCount++;
+        }
+      }
+
+      // Clean up blob URLs
+      pendingItems.forEach(item => {
+        if ((item as any)._imagePreviews) {
+          (item as any)._imagePreviews.forEach((url: string) => {
+            if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+          });
+        }
+        if ((item as any)._videoPreviews) {
+          (item as any)._videoPreviews.forEach((url: string) => {
+            if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+          });
+        }
+      });
+
+      // Reload items from Firebase
+      await loadMenuItems();
+      
+      // Clear pending items
+      setPendingItems([]);
+      
+      alert(`✅ Published successfully!\n${createdCount} created, ${updatedCount} updated, ${deletedCount} deleted.`);
     } catch (err) {
-      console.error('Failed to delete menu item:', err);
+      console.error('Failed to publish changes:', err);
+      alert(`❌ Error publishing changes: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setPublishing(false);
     }
+  }
+
+  function handleDiscardChanges() {
+    if (pendingItems.length === 0) return;
+    
+    if (!confirm(`Discard ${pendingItems.length} pending changes?`)) return;
+    
+    // Clean up blob URLs before discarding
+    pendingItems.forEach(item => {
+      if ((item as any)._imagePreviews) {
+        (item as any)._imagePreviews.forEach((url: string) => {
+          if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+        });
+      }
+      if ((item as any)._videoPreviews) {
+        (item as any)._videoPreviews.forEach((url: string) => {
+          if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+        });
+      }
+    });
+    
+    setPendingItems([]);
   }
 
   async function handleBulkUpload(bulkItems: MenuItemFormData[]) {
@@ -262,8 +458,35 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
       {!showForm ? (
         <>
           <div className="flex justify-between items-center mb-4 gap-3 flex-wrap">
-            <h2 className="text-2xl font-bold text-gray-800">Menu Items ({items.length})</h2>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800">
+                Menu Items ({items.length})
+                {pendingItems.length > 0 && (
+                  <span className="ml-3 text-lg text-orange-600 font-semibold">
+                    {pendingItems.length} Pending
+                  </span>
+                )}
+              </h2>
+            </div>
             <div className="flex gap-3 w-full sm:w-auto flex-wrap">
+              {pendingItems.length > 0 && (
+                <>
+                  <button
+                    onClick={handlePublishToMenu}
+                    disabled={publishing}
+                    className="px-5 py-2.5 bg-gradient-to-br from-green-600 to-green-700 text-white rounded-xl shadow-[4px_4px_8px_rgba(0,0,0,0.15),-2px_-2px_6px_rgba(255,255,255,0.05)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-1px_-1px_3px_rgba(255,255,255,0.05)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)] transition-all font-medium disabled:opacity-50"
+                  >
+                    {publishing ? '⏳ Publishing...' : `✓ Publish ${pendingItems.length} Changes`}
+                  </button>
+                  <button
+                    onClick={handleDiscardChanges}
+                    disabled={publishing}
+                    className="px-5 py-2.5 bg-gradient-to-br from-red-600 to-red-700 text-white rounded-xl shadow-[4px_4px_8px_rgba(0,0,0,0.15),-2px_-2px_6px_rgba(255,255,255,0.05)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-1px_-1px_3px_rgba(255,255,255,0.05)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)] transition-all font-medium disabled:opacity-50"
+                  >
+                    ✕ Discard All
+                  </button>
+                </>
+              )}
               <button
                 onClick={() => setShowSmartImport(true)}
                 className="px-5 py-2.5 bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-xl shadow-[4px_4px_8px_rgba(0,0,0,0.15),-2px_-2px_6px_rgba(255,255,255,0.05)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-1px_-1px_3px_rgba(255,255,255,0.05)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)] transition-all font-medium"
@@ -284,6 +507,27 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
               </button>
             </div>
           </div>
+
+          {pendingItems.length > 0 && (
+            <div className="mb-4 bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <span className="text-2xl">💾</span>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-orange-800">
+                    You have {pendingItems.length} pending change{pendingItems.length > 1 ? 's' : ''}
+                  </h3>
+                  <div className="mt-2 text-sm text-orange-700">
+                    <p>
+                      Changes are saved locally. Click <strong>"Publish Changes"</strong> to save them to Firebase, 
+                      or <strong>"Discard All"</strong> to cancel all pending changes.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mb-4">
             <input
@@ -318,13 +562,14 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
 
           {loading ? (
             <p className="text-gray-600">Loading...</p>
-          ) : items.length === 0 ? (
+          ) : allItems.length === 0 ? (
             <p className="text-gray-600">No menu items yet. Click "Add Item" to get started!</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-100">
                   <tr>
+                    <th className="px-3 sm:px-4 py-2 text-left font-semibold text-gray-700">Status</th>
                     <th className="px-3 sm:px-4 py-2 text-left font-semibold text-gray-700">Name</th>
                     <th className="px-3 sm:px-4 py-2 text-left font-semibold text-gray-700 hidden sm:table-cell">Section</th>
                     <th className="px-3 sm:px-4 py-2 text-left font-semibold text-gray-700">Price</th>
@@ -334,32 +579,53 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredItems.map((item) => (
-                    <tr key={item.id} className="border-t hover:bg-gray-50">
-                      <td className="px-3 sm:px-4 py-3 font-medium">{item.name}</td>
-                      <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">{item.section}</td>
-                      <td className="px-3 sm:px-4 py-3">{formatPrice(item.price, (item as any).currency)}</td>
-                      <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">{(item as any).is_vegetarian ? '🌱' : '-'}</td>
-                      <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">{item.is_todays_special ? '⭐' : '-'}</td>
-                      <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
-                        <button
-                          onClick={() => {
-                            setEditingItem(item);
-                            setShowForm(true);
-                          }}
-                          className="text-blue-600 hover:underline text-xs mr-2"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
-                          className="text-red-600 hover:underline text-xs"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredItems.map((item) => {
+                    const isDeleted = (item as any)._isDeleted;
+                    const isModified = (item as any)._isModified;
+                    const isNew = item.id?.startsWith('pending_') || false;
+                    
+                    return (
+                      <tr 
+                        key={item.id} 
+                        className={`border-t hover:bg-gray-50 ${
+                          isDeleted ? 'bg-red-50 opacity-60 line-through' : 
+                          isNew ? 'bg-green-50' : 
+                          isModified ? 'bg-yellow-50' : ''
+                        }`}
+                      >
+                        <td className="px-3 sm:px-4 py-3 text-xs">
+                          {isDeleted ? '🗑️ Delete' : 
+                           isNew ? '✨ New' : 
+                           isModified ? '✏️ Modified' : 
+                           '✓ Published'}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 font-medium">{item.name}</td>
+                        <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">{item.section}</td>
+                        <td className="px-3 sm:px-4 py-3">{formatPrice(item.price, (item as any).currency)}</td>
+                        <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">{(item as any).is_vegetarian ? '🌱' : '-'}</td>
+                        <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">{item.is_todays_special ? '⭐' : '-'}</td>
+                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                          {!isDeleted && (
+                            <button
+                              onClick={() => {
+                                setEditingItem(item);
+                                setShowForm(true);
+                              }}
+                              className="text-blue-600 hover:underline text-xs mr-2"
+                            >
+                              Edit
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="text-red-600 hover:underline text-xs"
+                          >
+                            {isDeleted ? 'Undo' : 'Delete'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -394,6 +660,11 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
               spice_level: (editingItem as any).spice || (editingItem as any).spice_level,
               sweet_level: (editingItem as any).sweet || (editingItem as any).sweet_level,
               portions: (editingItem as any).portions || [],
+              // Pass pending media data if editing pending item
+              _imageFiles: (editingItem as any)._imageFiles,
+              _videoFiles: (editingItem as any)._videoFiles,
+              _imagePreviews: (editingItem as any)._imagePreviews,
+              _videoPreviews: (editingItem as any)._videoPreviews,
             } : undefined}
             onSubmit={editingItem ? handleUpdateItem : handleAddItem}
             onCancel={() => {
