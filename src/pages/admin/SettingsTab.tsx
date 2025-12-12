@@ -85,7 +85,7 @@ export function SettingsTab({ restaurant, onUpdate }: SettingsTabProps) {
     }
   }, [restaurant.restaurantCode]);
 
-  const templateColors = getTemplateColors(selectedTemplate);
+  const templateColors = getTemplateColors(selectedTemplate) || [];
 
   const currentTheme = {
     mode: themeMode as 'light' | 'dark' | 'custom',
