@@ -41,8 +41,28 @@ export function TodaysSpecial({ items }: TodaysSpecialProps) {
       }}
     >
       <div className="flex items-center gap-2 mb-4">
-        <Sparkles className="w-5 h-5" style={{ color: themeStyles.primaryButtonBg }} />
-        <h2 className="text-xl sm:text-2xl font-bold" style={{ color: themeStyles.primaryButtonBg }}>Today's Special</h2>
+        <Sparkles className="w-5 h-5 animate-bounce" style={{ color: themeStyles.primaryButtonBg, animationDelay: '0.5s' }} />
+        <h2 
+          className="text-xl sm:text-2xl font-bold relative shimmer-text"
+          style={{ 
+            color: themeStyles.primaryButtonBg,
+            background: `linear-gradient(110deg, ${themeStyles.primaryButtonBg} 0%, ${themeStyles.primaryButtonBg} 40%, #ffffff 50%, ${themeStyles.primaryButtonBg} 60%, ${themeStyles.primaryButtonBg} 100%)`,
+            backgroundSize: '200% 100%',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            animation: 'shimmer 3s ease-in-out infinite'
+          }}
+        >
+          Today's Special
+          <style>{`
+            @keyframes shimmer {
+              0% { background-position: -200% 0; }
+              100% { background-position: 200% 0; }
+            }
+          `}</style>
+        </h2>
+        <Sparkles className="w-5 h-5 animate-bounce" style={{ color: themeStyles.primaryButtonBg, animationDelay: '0.5s' }} />
       </div>
 
       <div className="group">
