@@ -118,9 +118,10 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
             onFocus={() => setShowSuggestions(true)}
             placeholder="Search dishes, drinks or sections..."
             style={{
-              borderColor: themeStyles.borderColor,
+              borderColor: themeStyles.borderColor + '40',
+              background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f8)`,
             }}
-            className="w-full border rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2"
+            className="w-full border rounded-xl px-4 py-2 pr-10 shadow-[inset_3px_3px_6px_rgba(0,0,0,0.1),inset_-3px_-3px_6px_rgba(0,0,0,0.03)] focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
           />
 
           {query && (
@@ -138,7 +139,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
         </div>
 
         {filtered.length > 0 && showSuggestions && (
-          <ul className="absolute z-40 left-0 right-0 mt-2 rounded shadow max-h-60 overflow-auto text-sm" style={{ backgroundColor: themeStyles.backgroundColor, borderColor: themeStyles.borderColor, borderWidth: '1px' }}>
+          <ul className="absolute z-40 left-0 right-0 mt-2 rounded-xl shadow-[10px_10px_20px_rgba(0,0,0,0.2),-4px_-4px_12px_rgba(0,0,0,0.05)] max-h-60 overflow-auto text-sm" style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f8)`, borderColor: themeStyles.borderColor + '50', borderWidth: '1px' }}>
             {filtered.map((s, i) => (
               <li
                 key={`${s.type}-${s.title}-${i}`}
@@ -147,9 +148,9 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
                   select(s);
                 }}
                 style={{
-                  backgroundColor: i === focusedIndex ? `${themeStyles.accentBg}30` : 'transparent',
+                  backgroundColor: i === focusedIndex ? `${themeStyles.accentBg}40` : 'transparent',
                 }}
-                className="px-3 py-2 cursor-pointer"
+                className="px-3 py-2 cursor-pointer transition-colors hover:bg-opacity-20 first:rounded-t-xl last:rounded-b-xl"
               >
                 <div className="font-medium">{s.title}</div>
                 {s.subtitle && <div className="text-xs text-gray-500">{s.subtitle}</div>}
@@ -174,8 +175,8 @@ function LegendPane() {
     <div className="mt-2">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm"
-        style={{ backgroundColor: `${themeStyles.accentBg}20`, color: themeStyles.primaryButtonBg }}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm shadow-[6px_6px_12px_rgba(0,0,0,0.12),-4px_-4px_8px_rgba(0,0,0,0.03)] hover:shadow-[3px_3px_6px_rgba(0,0,0,0.12),-2px_-2px_4px_rgba(0,0,0,0.03)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12)] transition-all"
+        style={{ background: `linear-gradient(to bottom, ${themeStyles.accentBg}25, ${themeStyles.accentBg}15)`, color: themeStyles.primaryButtonBg }}
       >
         <span className="font-semibold">Legend</span>
         <span className="text-xs">{open ? 'Hide' : 'Show'}</span>

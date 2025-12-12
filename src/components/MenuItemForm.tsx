@@ -27,6 +27,11 @@ export interface MenuItemFormData {
   spice_level?: number;
   sweet_level?: number;
   portions?: Portion[]; // New: array of portions/sizes with prices
+  // Pending state media (not uploaded yet)
+  _imageFiles?: File[];
+  _videoFiles?: File[];
+  _imagePreviews?: string[];
+  _videoPreviews?: string[];
 }
 
 interface MenuItemFormProps {
@@ -124,18 +129,36 @@ export function MenuItemForm({
   const [newSection, setNewSection] = useState('');
   const [showNewSectionInput, setShowNewSectionInput] = useState(false);
 
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [videoFiles, setVideoFiles] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>(
-    (initialData?.images && initialData.images.length > 0)
-      ? initialData.images
-      : (initialData?.image ? [initialData.image] : [])
-  );
-  const [videoPreviews, setVideoPreviews] = useState<string[]>(
-    (initialData?.videos && initialData.videos.length > 0)
-      ? initialData.videos
-      : (initialData?.video ? [initialData.video] : [])
-  );
+  const [imageFiles, setImageFiles] = useState<File[]>(() => {
+    return (initialData?._imageFiles && Array.isArray(initialData._imageFiles)) ? initialData._imageFiles : [];
+  });
+  const [videoFiles, setVideoFiles] = useState<File[]>(() => {
+    return (initialData?._videoFiles && Array.isArray(initialData._videoFiles)) ? initialData._videoFiles : [];
+  });
+  const [imagePreviews, setImagePreviews] = useState<string[]>(() => {
+    if (initialData?._imagePreviews && Array.isArray(initialData._imagePreviews) && initialData._imagePreviews.length > 0) {
+      return initialData._imagePreviews;
+    }
+    if (initialData?.images && Array.isArray(initialData.images) && initialData.images.length > 0) {
+      return initialData.images;
+    }
+    if (initialData?.image) {
+      return [initialData.image];
+    }
+    return [];
+  });
+  const [videoPreviews, setVideoPreviews] = useState<string[]>(() => {
+    if (initialData?._videoPreviews && Array.isArray(initialData._videoPreviews) && initialData._videoPreviews.length > 0) {
+      return initialData._videoPreviews;
+    }
+    if (initialData?.videos && Array.isArray(initialData.videos) && initialData.videos.length > 0) {
+      return initialData.videos;
+    }
+    if (initialData?.video) {
+      return [initialData.video];
+    }
+    return [];
+  });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [error, setError] = useState<string>('');
@@ -529,40 +552,11 @@ export function MenuItemForm({
     setError('');
 
     try {
+      // Don't upload files yet - store them in pending state
       let imageUrl = formData.image || (formData.images?.[0] ?? undefined);
       let videoUrl = formData.video || (formData.videos?.[0] ?? undefined);
       let uploadedImageUrls: string[] = formData.images ? [...formData.images] : [];
       let uploadedVideoUrls: string[] = formData.videos ? [...formData.videos] : [];
-
-      if (imageFiles.length > 0) {
-        setUploadingImage(true);
-        const newUrls: string[] = [];
-        for (const file of imageFiles) {
-          const result = await uploadToCloudinary(file, {
-            restaurantCode,
-            fileType: 'image',
-          });
-          newUrls.push(result.url);
-        }
-        uploadedImageUrls = [...uploadedImageUrls, ...newUrls].slice(0, MAX_IMAGES);
-        imageUrl = uploadedImageUrls[0];
-        setUploadingImage(false);
-      }
-
-      if (videoFiles.length > 0) {
-        setUploadingVideo(true);
-        const newUrls: string[] = [];
-        for (const file of videoFiles) {
-          const result = await uploadToCloudinary(file, {
-            restaurantCode,
-            fileType: 'video',
-          });
-          newUrls.push(result.url);
-        }
-        uploadedVideoUrls = [...uploadedVideoUrls, ...newUrls].slice(0, MAX_VIDEOS);
-        videoUrl = uploadedVideoUrls[0];
-        setUploadingVideo(false);
-      }
 
       // Validate form
       if (!formData.name.trim()) {
@@ -634,6 +628,16 @@ if (!hasValidPrice) {
       if (formData.spice_level) submitData.spice_level = formData.spice_level;
       if (formData.sweet_level) submitData.sweet_level = formData.sweet_level;
 
+      // Store File objects and previews for pending state
+      if (imageFiles.length > 0) {
+        submitData._imageFiles = imageFiles;
+        submitData._imagePreviews = imagePreviews;
+      }
+      if (videoFiles.length > 0) {
+        submitData._videoFiles = videoFiles;
+        submitData._videoPreviews = videoPreviews;
+      }
+
       await onSubmit(submitData as MenuItemFormData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save menu item');
@@ -673,94 +677,6 @@ if (!hasValidPrice) {
 
 
         <div>
-          {/* <label className="block text-sm font-medium text-gray-700 mb-1">Portion/Size & Price *</label>
-          <div className="flex flex-col gap-2 w-full">
-            {portions.map((portion, idx) => (
-              <div key={idx} className="flex flex-wrap gap-2 items-center w-full">
-                <input
-                  type="text"
-                  value={portion.label}
-                  onChange={e => {
-                    const updated = [...portions];
-                    updated[idx].label = e.target.value;
-                    setPortions(updated);
-                    setFormData({ ...formData, portions: updated });
-                  }}
-                  className="min-w-[80px] max-w-[120px] flex-1 px-2 py-1 border border-gray-300 rounded"
-                  disabled={isLoading}
-                  placeholder="Full/Half/250ml"
-                />
-                <input
-                  type="number"
-                  value={portion.price}
-                  min="0"
-                  step="0.01"
-                  onChange={e => {
-                    const updated = [...portions];
-                    updated[idx].price = parseFloat(e.target.value);
-                    setPortions(updated);
-                    setFormData({ ...formData, portions: updated });
-                  }}
-                  className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded"
-                  disabled={isLoading}
-                  placeholder="Price"
-                />
-                <select
-                  value={portion.currency || 'INR'}
-                  onChange={e => {
-                    const updated = [...portions];
-                    updated[idx].currency = e.target.value as Portion['currency'];
-                    setPortions(updated);
-                    setFormData({ ...formData, portions: updated });
-                  }}
-                  className="min-w-[70px] max-w-[100px] flex-1 px-2 py-1 border border-gray-300 rounded bg-white"
-                  disabled={isLoading}
-                >
-                  <option value="INR">₹ INR</option>
-                  <option value="USD">$ USD</option>
-                  <option value="EUR">€ EUR</option>
-                  <option value="GBP">£ GBP</option>
-                </select>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="radio"
-                    checked={portion.default === true}
-                    onChange={() => {
-                      const updated = portions.map((p, i) => ({ ...p, default: i === idx }));
-                      setPortions(updated);
-                      setFormData({ ...formData, portions: updated });
-                    }}
-                    name="defaultPortion"
-                    disabled={isLoading}
-                  />
-                  <span className="text-xs">Default</span>
-                </div>
-                {portions.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = portions.filter((_, i) => i !== idx);
-                      setPortions(updated);
-                      setFormData({ ...formData, portions: updated });
-                    }}
-                    className="px-2 py-1 bg-red-500 text-white rounded text-xs"
-                    disabled={isLoading}
-                  >Remove</button>
-                )}
-              </div>
-            ))}
-            {portions.length < 5 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setPortions([...portions, { label: '', price: 0, currency: 'INR', default: false }]);
-                }}
-                className="px-3 py-1 bg-blue-500 text-white rounded text-xs w-fit"
-                disabled={isLoading}
-              >+ Add Portion/Size</button>
-            )}
-            <div className="text-xs text-gray-500">E.g., Full/Half for food, 250ml/500ml for drinks. Mark one as default.</div>
-          </div> */}
 
 <label className="block text-sm font-medium text-gray-700 mb-1">Pricing *</label>
 <div className="mb-2">
@@ -1332,7 +1248,7 @@ if (!hasValidPrice) {
             ? '⏳ Uploading images...'
             : uploadingVideo
             ? '⏳ Uploading videos...'
-            : '✓ Save Item'}
+            : '✓ Add to Pending'}
         </button>
         <button
           type="button"

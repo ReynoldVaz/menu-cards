@@ -98,10 +98,13 @@ export function SideDrawer({
 
       {/* Drawer */}
       <aside
-        className="absolute left-0 top-0 h-full w-72 shadow-2xl 
+        className="absolute left-0 top-0 h-full w-72 shadow-[16px_0_32px_rgba(0,0,0,0.2)] 
                    rounded-r-2xl p-5 overflow-y-auto 
                    border-r animate-slideRightSoft"
-        style={{ backgroundColor: themeStyles.backgroundColor, borderColor: themeStyles.borderColor }}
+        style={{ 
+          background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f8)`,
+          borderColor: themeStyles.borderColor 
+        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -111,7 +114,7 @@ export function SideDrawer({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="text-gray-500 hover:text-black text-xl"
+            className="text-gray-500 hover:text-black text-xl w-8 h-8 rounded-full flex items-center justify-center shadow-[3px_3px_6px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12)] transition-all"
           >
             ✕
           </button>
@@ -119,12 +122,12 @@ export function SideDrawer({
 
         {/* Diet Filter Section */}
         {selectedDiets && onDietChange && (
-          <div className="mb-6 rounded-lg" style={{ borderColor: themeStyles.borderColor, borderWidth: '1px' }}>
+          <div className="mb-6 rounded-xl shadow-[6px_6px_12px_rgba(0,0,0,0.15),-4px_-4px_8px_rgba(0,0,0,0.03)]" style={{ borderColor: themeStyles.borderColor + '40', borderWidth: '1px' }}>
             {/* Header - Collapsable */}
             <button
               onClick={() => setDietFilterOpen(!dietFilterOpen)}
-              className="w-full p-4 flex items-center justify-between rounded-lg transition-all"
-              style={{ backgroundColor: hexToRgba(themeStyles.accentBg, 0.1) }}
+              className="w-full p-4 flex items-center justify-between rounded-xl transition-all"
+              style={{ background: `linear-gradient(to bottom, ${hexToRgba(themeStyles.accentBg, 0.15)}, ${hexToRgba(themeStyles.accentBg, 0.05)})` }}
             >
               <div className="text-sm font-semibold" style={{ color: themeStyles.primaryButtonBg }}>🥗 Filter by Diet</div>
               <span style={{ color: themeStyles.primaryButtonBg, transform: dietFilterOpen ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.3s' }}>
@@ -139,11 +142,15 @@ export function SideDrawer({
                   {/* Veg badge */}
                   <button
                     onClick={() => onDietChange('veg')}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                      selectedDiets.has('veg') 
+                        ? 'shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2)]' 
+                        : 'shadow-[2px_2px_4px_rgba(0,0,0,0.08),-2px_-2px_4px_rgba(255,255,255,0.9)] hover:shadow-[1px_1px_2px_rgba(0,0,0,0.08),-1px_-1px_2px_rgba(255,255,255,0.9)]'
+                    }`}
                     style={{
                       backgroundColor: selectedDiets.has('veg') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.08),
                       color: selectedDiets.has('veg') ? 'white' : themeStyles.primaryButtonBg,
-                      borderColor: themeStyles.primaryButtonBg,
+                      borderColor: selectedDiets.has('veg') ? 'transparent' : themeStyles.primaryButtonBg + '30',
                       borderWidth: '1px',
                     }}
                     title="Vegetarian"
@@ -155,11 +162,15 @@ export function SideDrawer({
                   {/* Non-Veg badge */}
                   <button
                     onClick={() => onDietChange('non-veg')}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                      selectedDiets.has('non-veg') 
+                        ? 'shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2)]' 
+                        : 'shadow-[2px_2px_4px_rgba(0,0,0,0.08),-2px_-2px_4px_rgba(255,255,255,0.9)] hover:shadow-[1px_1px_2px_rgba(0,0,0,0.08),-1px_-1px_2px_rgba(255,255,255,0.9)]'
+                    }`}
                     style={{
                       backgroundColor: selectedDiets.has('non-veg') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.08),
                       color: selectedDiets.has('non-veg') ? 'white' : themeStyles.primaryButtonBg,
-                      borderColor: themeStyles.primaryButtonBg,
+                      borderColor: selectedDiets.has('non-veg') ? 'transparent' : themeStyles.primaryButtonBg + '30',
                       borderWidth: '1px',
                     }}
                     title="Non-Veg"
@@ -171,11 +182,15 @@ export function SideDrawer({
                   {/* Vegan badge */}
                   <button
                     onClick={() => onDietChange('vegan')}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                      selectedDiets.has('vegan') 
+                        ? 'shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2)]' 
+                        : 'shadow-[2px_2px_4px_rgba(0,0,0,0.08),-2px_-2px_4px_rgba(255,255,255,0.9)] hover:shadow-[1px_1px_2px_rgba(0,0,0,0.08),-1px_-1px_2px_rgba(255,255,255,0.9)]'
+                    }`}
                     style={{
                       backgroundColor: selectedDiets.has('vegan') ? themeStyles.primaryButtonBg : hexToRgba(themeStyles.primaryButtonBg, 0.08),
                       color: selectedDiets.has('vegan') ? 'white' : themeStyles.primaryButtonBg,
-                      borderColor: themeStyles.primaryButtonBg,
+                      borderColor: selectedDiets.has('vegan') ? 'transparent' : themeStyles.primaryButtonBg + '30',
                       borderWidth: '1px',
                     }}
                     title="Vegan"
@@ -195,18 +210,18 @@ export function SideDrawer({
             <button
               key={s.id}
               onClick={() => goTo(s.id)}
-              className="w-full px-4 py-3 rounded-xl border flex items-center gap-3 shadow-sm"
+              className="w-full px-4 py-3 rounded-xl border flex items-center gap-3 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-4px_-4px_8px_rgba(0,0,0,0.03)] hover:shadow-[3px_3px_6px_rgba(0,0,0,0.12),-2px_-2px_4px_rgba(0,0,0,0.03)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12)] transition-all"
               style={{
-                backgroundColor: hexToRgba(themeStyles.backgroundColor, 0.05),
-                borderColor: themeStyles.borderColor,
+                background: `linear-gradient(to bottom, ${hexToRgba(themeStyles.backgroundColor, 0.8)}, ${hexToRgba(themeStyles.backgroundColor, 0.6)})`,
+                borderColor: themeStyles.borderColor + '50',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = hexToRgba(themeStyles.accentBg, 0.1);
-                e.currentTarget.style.borderColor = themeStyles.accentBg;
+                e.currentTarget.style.background = `linear-gradient(to bottom, ${hexToRgba(themeStyles.accentBg, 0.2)}, ${hexToRgba(themeStyles.accentBg, 0.1)})`;
+                e.currentTarget.style.borderColor = themeStyles.accentBg + '80';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = hexToRgba(themeStyles.backgroundColor, 0.05);
-                e.currentTarget.style.borderColor = themeStyles.borderColor;
+                e.currentTarget.style.background = `linear-gradient(to bottom, ${hexToRgba(themeStyles.backgroundColor, 0.8)}, ${hexToRgba(themeStyles.backgroundColor, 0.6)})`;
+                e.currentTarget.style.borderColor = themeStyles.borderColor + '50';
               }}
             >
               {/* Premium Icon */}

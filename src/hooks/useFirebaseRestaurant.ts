@@ -81,6 +81,8 @@ export interface Restaurant {
   contactPhone?: string;
   captureCustomerPhone?: boolean;
   enableAnalytics?: boolean;
+  enableWhatsAppMarketing?: boolean;
+  whatsappRequestedAt?: string;
 }
 export interface UseFirebaseRestaurantResult {
   restaurant: Restaurant | null;

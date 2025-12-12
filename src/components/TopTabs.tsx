@@ -52,9 +52,9 @@ export function TopTabs({ sections }: { sections: SectionTab[] }) {
   return (
     <div 
       ref={containerRef} 
-      className="sticky top-0 z-30 backdrop-blur-sm"
+      className="sticky top-0 z-30 backdrop-blur-sm shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08),inset_-2px_-2px_4px_rgba(0,0,0,0.03)]"
       style={{ 
-        backgroundColor: themeStyles.backgroundColor,
+        background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f0)`,
         borderBottomColor: themeStyles.borderColor,
         borderBottomWidth: '1px'
       }}
@@ -66,16 +66,17 @@ export function TopTabs({ sections }: { sections: SectionTab[] }) {
               <button
                 key={s.id}
                 onClick={() => goTo(s.id)}
-                className={`flex items-center gap-2 whitespace-nowrap px-3 py-1 rounded-md text-sm ${
-                  active === s.id ? 'font-semibold' : ''
+                className={`flex items-center gap-2 whitespace-nowrap px-3 py-1 rounded-xl text-sm transition-all ${
+                  active === s.id ? 'font-semibold shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12)]' : 'shadow-[3px_3px_6px_rgba(0,0,0,0.12),-2px_-2px_4px_rgba(0,0,0,0.03)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.12),-1px_-1px_2px_rgba(0,0,0,0.03)]'
                 }`}
                 style={
                   active === s.id
                     ? {
-                        backgroundColor: themeStyles.accentBg,
+                        background: `linear-gradient(to bottom, ${themeStyles.accentBg}, ${themeStyles.accentBg}dd)`,
                         color: themeStyles.primaryButtonBg,
                       }
                     : {
+                        background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f5)`,
                         color: themeStyles.textColor,
                       }
                 }

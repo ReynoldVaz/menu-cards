@@ -16,15 +16,14 @@ export function SearchIconButton({ searchBarRef }: SearchIconButtonProps) {
   // Use consistent size 'lg' (36px) for all floating buttons
   const iconSize = getIconSize('lg');
   const borderRadiusClass = searchIcon?.shape === 'circle' ? 'rounded-full' : searchIcon?.shape === 'rounded-square' ? 'rounded-lg' : 'rounded-none';
-  const shadowClass = searchIcon?.shadow || 'shadow-md';
   const animationClass = searchIcon?.animated ? 'hover:scale-110 transition-transform' : '';
 
   return (
     <button
       onClick={() => searchBarRef.current?.focus()}
-      className={`fixed right-4 bottom-36 text-white ${borderRadiusClass} ${shadowClass} ${animationClass} z-[40]`}
+      className={`fixed right-4 bottom-36 text-white ${borderRadiusClass} shadow-[6px_6px_12px_rgba(0,0,0,0.2),-4px_-4px_10px_rgba(255,255,255,0.1)] hover:shadow-[4px_4px_8px_rgba(0,0,0,0.2),-2px_-2px_6px_rgba(255,255,255,0.1)] active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.3)] ${animationClass} z-[40] transition-all`}
       style={{
-        backgroundColor: hexToRgba(themeStyles.primaryButtonBg, 0.85),
+        background: `linear-gradient(145deg, ${hexToRgba(themeStyles.primaryButtonBg, 0.9)}, ${hexToRgba(themeStyles.primaryButtonBg, 0.8)})`,
         padding: `${iconSize / 8}px`
       }}
       title="Search menu"
