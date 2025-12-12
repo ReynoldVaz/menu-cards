@@ -18,6 +18,8 @@ interface Restaurant {
   description?: string;
   isActive: boolean;
   createdAt?: string;
+  enableWhatsAppMarketing?: boolean;
+  whatsappRequestedAt?: string;
 }
 
 interface ApprovalRequest {
@@ -36,9 +38,18 @@ interface ApprovalRequest {
 }
 
 interface AdminTab {
-  id: 'overview' | 'approvals' | 'theme-requests' | 'restaurants' | 'settings';
+  id: 'overview' | 'approvals' | 'theme-requests' | 'restaurants' | 'whatsapp-management' | 'settings';
   label: string;
   icon: string;
+}
+
+interface TwilioConfig {
+  subaccountSid?: string;
+  authToken?: string;
+  whatsappNumber?: string;
+  status?: 'pending' | 'active' | 'inactive';
+  createdAt?: string;
+  isSimulated?: boolean;
 }
 
 export function MasterAdminDashboard() {
@@ -49,12 +60,16 @@ export function MasterAdminDashboard() {
   const [themeRequests, setThemeRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [twilioConfigs, setTwilioConfigs] = useState<Record<string, TwilioConfig>>({});
+  const [creatingSubaccount, setCreatingSubaccount] = useState<string | null>(null);
+  const [whatsappRequests, setWhatsappRequests] = useState<any[]>([]);
 
   const tabs: AdminTab[] = [
     { id: 'overview', label: 'Dashboard', icon: '📊' },
     { id: 'approvals', label: 'Approvals', icon: '📋' },
     { id: 'theme-requests', label: 'Theme Requests', icon: '✨' },
     { id: 'restaurants', label: 'All Restaurants', icon: '🏪' },
+    { id: 'whatsapp-management', label: 'WhatsApp Setup', icon: '💬' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
   ];
 
@@ -66,11 +81,170 @@ export function MasterAdminDashboard() {
     try {
       setLoading(true);
       setError('');
-      await Promise.all([loadRestaurants(), loadApprovalRequests(), loadThemeRequests()]);
+      await Promise.all([loadRestaurants(), loadApprovalRequests(), loadThemeRequests(), loadTwilioConfigs(), loadWhatsAppRequests()]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadWhatsAppRequests() {
+    try {
+      const requestsRef = collection(db, 'whatsapp_requests');
+      const snapshot = await getDocs(requestsRef);
+      
+      const requests = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      
+      setWhatsappRequests(requests);
+    } catch (err) {
+      console.error('Failed to load WhatsApp requests:', err);
+    }
+  }
+
+  async function handleApproveWhatsAppRequest(request: any) {
+    if (!window.confirm(`Approve WhatsApp request for ${request.restaurantName}?`)) {
+      return;
+    }
+
+    try {
+      // Update request status
+      const requestRef = doc(db, 'whatsapp_requests', request.id);
+      await updateDoc(requestRef, {
+        status: 'approved',
+        reviewedAt: new Date().toISOString(),
+        reviewedBy: 'Master Admin',
+      });
+
+      // Find the restaurant
+      const restaurant = restaurants.find(r => r.restaurantCode === request.restaurantCode);
+      if (!restaurant) {
+        throw new Error('Restaurant not found');
+      }
+
+      // Enable phone collection (auto-enabled with WhatsApp)
+      const restaurantRef = doc(db, 'restaurants', restaurant.restaurantCode);
+      await updateDoc(restaurantRef, {
+        captureCustomerPhone: true,
+        updatedAt: new Date().toISOString(),
+      });
+
+      // Create Twilio subaccount
+      await handleCreateTwilioSubaccount(restaurant);
+
+      // Send approval email
+      await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: request.ownerEmail,
+          subject: '✅ WhatsApp Marketing Request Approved',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #16a34a;">WhatsApp Request Approved!</h2>
+              <p>Great news! Your WhatsApp marketing request has been approved.</p>
+              
+              <div style="background-color: #f0fdf4; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #15803d;">What's Next?</h3>
+                <p style="margin: 0;">Your Twilio subaccount has been automatically created. You can now:</p>
+                <ul>
+                  <li>Collect customer phone numbers (auto-enabled)</li>
+                  <li>Send broadcast messages to your subscribers</li>
+                  <li>View your Twilio configuration in the Subscribers tab</li>
+                  <li>Start engaging with your customers via WhatsApp</li>
+                </ul>
+              </div>
+              
+              <p style="color: #6b7280; font-size: 14px;">
+                <strong>Restaurant:</strong> ${request.restaurantName}<br>
+                <strong>Business Phone:</strong> ${request.businessPhone}
+              </p>
+            </div>
+          `,
+        }),
+      });
+
+      // Reload data
+      await loadWhatsAppRequests();
+      alert(`✅ WhatsApp request approved for ${request.restaurantName}`);
+    } catch (err) {
+      console.error('Error approving request:', err);
+      alert('Error approving request: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  }
+
+  async function handleRejectWhatsAppRequest(request: any) {
+    const reason = window.prompt(`Reject WhatsApp request for ${request.restaurantName}?\n\nPlease provide a reason for rejection:`);
+    
+    if (!reason) {
+      return; // User cancelled
+    }
+
+    try {
+      // Update request status
+      const requestRef = doc(db, 'whatsapp_requests', request.id);
+      await updateDoc(requestRef, {
+        status: 'rejected',
+        rejectionReason: reason,
+        reviewedAt: new Date().toISOString(),
+        reviewedBy: 'Master Admin',
+      });
+
+      // Send rejection email
+      await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: request.ownerEmail,
+          subject: '❌ WhatsApp Marketing Request Status',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #dc2626;">WhatsApp Request Update</h2>
+              <p>We've reviewed your WhatsApp marketing request for <strong>${request.restaurantName}</strong>.</p>
+              
+              <div style="background-color: #fef2f2; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626;">
+                <p style="margin: 0; color: #991b1b;"><strong>Status:</strong> Not Approved</p>
+                <p style="margin: 10px 0 0 0;"><strong>Reason:</strong> ${reason}</p>
+              </div>
+              
+              <p>You can submit a new request after addressing the concerns mentioned above.</p>
+              
+              <p style="color: #6b7280; font-size: #14px;">
+                If you have questions, please contact our support team.
+              </p>
+            </div>
+          `,
+        }),
+      });
+
+      // Reload data
+      await loadWhatsAppRequests();
+      alert(`Request rejected for ${request.restaurantName}`);
+    } catch (err) {
+      console.error('Error rejecting request:', err);
+      alert('Error rejecting request: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  }
+
+  async function loadTwilioConfigs() {
+    try {
+      const restaurantsRef = collection(db, 'restaurants');
+      const snapshot = await getDocs(restaurantsRef);
+      
+      const configs: Record<string, TwilioConfig> = {};
+      snapshot.docs.forEach((doc) => {
+        const twilioConfig = doc.data().twilioConfig;
+        if (twilioConfig) {
+          configs[doc.id] = twilioConfig as TwilioConfig;
+        }
+      });
+      
+      setTwilioConfigs(configs);
+    } catch (err) {
+      console.error('Failed to load Twilio configs:', err);
     }
   }
 
@@ -90,6 +264,8 @@ export function MasterAdminDashboard() {
         description: doc.data().description,
         isActive: doc.data().isActive,
         createdAt: doc.data().createdAt,
+        enableWhatsAppMarketing: doc.data().enableWhatsAppMarketing ?? false,
+        whatsappRequestedAt: doc.data().whatsappRequestedAt || null,
       }));
 
       setRestaurants(restaurantsList);
@@ -385,6 +561,78 @@ export function MasterAdminDashboard() {
 
   function navigateToRestaurantDashboard(restaurantCode: string) {
     navigate(`/admin/dashboard?restaurant=${restaurantCode}`);
+  }
+
+  async function handleCreateTwilioSubaccount(restaurant: Restaurant) {
+    if (!window.confirm(`Create Twilio subaccount for ${restaurant.name}?`)) {
+      return;
+    }
+
+    try {
+      setCreatingSubaccount(restaurant.restaurantCode);
+      setError('');
+
+      // Call API to create subaccount
+      const response = await fetch('/api/twilio/create-subaccount', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurantCode: restaurant.restaurantCode,
+          restaurantName: restaurant.name,
+          ownerEmail: restaurant.email,
+          ownerPhone: restaurant.phone,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create subaccount');
+      }
+
+      // Store credentials in Firestore
+      const restaurantRef = doc(db, 'restaurants', restaurant.restaurantCode);
+      await updateDoc(restaurantRef, {
+        twilioConfig: {
+          subaccountSid: data.data.subaccountSid,
+          authToken: data.data.authToken,
+          whatsappNumber: data.data.whatsappNumber,
+          status: data.data.status,
+          createdAt: data.data.createdAt,
+          isSimulated: data.data.isSimulated,
+        },
+        updatedAt: new Date().toISOString(),
+      });
+
+      // Reload data
+      await loadTwilioConfigs();
+      
+      alert(`✅ Twilio subaccount created for ${restaurant.name}${data.data.isSimulated ? ' (SIMULATED - Replace with real credentials)' : ''}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create Twilio subaccount');
+      alert('Error: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setCreatingSubaccount(null);
+    }
+  }
+
+  async function handleDeleteTwilioSubaccount(restaurant: Restaurant) {
+    if (!window.confirm(`Delete Twilio subaccount for ${restaurant.name}? This will disable WhatsApp messaging.`)) {
+      return;
+    }
+
+    try {
+      const restaurantRef = doc(db, 'restaurants', restaurant.restaurantCode);
+      await updateDoc(restaurantRef, {
+        twilioConfig: null,
+        updatedAt: new Date().toISOString(),
+      });
+
+      await loadTwilioConfigs();
+      alert(`✅ Twilio subaccount deleted for ${restaurant.name}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete Twilio subaccount');
+    }
   }
 
   if (loading) {
@@ -768,6 +1016,240 @@ export function MasterAdminDashboard() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* WhatsApp Management Tab */}
+        {activeTab === 'whatsapp-management' && (
+          <div className="space-y-4">
+            {/* Pending Requests Section */}
+            {whatsappRequests.filter(r => r.status === 'pending').length > 0 && (
+              <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">🔔</span>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Pending WhatsApp Requests ({whatsappRequests.filter(r => r.status === 'pending').length})
+                    </h3>
+                    <p className="text-sm text-gray-600">Review and approve requests below</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {whatsappRequests
+                    .filter(r => r.status === 'pending')
+                    .map((request) => (
+                      <div key={request.id} className="border-l-4 border-orange-500 bg-orange-50 rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h4 className="font-bold text-gray-900">{request.restaurantName}</h4>
+                            <p className="text-sm text-gray-600">Code: {request.restaurantCode}</p>
+                          </div>
+                          <span className="px-3 py-1 bg-yellow-200 text-yellow-800 rounded-full text-xs font-medium">
+                            Pending
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                          <div>
+                            <p className="text-xs text-gray-600">Owner Email</p>
+                            <p className="text-sm font-medium">{request.ownerEmail}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Business Phone</p>
+                            <p className="text-sm font-medium">{request.businessPhone}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Message Volume</p>
+                            <p className="text-sm font-medium capitalize">{request.messageVolume}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Requested</p>
+                            <p className="text-sm font-medium">{new Date(request.requestedAt).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+
+                        <div className="mb-3">
+                          <p className="text-xs text-gray-600 mb-1">Use Case</p>
+                          <p className="text-sm bg-white p-2 rounded">{request.useCase}</p>
+                        </div>
+
+                        <div className="mb-4">
+                          <p className="text-xs text-gray-600 mb-1">Sample Message</p>
+                          <p className="text-sm bg-white p-2 rounded italic">"{request.sampleMessage}"</p>
+                        </div>
+
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => handleApproveWhatsAppRequest(request)}
+                            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                          >
+                            ✓ Approve & Create Subaccount
+                          </button>
+                          <button
+                            onClick={() => handleRejectWhatsAppRequest(request)}
+                            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                          >
+                            ✕ Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">WhatsApp Multi-Tenant Setup</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Create and manage Twilio subaccounts for each restaurant. Each restaurant gets isolated WhatsApp messaging capabilities.
+              </p>
+              
+              {/* Instructions */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-blue-900 mb-2">📋 Setup Instructions</h3>
+                <ol className="text-xs sm:text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>Configure master Twilio credentials in environment variables</li>
+                  <li>Click "Create Subaccount" for each restaurant</li>
+                  <li>Subaccount credentials will be stored in Firestore automatically</li>
+                  <li>Restaurant owners can broadcast via SubscribersTab</li>
+                  <li>Monitor usage and costs in Twilio Console</li>
+                </ol>
+              </div>
+
+              {/* Placeholder Warning */}
+              <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-yellow-900 mb-2">⚠️ PLACEHOLDER MODE</h3>
+                <p className="text-xs sm:text-sm text-yellow-800">
+                  Currently using simulated Twilio API calls. To enable real integration:
+                </p>
+                <ul className="text-xs sm:text-sm text-yellow-800 mt-2 space-y-1 list-disc list-inside">
+                  <li>Set <code className="bg-yellow-100 px-1 rounded">TWILIO_MASTER_ACCOUNT_SID</code> in .env</li>
+                  <li>Set <code className="bg-yellow-100 px-1 rounded">TWILIO_MASTER_AUTH_TOKEN</code> in .env</li>
+                  <li>Uncomment Twilio SDK code in API routes</li>
+                  <li>Install Twilio: <code className="bg-yellow-100 px-1 rounded">npm install twilio</code></li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Restaurant List with Twilio Status */}
+            <div className="bg-white rounded-lg shadow overflow-x-auto">
+              <table className="w-full min-w-[800px]">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Restaurant</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Code</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">WhatsApp Status</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Subaccount SID</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">WhatsApp Number</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-900">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {restaurants.map((restaurant) => {
+                    const config = twilioConfigs[restaurant.restaurantCode];
+                    const isCreating = creatingSubaccount === restaurant.restaurantCode;
+                    const isPendingSetup = restaurant.enableWhatsAppMarketing && !config;
+                    
+                    return (
+                      <tr key={restaurant.id} className={`hover:bg-gray-50 ${isPendingSetup ? 'bg-orange-50' : ''}`}>
+                        <td className="px-3 sm:px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium text-gray-900">{restaurant.name}</div>
+                            {isPendingSetup && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-200 text-orange-900">
+                                🔔 Pending
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 font-mono">
+                          {restaurant.restaurantCode}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4">
+                          {config ? (
+                            <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                              config.status === 'active' 
+                                ? 'bg-green-100 text-green-800' 
+                                : config.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {config.status === 'active' ? '✓ Active' : config.status === 'pending' ? '⏳ Pending' : '✗ Inactive'}
+                              {config.isSimulated && ' (SIM)'}
+                            </span>
+                          ) : restaurant.enableWhatsAppMarketing ? (
+                            <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-orange-100 text-orange-800">
+                              🔔 Requested
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-800">
+                              Not Setup
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 font-mono">
+                          {config?.subaccountSid ? `${config.subaccountSid.slice(0, 10)}...` : '-'}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 font-mono">
+                          {config?.whatsappNumber || '-'}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            {!config ? (
+                              <button
+                                onClick={() => handleCreateTwilioSubaccount(restaurant)}
+                                disabled={isCreating}
+                                className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded font-medium transition-colors w-full sm:w-auto"
+                              >
+                                {isCreating ? '⏳ Creating...' : '➕ Create Subaccount'}
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    alert(`Subaccount SID: ${config.subaccountSid}\nAuth Token: ${config.authToken}\nWhatsApp: ${config.whatsappNumber}\nStatus: ${config.status}\n\n${config.isSimulated ? '⚠️ SIMULATED DATA - Replace with real credentials' : ''}`);
+                                  }}
+                                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors w-full sm:w-auto"
+                                >
+                                  📋 View Details
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteTwilioSubaccount(restaurant)}
+                                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors w-full sm:w-auto"
+                                >
+                                  🗑️ Delete
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-gray-600 text-sm font-medium">Total Restaurants</h3>
+                <p className="text-4xl font-bold text-orange-600 mt-2">{restaurants.length}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-gray-600 text-sm font-medium">WhatsApp Enabled</h3>
+                <p className="text-4xl font-bold text-green-600 mt-2">
+                  {Object.keys(twilioConfigs).length}
+                </p>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-gray-600 text-sm font-medium">Pending Setup</h3>
+                <p className="text-4xl font-bold text-blue-600 mt-2">
+                  {restaurants.length - Object.keys(twilioConfigs).length}
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

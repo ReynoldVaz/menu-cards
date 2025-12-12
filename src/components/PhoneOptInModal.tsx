@@ -25,17 +25,52 @@ export function PhoneOptInModal({
 
   if (!isOpen) return null;
 
-  function isValidCustomerPhone(input: string) {
+  function getPhoneValidation(countryCode: string) {
+    // Country-specific phone number lengths
+    const validations: Record<string, { length: number; name: string }> = {
+      '+91': { length: 10, name: 'India' },      // India: 10 digits
+      '+1': { length: 10, name: 'US/Canada' },   // US/Canada: 10 digits
+      '+44': { length: 10, name: 'UK' },         // UK: 10 digits
+      '+61': { length: 9, name: 'Australia' },   // Australia: 9 digits
+      '+971': { length: 9, name: 'UAE' },        // UAE: 9 digits
+      '+65': { length: 8, name: 'Singapore' },   // Singapore: 8 digits
+      '+7': { length: 10, name: 'Russia' },      // Russia: 10 digits
+      '+49': { length: 10, name: 'Germany' },    // Germany: 10-11 digits
+      '+33': { length: 9, name: 'France' },      // France: 9 digits
+      '+39': { length: 10, name: 'Italy' },      // Italy: 10 digits
+    };
+    return validations[countryCode] || { length: 10, name: 'Default' };
+  }
+
+  function isValidCustomerPhone(input: string, countryCode: string) {
+    // Remove all non-digit characters
     const cleaned = input.replace(/[^0-9]/g, '');
-    if (cleaned.length < 10) return false;
-    return /^[+0-9 ()-]+$/.test(input);
+    
+    // Check format - only digits, spaces, dashes, parentheses allowed
+    if (!/^[0-9\s\-()]+$/.test(input)) return false;
+    
+    // Country-specific length validation
+    const validation = getPhoneValidation(countryCode);
+    
+    // Allow exact length or +1 for flexibility
+    if (cleaned.length < validation.length || cleaned.length > validation.length + 1) {
+      return false;
+    }
+    
+    return true;
   }
 
   const fullPhone = countryCode + ' ' + customerPhone.trim();
 
   async function handleOptInSubmit() {
-    if (!isValidCustomerPhone(customerPhone)) {
-      setOptInError('Enter a valid 10-digit phone (digits, +, spaces, () and - allowed).');
+    if (!customerPhone.trim()) {
+      setOptInError('Please enter your phone number.');
+      return;
+    }
+
+    const validation = getPhoneValidation(countryCode);
+    if (!isValidCustomerPhone(customerPhone, countryCode)) {
+      setOptInError(`Please enter a valid ${validation.name} phone number (${validation.length} digits).`);
       return;
     }
 
@@ -66,14 +101,16 @@ export function PhoneOptInModal({
     } catch (e) {
       console.error('Failed to save subscriber phone:', e);
     } finally {
-      localStorage.setItem('customerPhoneOptIn', 'true');
-      localStorage.setItem('customerPhoneNumber', fullPhone);
+      // Restaurant-specific storage
+      localStorage.setItem(`customerPhoneOptIn_${restaurantId}`, 'true');
+      localStorage.setItem(`customerPhoneNumber_${restaurantId}`, fullPhone);
       setTimeout(() => onClose(), 1500);
     }
   }
 
   function handleOptInSkip() {
-    localStorage.setItem('customerPhoneOptOut', 'true');
+    // Restaurant-specific storage
+    localStorage.setItem(`customerPhoneOptOut_${restaurantId}`, 'true');
     onClose();
   }
 

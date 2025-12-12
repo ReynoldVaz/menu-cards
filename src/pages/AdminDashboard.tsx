@@ -141,6 +141,7 @@ export function AdminDashboard() {
           updatedAt: restaurantData.updatedAt,
           captureCustomerPhone: restaurantData.captureCustomerPhone,
           enableAnalytics: restaurantData.enableAnalytics ?? false,
+          enableWhatsAppMarketing: restaurantData.enableWhatsAppMarketing ?? false,
         } as Restaurant);
       } else {
         setError('Restaurant not found');
@@ -242,7 +243,7 @@ export function AdminDashboard() {
                 {activeTab === 'settings' && <SettingsTab restaurant={restaurant} onUpdate={loadUserRestaurant} />}
 
                 {/* Subscribers Tab */}
-                {activeTab === 'subscribers' && <SubscribersTab restaurant={restaurant} />}
+                {activeTab === 'subscribers' && <SubscribersTab restaurant={restaurant} onUpdate={loadUserRestaurant} />}
 
                 {/* QR Tab */}
                 {activeTab === 'qr' && <QRTab restaurant={restaurant} />}

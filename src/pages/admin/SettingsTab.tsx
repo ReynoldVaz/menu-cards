@@ -22,7 +22,6 @@ export function SettingsTab({ restaurant, onUpdate }: SettingsTabProps) {
   const [youtube, setYoutube] = useState(restaurant.youtube || '');
   const [website, setWebsite] = useState(restaurant.website || '');
   const [googleReviews, setGoogleReviews] = useState(restaurant.googleReviews || '');
-  const [captureCustomerPhone, setCaptureCustomerPhone] = useState<boolean>(restaurant.captureCustomerPhone || false);
   const [enableAnalytics, setEnableAnalytics] = useState<boolean>(restaurant.enableAnalytics ?? false);
   const [themeMode, setThemeMode] = useState(restaurant.theme?.mode || 'custom');
   const [primaryColor, setPrimaryColor] = useState(restaurant.theme?.primaryColor || '#EA580C');
@@ -169,7 +168,6 @@ export function SettingsTab({ restaurant, onUpdate }: SettingsTabProps) {
         website: website || null,
         googleReviews: googleReviews || null,
         contactPhone: contactPhone || null,
-        captureCustomerPhone: Boolean(captureCustomerPhone),
         enableAnalytics: Boolean(enableAnalytics),
       };
       if (logoFile && logoUrl) {
@@ -445,19 +443,6 @@ export function SettingsTab({ restaurant, onUpdate }: SettingsTabProps) {
                 </div>
               </div>
             </details>
-            {/* Customer phone capture opt-in – moved below Social links */}
-            <div className="flex items-start gap-3 p-3 border rounded">
-              <input
-                id="captureCustomerPhone"
-                type="checkbox"
-                className="mt-1"
-                checked={captureCustomerPhone}
-                onChange={(e) => setCaptureCustomerPhone(e.target.checked)}
-              />
-              <label htmlFor="captureCustomerPhone" className="text-sm text-gray-700">
-                Enable phone collection prompt for customers scanning the QR. If enabled, visitors will see a dialog asking to provide their phone number to receive updates. They can skip this.
-              </label>
-            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Logo (Optional, max 5MB)</label>

@@ -8,8 +8,9 @@ export function usePhoneOptIn(restaurant: Restaurant | null) {
     if (!restaurant) return;
     
     const shouldPrompt = restaurant.captureCustomerPhone;
-    const alreadyOpted = localStorage.getItem('customerPhoneOptIn') === 'true';
-    const skipped = localStorage.getItem('customerPhoneOptOut') === 'true';
+    // Restaurant-specific localStorage keys
+    const alreadyOpted = localStorage.getItem(`customerPhoneOptIn_${restaurant.id}`) === 'true';
+    const skipped = localStorage.getItem(`customerPhoneOptOut_${restaurant.id}`) === 'true';
     
     if (shouldPrompt && !alreadyOpted && !skipped) {
       setShowOptIn(true);
