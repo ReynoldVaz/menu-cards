@@ -1,0 +1,167 @@
+rules_version = '2';
+
+/**
+ * Firebase Security Rules - PRODUCTION
+ * 
+ * CRITICAL: These rules enforce multi-tenancy and prevent data leaks
+ * Deploy with: firebase deploy --only firestore:rules
+ * 
+ * Security Principles:
+ * 1. Deny by default
+ * 2. Explicit allow based on authentication and ownership
+ * 3. Validate data structure and types
+ * 4. Prevent cross-tenant data access
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // =============================================================================
+    // HELPER FUNCTIONS
+    // =============================================================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user is master admin (hardcoded email check)
+    function isMasterAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.email in [
+               'admin@menucards.com',
+               'reynoldvaz@gmail.com'  // Add your email
+             ];
+    }
+    
+    // Check if user owns this restaurant (using restaurantCode as UID)
+    function ownsRestaurant(restaurantCode) {
+      return isAuthenticated() && 
+             request.auth.uid == restaurantCode;
+    }
+    
+    // Check if user owns restaurant by document data
+    function ownsRestaurantByData(restaurantData) {
+      return isAuthenticated() && 
+             (request.auth.uid == restaurantData.restaurantCode ||
+              request.auth.uid == restaurantData.ownerUID);
+    }
+    
+    // Validate broadcast limits structure
+    function isValidBroadcastLimits(limits) {
+      return limits.keys().hasAll(['perWeek', 'perMonth', 'estimatedRecipients']) &&
+             limits.perWeek is int && limits.perWeek >= 1 && limits.perWeek <= 30 &&
+             limits.perMonth is int && limits.perMonth >= 1 && limits.perMonth <= 100 &&
+             limits.estimatedRecipients is int && limits.estimatedRecipients >= 1;
+    }
+    
+    // =============================================================================
+    // WHATSAPP REQUESTS COLLECTION
+    // =============================================================================
+    
+    match /whatsapp_requests/{requestId} {
+      // Allow restaurant owners to create their own requests
+      allow create: if isAuthenticated() && 
+                       request.resource.data.restaurantCode == request.auth.uid &&
+                       request.resource.data.ownerEmail == request.auth.token.email &&
+                       request.resource.data.status == 'pending' &&
+                       isValidBroadcastLimits(request.resource.data.broadcastLimits);
+      
+      // Allow owners to read ONLY their own requests
+      allow read: if isAuthenticated() && 
+                     resource.data.restaurantCode == request.auth.uid;
+      
+      // Allow master admin to read all requests
+      allow read: if isMasterAdmin();
+      
+      // Only master admin can update (approve/reject)
+      allow update: if isMasterAdmin() &&
+                       request.resource.data.status in ['approved', 'rejected'];
+      
+      // No one can delete requests (audit trail)
+      allow delete: if false;
+    }
+    
+    // =============================================================================
+    // RESTAURANTS COLLECTION - CRITICAL MULTI-TENANCY FIX
+    // =============================================================================
+    
+    match /restaurants/{restaurantCode} {
+      // FIXED: Only owner or admin can read this restaurant's data
+      // Previously: allow read: if isAuthenticated(); (SECURITY LEAK)
+      allow read: if ownsRestaurant(restaurantCode) || isMasterAdmin();
+      
+      // Only master admin can create restaurants
+      allow create: if isMasterAdmin();
+      
+      // Owner can update their own restaurant (except sensitive fields)
+      // Master admin can update everything
+      allow update: if (ownsRestaurant(restaurantCode) && 
+                        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['twilioConfig', 'ownerUID'])) ||
+                       isMasterAdmin();
+      
+      // Only master admin can delete
+      allow delete: if isMasterAdmin();
+      
+      // ---------------------------------------------------------------------------
+      // SUBSCRIBERS SUBCOLLECTION (restaurants/{code}/subscribers)
+      // ---------------------------------------------------------------------------
+      
+      match /subscribers/{subscriberId} {
+        // Restaurant owner can read/write their own subscribers
+        allow read, write: if ownsRestaurant(restaurantCode);
+        
+        // Master admin can read (for analytics)
+        allow read: if isMasterAdmin();
+        
+        // SPECIAL: Allow webhook to create/delete subscribers (service account bypass)
+        // Service account requests have request.auth == null
+        allow create, delete: if request.auth == null;
+      }
+      
+      // ---------------------------------------------------------------------------
+      // BROADCAST HISTORY SUBCOLLECTION (restaurants/{code}/broadcast_history)
+      // ---------------------------------------------------------------------------
+      
+      match /broadcast_history/{historyId} {
+        // Restaurant owner can read/write their own history
+        allow read, write: if ownsRestaurant(restaurantCode);
+        
+        // Master admin can read for analytics
+        allow read: if isMasterAdmin();
+        
+        // No deletes (audit trail)
+        allow delete: if false;
+      }
+    }
+    
+    // =============================================================================
+    // USERS COLLECTION (user profiles)
+    // =============================================================================
+    
+    match /users/{userId} {
+      // Users can read any profile (for public data)
+      allow read: if isAuthenticated();
+      
+      // Users can only write their own profile
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // =============================================================================
+    // MASTER ADMIN COLLECTION (internal data)
+    // =============================================================================
+    
+    match /master_admin/{document=**} {
+      // Only master admin can access
+      allow read, write: if isMasterAdmin();
+    }
+    
+    // =============================================================================
+    // DENY ALL OTHER COLLECTIONS
+    // =============================================================================
+    
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

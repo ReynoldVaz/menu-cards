@@ -2,10 +2,11 @@
  * Twilio WhatsApp Message Sending API
  * Sends WhatsApp messages using restaurant's Twilio subaccount credentials
  * 
- * PLACEHOLDERS:
- * - Subaccount credentials fetched from Firestore
- * - Real Twilio API integration
+ * SECURITY: Expects encrypted authToken from client
+ * Decrypts token before using with Twilio API
  */
+
+import { decryptToken, safeDecrypt } from '../../src/utils/encryption.ts';
 
 export default async function handler(req, res) {
   // Only allow POST
@@ -31,6 +32,18 @@ export default async function handler(req, res) {
       });
     }
 
+    // SECURITY FIX: Decrypt auth token before using
+    let decryptedAuthToken;
+    try {
+      decryptedAuthToken = safeDecrypt(authToken);
+    } catch (error) {
+      console.error('[Twilio] Failed to decrypt auth token:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to decrypt authentication token'
+      });
+    }
+
     if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
       return res.status(400).json({ 
         success: false, 
@@ -51,7 +64,8 @@ export default async function handler(req, res) {
     console.log('[Twilio] Recipients:', recipients.length);
 
     // TODO: Use real Twilio SDK in production
-    // const client = require('twilio')(subaccountSid, authToken);
+    // IMPORTANT: Use decryptedAuthToken instead of authToken
+    // const client = require('twilio')(subaccountSid, decryptedAuthToken);
     // const results = await Promise.all(
     //   recipients.map(async (phone) => {
     //     try {

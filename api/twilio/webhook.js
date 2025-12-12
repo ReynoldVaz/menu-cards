@@ -3,10 +3,13 @@
  * Handles incoming WhatsApp messages for STOP/START commands
  * Automatically manages subscriber opt-outs/opt-ins
  * Deployed on Vercel serverless
+ * 
+ * SECURITY: Validates Twilio webhook signature to prevent spoofing
  */
 
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import twilio from 'twilio';
 
 // Initialize Firebase Admin (only once)
 if (!getApps().length) {
@@ -33,6 +36,44 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'text/xml');
     return res.status(405).send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
   }
+
+  // SECURITY FIX: Validate Twilio webhook signature
+  const twilioSignature = req.headers['x-twilio-signature'];
+  
+  if (!twilioSignature) {
+    console.error('[Webhook] Missing Twilio signature');
+    res.setHeader('Content-Type', 'text/xml');
+    return res.status(403).send('<?xml version="1.0" encoding="UTF-8"?><Response><Message>Forbidden</Message></Response>');
+  }
+
+  // Construct the full URL
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const url = `${protocol}://${host}${req.url}`;
+
+  // Validate signature using Twilio's helper
+  const authToken = process.env.TWILIO_MASTER_AUTH_TOKEN;
+  
+  if (!authToken) {
+    console.error('[Webhook] TWILIO_MASTER_AUTH_TOKEN not configured');
+    res.setHeader('Content-Type', 'text/xml');
+    return res.status(500).send('<?xml version="1.0" encoding="UTF-8"?><Response><Message>Configuration error</Message></Response>');
+  }
+
+  const isValidSignature = twilio.validateRequest(
+    authToken,
+    twilioSignature,
+    url,
+    req.body
+  );
+
+  if (!isValidSignature) {
+    console.error('[Webhook] Invalid Twilio signature. Possible spoofing attempt.');
+    res.setHeader('Content-Type', 'text/xml');
+    return res.status(403).send('<?xml version="1.0" encoding="UTF-8"?><Response><Message>Invalid signature</Message></Response>');
+  }
+
+  console.log('[Webhook] Signature validated successfully');
 
   try {
     const { From, Body, To } = req.body;
