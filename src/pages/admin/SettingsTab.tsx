@@ -222,28 +222,28 @@ export function SettingsTab({ restaurant, onUpdate }: SettingsTabProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 space-y-8">
+    <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl shadow-[8px_8px_16px_rgba(0,0,0,0.1),-8px_-8px_16px_rgba(255,255,255,0.9)] p-6 space-y-8">
       <div>
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Settings</h2>
         
         {/* Restaurant Details */}
-        <div className="space-y-4 pb-8 border-b">
+        <div className="space-y-4 pb-8 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-700">Restaurant Details</h3>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Restaurant Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-xl bg-gradient-to-br from-white to-gray-50 shadow-[inset_2px_2px_4px_rgba(0,0,0,0.06),inset_-2px_-2px_4px_rgba(255,255,255,0.5)] focus:outline-none focus:ring-2 focus:ring-blue-400 transition-shadow"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-24"
+              className="w-full px-4 py-3 rounded-xl bg-gradient-to-br from-white to-gray-50 shadow-[inset_2px_2px_4px_rgba(0,0,0,0.06),inset_-2px_-2px_4px_rgba(255,255,255,0.5)] focus:outline-none focus:ring-2 focus:ring-blue-400 transition-shadow h-24"
             />
           </div>
           {/* Enable Analytics Toggle */}

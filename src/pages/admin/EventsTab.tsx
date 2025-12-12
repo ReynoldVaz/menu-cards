@@ -109,14 +109,14 @@ export function EventsTab({ restaurantId }: EventsTabProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl shadow-[8px_8px_16px_rgba(0,0,0,0.1),-8px_-8px_16px_rgba(255,255,255,0.9)] p-6">
       {!showForm ? (
         <>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Events ({events.length})</h2>
             <button
               onClick={() => setShowForm(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium"
+              className="px-5 py-2.5 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-[4px_4px_8px_rgba(0,0,0,0.15),-2px_-2px_6px_rgba(255,255,255,0.1)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-1px_-1px_3px_rgba(255,255,255,0.1)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2)] transition-all font-medium"
             >
               ➕ Add Event
             </button>
