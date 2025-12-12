@@ -6,7 +6,8 @@ import type { Restaurant } from '../../hooks/useFirebaseRestaurant';
 // FEATURE FLAG: BYON (Bring Your Own Number)
 // Set to true when ready to enable number porting feature
 // Currently disabled pending proper Twilio porting integration
-const BYON_ENABLED = false;
+// const BYON_ENABLED = false;
+const BYON_ENABLED = true;
 
 interface SubscribersTabProps {
   restaurant: Restaurant;

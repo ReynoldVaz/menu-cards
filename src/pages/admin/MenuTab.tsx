@@ -4,6 +4,7 @@ import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, getDoc, query, 
 import type { MenuItem } from '../../data/menuData';
 import { MenuItemForm, type MenuItemFormData } from '../../components/MenuItemForm';
 import { BulkUploadMenu } from '../../components/BulkUploadMenu';
+import { SmartMenuImport } from '../../components/SmartMenuImport';
 import { formatPrice } from '../../utils/formatPrice';
 
 interface MenuTabProps {
@@ -19,6 +20,7 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
   const [savingItem, setSavingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showSmartImport, setShowSmartImport] = useState(false);
 
   useEffect(() => {
     loadMenuItems();
@@ -261,12 +263,18 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
         <>
           <div className="flex justify-between items-center mb-4 gap-3 flex-wrap">
             <h2 className="text-2xl font-bold text-gray-800">Menu Items ({items.length})</h2>
-            <div className="flex gap-3 w-full sm:w-auto">
+            <div className="flex gap-3 w-full sm:w-auto flex-wrap">
+              <button
+                onClick={() => setShowSmartImport(true)}
+                className="px-5 py-2.5 bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-xl shadow-[4px_4px_8px_rgba(0,0,0,0.15),-2px_-2px_6px_rgba(255,255,255,0.05)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-1px_-1px_3px_rgba(255,255,255,0.05)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)] transition-all font-medium"
+              >
+                📸 Smart Import
+              </button>
               <button
                 onClick={() => setShowBulkUpload(true)}
                 className="px-5 py-2.5 bg-gradient-to-br from-gray-700 to-gray-800 text-white rounded-xl shadow-[4px_4px_8px_rgba(0,0,0,0.15),-2px_-2px_6px_rgba(255,255,255,0.05)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-1px_-1px_3px_rgba(255,255,255,0.05)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)] transition-all font-medium"
               >
-                ⬆️ Bulk Import
+                ⬆️ CSV Import
               </button>
               <button
                 onClick={() => setShowForm(true)}
@@ -287,10 +295,21 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
             />
           </div>
 
+          {showSmartImport && (
+            <SmartMenuImport
+              restaurantId={restaurantId}
+              onExtractedData={(extractedItems) => {
+                handleBulkUpload(extractedItems);
+                setShowSmartImport(false);
+              }}
+              onClose={() => setShowSmartImport(false)}
+            />
+          )}
+
           {showBulkUpload && (
             <div className="mb-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-800">Bulk Import</h3>
+                <h3 className="font-semibold text-gray-800">CSV Bulk Import</h3>
                 <button onClick={() => setShowBulkUpload(false)} className="text-sm text-gray-600 hover:text-gray-800">Close</button>
               </div>
               <BulkUploadMenu onUpload={handleBulkUpload} isLoading={savingItem} />
