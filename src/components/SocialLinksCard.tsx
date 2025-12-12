@@ -33,7 +33,7 @@ export function SocialLinksCard({ restaurant }: SocialLinksCardProps) {
 
   return (
     <div
-      className="mx-auto max-w-md rounded-2xl shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.8)] p-4"
+      className="mx-auto max-w-md rounded-2xl shadow-[8px_8px_16px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(0,0,0,0.03)] p-4"
       style={{ 
         background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f5)`,
         border: `1px solid ${themeStyles.borderColor}60` 
@@ -49,7 +49,7 @@ export function SocialLinksCard({ restaurant }: SocialLinksCardProps) {
             href={l.url!}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center w-10 h-10 rounded-full text-base shadow-[3px_3px_6px_rgba(0,0,0,0.1),-3px_-3px_6px_rgba(255,255,255,0.9)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.1),-2px_-2px_4px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.15)] transition-all"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full text-base shadow-[4px_4px_8px_rgba(0,0,0,0.15),-3px_-3px_6px_rgba(0,0,0,0.03)] hover:shadow-[3px_3px_6px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(0,0,0,0.03)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.15)] transition-all"
             style={{
               background: `linear-gradient(to bottom, ${l.bg}, ${l.bg}dd)`,
               color: themeStyles.primaryButtonBg,

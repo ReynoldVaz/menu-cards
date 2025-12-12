@@ -102,7 +102,7 @@ useEffect(() => {
 
       {/* Modal card with scale/opacity entrance */}
       <div
-        className={`relative max-w-3xl w-full mx-0 sm:mx-0 rounded-2xl shadow-[16px_16px_32px_rgba(0,0,0,0.2),-8px_-8px_24px_rgba(255,255,255,0.7)] overflow-hidden max-h-[90vh] flex flex-col transform transition-all duration-300 ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        className={`relative max-w-3xl w-full mx-0 sm:mx-0 rounded-2xl shadow-[16px_16px_32px_rgba(0,0,0,0.3),-8px_-8px_24px_rgba(0,0,0,0.08)] overflow-hidden max-h-[90vh] flex flex-col transform transition-all duration-300 ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
         style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f5)` }}
       >
         
@@ -134,7 +134,7 @@ useEffect(() => {
           <button
             onClick={onClose}
             aria-label="Close"
-            className="text-gray-500 hover:text-gray-800 w-8 h-8 rounded-full flex items-center justify-center shadow-[3px_3px_6px_rgba(0,0,0,0.1),-3px_-3px_6px_rgba(255,255,255,0.9)] hover:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1)] active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.15)] transition-all text-xl"
+            className="text-gray-500 hover:text-gray-800 w-8 h-8 rounded-full flex items-center justify-center shadow-[4px_4px_8px_rgba(0,0,0,0.15),-3px_-3px_6px_rgba(0,0,0,0.03)] hover:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12)] active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.15)] transition-all text-xl"
           >
             ✕
           </button>
@@ -153,7 +153,7 @@ useEffect(() => {
               ) : (
                 <>
                   <div
-                    className="w-full rounded-2xl overflow-hidden flex items-center justify-center shadow-[8px_8px_16px_rgba(0,0,0,0.15),-4px_-4px_12px_rgba(255,255,255,0.1)] ring-1 ring-white/10 relative touch-pan-y"
+                    className="w-full rounded-2xl overflow-hidden flex items-center justify-center shadow-[8px_8px_16px_rgba(0,0,0,0.2),-4px_-4px_12px_rgba(0,0,0,0.05)] ring-1 ring-white/10 relative touch-pan-y"
                     style={{
                       background: activeMedia?.type === 'image' ? 'transparent' : '#000',
                       aspectRatio: activeMedia?.type === 'video' && videoAspectRatio ? `${videoAspectRatio}` : undefined,
@@ -244,7 +244,7 @@ useEffect(() => {
                         className={`flex-shrink-0 rounded-xl overflow-hidden border bg-black/40 hover:scale-[1.03] transition-all duration-200 ${
                           i === index 
                             ? 'shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)]' 
-                            : 'shadow-[3px_3px_6px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.1)]'
+                            : 'shadow-[4px_4px_8px_rgba(0,0,0,0.2),-2px_-2px_4px_rgba(0,0,0,0.05)]'
                         }`}
                         style={{
                           borderWidth: i === index ? '2px' : '1px',
@@ -300,8 +300,8 @@ useEffect(() => {
                     onClick={() => setTab(t as any)}
                     className={`px-3 py-1 rounded-xl text-sm font-medium transition-all ${
                       tab === t 
-                        ? 'shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12),inset_-2px_-2px_4px_rgba(255,255,255,0.5)]' 
-                        : 'shadow-[3px_3px_6px_rgba(0,0,0,0.08),-3px_-3px_6px_rgba(255,255,255,0.8)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.08),-2px_-2px_4px_rgba(255,255,255,0.8)]'
+                        ? 'shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12),inset_-2px_-2px_4px_rgba(0,0,0,0.05)]' 
+                        : 'shadow-[4px_4px_8px_rgba(0,0,0,0.12),-3px_-3px_6px_rgba(0,0,0,0.03)] hover:shadow-[3px_3px_6px_rgba(0,0,0,0.12),-2px_-2px_4px_rgba(0,0,0,0.03)]'
                     }`}
                     style={
                       tab === t
@@ -322,14 +322,14 @@ useEffect(() => {
 
               <div className="mt-4">
                 {tab === 'description' && (
-                  <div className="p-4 rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.06),inset_-2px_-2px_4px_rgba(255,255,255,0.5)]" style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}f8, ${themeStyles.backgroundColor})` }}>
+                  <div className="p-4 rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08),inset_-2px_-2px_4px_rgba(0,0,0,0.03)]" style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}f8, ${themeStyles.backgroundColor})` }}>
                     <h4 className="font-semibold text-gray-800">Description</h4>
                     <p className="text-sm text-gray-600 mt-1">{item.description}</p>
                   </div>
                 )}
 
                 {tab === 'ingredients' && (
-                  <div className="p-4 rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.06),inset_-2px_-2px_4px_rgba(255,255,255,0.5)]" style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}f8, ${themeStyles.backgroundColor})` }}>
+                  <div className="p-4 rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08),inset_-2px_-2px_4px_rgba(0,0,0,0.03)]" style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}f8, ${themeStyles.backgroundColor})` }}>
                     <h4 className="font-semibold text-gray-800">Ingredients</h4>
                     {item.ingredients && (
                       <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
@@ -347,7 +347,7 @@ useEffect(() => {
                 )}
 
                 {tab === 'price' && (
-                  <div className="p-4 rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.06),inset_-2px_-2px_4px_rgba(255,255,255,0.5)]" style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}f8, ${themeStyles.backgroundColor})` }}>
+                  <div className="p-4 rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08),inset_-2px_-2px_4px_rgba(0,0,0,0.03)]" style={{ background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}f8, ${themeStyles.backgroundColor})` }}>
                     <h4 className="font-semibold text-gray-800">Price</h4>
                     {portions.length > 1 ? (
   <div className="flex flex-wrap gap-2 mt-1">
@@ -359,7 +359,7 @@ useEffect(() => {
       return (
         <span
           key={idx}
-          className="inline-block text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-xl shadow-[3px_3px_6px_rgba(0,0,0,0.08),-3px_-3px_6px_rgba(255,255,255,0.8)]"
+          className="inline-block text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-xl shadow-[4px_4px_8px_rgba(0,0,0,0.12),-3px_-3px_6px_rgba(0,0,0,0.03)]"
           style={{ 
             color: themeStyles.primaryButtonBg,
             background: 'linear-gradient(to bottom, #f9fafb, #f3f4f6)'

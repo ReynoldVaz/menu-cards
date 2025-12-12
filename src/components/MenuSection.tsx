@@ -219,8 +219,8 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
     backgroundColor: themeStyles.accentBg,
     color: themeStyles.primaryButtonBg,
     boxShadow: open 
-      ? 'inset 3px 3px 6px rgba(0,0,0,0.1), inset -3px -3px 6px rgba(255,255,255,0.7)'
-      : '6px 6px 12px rgba(0,0,0,0.1), -6px -6px 12px rgba(255,255,255,0.9)'
+      ? 'inset 3px 3px 6px rgba(0,0,0,0.15), inset -3px -3px 6px rgba(0,0,0,0.05)'
+      : '6px 6px 12px rgba(0,0,0,0.2), -6px -6px 12px rgba(0,0,0,0.05)'
   }}
 >
   <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -276,7 +276,7 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
           {items.map((item) => (
             <div
               key={item.name}
-              className="group p-3 sm:p-4 rounded-2xl flex items-center gap-4 transition-all hover:shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.5)]"
+              className="group p-3 sm:p-4 rounded-2xl flex items-center gap-4 transition-all hover:shadow-[6px_6px_12px_rgba(0,0,0,0.15),-4px_-4px_8px_rgba(0,0,0,0.03)]"
               style={{ 
                 backgroundColor: `${themeStyles.accentBg}20`,
                 boxShadow: '6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.5)'
@@ -421,7 +421,7 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
                                 [item.id ?? item.name]: !prev[item.id ?? item.name]
                               }));
                             }}
-                            className="font-bold text-xs sm:text-sm whitespace-nowrap rounded-xl px-2 py-1 pr-6 max-w-[90px] min-w-[70px] transition-all cursor-pointer hover:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.08),inset_-3px_-3px_6px_rgba(255,255,255,0.6)] flex items-center justify-between"
+                            className="font-bold text-xs sm:text-sm whitespace-nowrap rounded-xl px-2 py-1 pr-6 max-w-[90px] min-w-[70px] transition-all cursor-pointer hover:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.12),inset_-3px_-3px_6px_rgba(0,0,0,0.05)] flex items-center justify-between"
                             style={{ 
                               color: themeStyles.primaryButtonBg, 
                               background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f5)`,
@@ -461,7 +461,7 @@ const [selectedPortionIdxMap, setSelectedPortionIdxMap] = useState<{ [itemId: st
                                 }}
                               />
                               <div
-                                className="absolute right-0 mt-1 rounded-xl overflow-hidden z-20 shadow-[6px_6px_12px_rgba(0,0,0,0.15),-4px_-4px_10px_rgba(255,255,255,0.8)] min-w-[110px]"
+                                className="absolute right-0 mt-1 rounded-xl overflow-hidden z-20 shadow-[8px_8px_16px_rgba(0,0,0,0.25),-4px_-4px_10px_rgba(0,0,0,0.05)] min-w-[110px]"
                                 style={{ 
                                   background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f8)`
                                 }}

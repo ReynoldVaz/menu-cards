@@ -10,7 +10,7 @@ export function EventCard({ event }: EventCardProps) {
   const themeStyles = useThemeStyles();
   return (
     <div 
-      className="rounded-2xl p-4 sm:p-6 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.8)] hover:shadow-[8px_8px_16px_rgba(0,0,0,0.12),-8px_-8px_16px_rgba(255,255,255,0.9)] transition-all duration-300" 
+      className="rounded-2xl p-4 sm:p-6 shadow-[8px_8px_16px_rgba(0,0,0,0.15),-6px_-6px_12px_rgba(0,0,0,0.03)] hover:shadow-[10px_10px_20px_rgba(0,0,0,0.2),-8px_-8px_16px_rgba(0,0,0,0.05)] transition-all duration-300" 
       style={{ 
         background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f5)`,
         borderColor: themeStyles.borderColor + '40', 
@@ -54,7 +54,7 @@ export function EventCard({ event }: EventCardProps) {
             src={(event as any).image}
             alt={event.title}
             loading="lazy"
-            className="w-32 h-24 object-cover rounded-xl border shadow-[4px_4px_8px_rgba(0,0,0,0.08),-2px_-2px_4px_rgba(255,255,255,0.5)]"
+            className="w-32 h-24 object-cover rounded-xl border shadow-[6px_6px_12px_rgba(0,0,0,0.12),-2px_-2px_4px_rgba(0,0,0,0.03)]"
             style={{ borderColor: themeStyles.borderColor + '50' }}
           />
         )}

@@ -55,7 +55,7 @@ function App({ analyticsSummary }: AppProps) {
     >
       <div className="w-full">
         <div className="w-full">
-          <div className="rounded-2xl shadow-[12px_12px_24px_rgba(0,0,0,0.15),-12px_-12px_24px_rgba(255,255,255,0.7)] overflow-hidden relative" style={{ backgroundColor: themeStyles.backgroundColor, borderColor: themeStyles.borderColor, borderWidth: '1px' }}>             <SearchIconButton searchBarRef={searchBarRef} />
+          <div className="rounded-2xl shadow-[12px_12px_24px_rgba(0,0,0,0.2),-12px_-12px_24px_rgba(0,0,0,0.05)] overflow-hidden relative" style={{ backgroundColor: themeStyles.backgroundColor, borderColor: themeStyles.borderColor, borderWidth: '1px' }}>             <SearchIconButton searchBarRef={searchBarRef} />
             <Header onMenuClick={() => setDrawerOpen(true)} />
 
 
@@ -92,7 +92,7 @@ function App({ analyticsSummary }: AppProps) {
 
             <MenuFab onClick={() => setDrawerOpen(true)} />
 
-            <div className="p-6 sm:p-10 space-y-12">
+            <div className="p-6 sm:p-10 space-y-6">
 
               <SearchBar
                 ref={searchBarRef}

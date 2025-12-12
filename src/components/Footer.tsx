@@ -12,7 +12,7 @@ interface FooterProps {
 export function Footer({ restaurant, themeStyles, companyPhone }: FooterProps) {
   return (
     <div 
-      className="backdrop-blur-md py-8 px-6 sm:px-12 text-center shadow-[inset_0_6px_12px_rgba(0,0,0,0.08),inset_0_-2px_6px_rgba(255,255,255,0.4)]"
+      className="backdrop-blur-md py-8 px-6 sm:px-12 text-center shadow-[inset_0_6px_12px_rgba(0,0,0,0.1),inset_0_-2px_6px_rgba(0,0,0,0.03)]"
       style={{ 
         background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}f8, ${themeStyles.backgroundColor})`,
         borderTop: '1px solid ' + themeStyles.borderColor + '60'

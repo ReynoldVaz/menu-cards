@@ -114,7 +114,7 @@ export function SideDrawer({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="text-gray-500 hover:text-black text-xl w-8 h-8 rounded-full flex items-center justify-center shadow-[2px_2px_4px_rgba(0,0,0,0.1),-2px_-2px_4px_rgba(255,255,255,0.9)] hover:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1)] transition-all"
+            className="text-gray-500 hover:text-black text-xl w-8 h-8 rounded-full flex items-center justify-center shadow-[3px_3px_6px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12)] transition-all"
           >
             ✕
           </button>
@@ -122,7 +122,7 @@ export function SideDrawer({
 
         {/* Diet Filter Section */}
         {selectedDiets && onDietChange && (
-          <div className="mb-6 rounded-xl shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.8)]" style={{ borderColor: themeStyles.borderColor + '40', borderWidth: '1px' }}>
+          <div className="mb-6 rounded-xl shadow-[6px_6px_12px_rgba(0,0,0,0.15),-4px_-4px_8px_rgba(0,0,0,0.03)]" style={{ borderColor: themeStyles.borderColor + '40', borderWidth: '1px' }}>
             {/* Header - Collapsable */}
             <button
               onClick={() => setDietFilterOpen(!dietFilterOpen)}
@@ -210,7 +210,7 @@ export function SideDrawer({
             <button
               key={s.id}
               onClick={() => goTo(s.id)}
-              className="w-full px-4 py-3 rounded-xl border flex items-center gap-3 shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.8)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.08),-2px_-2px_4px_rgba(255,255,255,0.8)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1)] transition-all"
+              className="w-full px-4 py-3 rounded-xl border flex items-center gap-3 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-4px_-4px_8px_rgba(0,0,0,0.03)] hover:shadow-[3px_3px_6px_rgba(0,0,0,0.12),-2px_-2px_4px_rgba(0,0,0,0.03)] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12)] transition-all"
               style={{
                 background: `linear-gradient(to bottom, ${hexToRgba(themeStyles.backgroundColor, 0.8)}, ${hexToRgba(themeStyles.backgroundColor, 0.6)})`,
                 borderColor: themeStyles.borderColor + '50',

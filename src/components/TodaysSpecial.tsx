@@ -33,7 +33,7 @@ export function TodaysSpecial({ items }: TodaysSpecialProps) {
 
   return (
     <div
-      className="mb-12 p-4 sm:p-6 rounded-2xl shadow-[8px_8px_16px_rgba(0,0,0,0.12),-8px_-8px_16px_rgba(255,255,255,0.8)]"
+      className="mb-6 p-4 sm:p-6 rounded-2xl shadow-[8px_8px_16px_rgba(0,0,0,0.2),-8px_-8px_16px_rgba(0,0,0,0.05)]"
       style={{
         background: `linear-gradient(135deg, ${hexToRgba(themeStyles.accentBg, 0.6)}, ${hexToRgba(themeStyles.accentBg, 0.3)})`,
         borderColor: themeStyles.borderColor + '40',

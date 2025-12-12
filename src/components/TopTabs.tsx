@@ -52,7 +52,7 @@ export function TopTabs({ sections }: { sections: SectionTab[] }) {
   return (
     <div 
       ref={containerRef} 
-      className="sticky top-0 z-30 backdrop-blur-sm shadow-[inset_2px_2px_4px_rgba(0,0,0,0.06),inset_-2px_-2px_4px_rgba(255,255,255,0.5)]"
+      className="sticky top-0 z-30 backdrop-blur-sm shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08),inset_-2px_-2px_4px_rgba(0,0,0,0.03)]"
       style={{ 
         background: `linear-gradient(to bottom, ${themeStyles.backgroundColor}, ${themeStyles.backgroundColor}f0)`,
         borderBottomColor: themeStyles.borderColor,
@@ -67,7 +67,7 @@ export function TopTabs({ sections }: { sections: SectionTab[] }) {
                 key={s.id}
                 onClick={() => goTo(s.id)}
                 className={`flex items-center gap-2 whitespace-nowrap px-3 py-1 rounded-xl text-sm transition-all ${
-                  active === s.id ? 'font-semibold shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1)]' : 'shadow-[2px_2px_4px_rgba(0,0,0,0.08),-2px_-2px_4px_rgba(255,255,255,0.8)] hover:shadow-[1px_1px_2px_rgba(0,0,0,0.08),-1px_-1px_2px_rgba(255,255,255,0.8)]'
+                  active === s.id ? 'font-semibold shadow-[inset_2px_2px_4px_rgba(0,0,0,0.12)]' : 'shadow-[3px_3px_6px_rgba(0,0,0,0.12),-2px_-2px_4px_rgba(0,0,0,0.03)] hover:shadow-[2px_2px_4px_rgba(0,0,0,0.12),-1px_-1px_2px_rgba(0,0,0,0.03)]'
                 }`}
                 style={
                   active === s.id
