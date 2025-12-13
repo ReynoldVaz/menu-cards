@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../firebase.config';
-import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, getDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, getDoc, query, where, writeBatch } from 'firebase/firestore';
 import type { MenuItem } from '../../data/menuData';
 import { MenuItemForm, type MenuItemFormData } from '../../components/MenuItemForm';
 import { BulkUploadMenu } from '../../components/BulkUploadMenu';
@@ -180,7 +180,12 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
   }
 
   // Combine published and pending items for display
-  const allItems = [...items, ...pendingItems];
+  // Remove items from published list that are in pending (to avoid duplicates)
+  const pendingIds = new Set(pendingItems.map(p => p.id));
+  const nonPendingItems = items.filter(item => !pendingIds.has(item.id));
+  
+  // Put pending items first, then published items
+  const allItems = [...pendingItems, ...nonPendingItems];
   
   // Global search: substring match across key fields
   const filteredItems = allItems.filter((item) => {
@@ -243,13 +248,23 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
   async function handlePublishToMenu() {
     if (pendingItems.length === 0) return;
     
-    if (!confirm(`Publish ${pendingItems.length} changes to Firebase?`)) return;
+    if (!confirm(`Publish ${pendingItems.length} changes to Menu?`)) return;
 
     try {
       setPublishing(true);
       let createdCount = 0;
       let updatedCount = 0;
       let deletedCount = 0;
+
+      // Step 1: Upload all media files first
+      console.log('📤 Step 1/2: Uploading media files...');
+      const processedItems: Array<{
+        item: MenuItem;
+        cleanData: any;
+        isNew: boolean;
+        isDeleted: boolean;
+        isModified: boolean;
+      }> = [];
 
       for (const item of pendingItems) {
         const isNewItem = item.id?.startsWith('pending_') || false;
@@ -261,7 +276,7 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
         let uploadedVideoUrls: string[] = (item as any).videos || [];
         
         if ((item as any)._imageFiles && (item as any)._imageFiles.length > 0) {
-          console.log(`Uploading ${(item as any)._imageFiles.length} images for ${item.name}...`);
+          console.log(`  Uploading ${(item as any)._imageFiles.length} images for ${item.name}...`);
           const { uploadToCloudinary } = await import('../../utils/cloudinaryUpload');
           const newUrls: string[] = [];
           for (const file of (item as any)._imageFiles) {
@@ -275,7 +290,7 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
         }
         
         if ((item as any)._videoFiles && (item as any)._videoFiles.length > 0) {
-          console.log(`Uploading ${(item as any)._videoFiles.length} videos for ${item.name}...`);
+          console.log(`  Uploading ${(item as any)._videoFiles.length} videos for ${item.name}...`);
           const { uploadToCloudinary } = await import('../../utils/cloudinaryUpload');
           const newUrls: string[] = [];
           for (const file of (item as any)._videoFiles) {
@@ -309,25 +324,41 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
           (cleanItem as any).video = uploadedVideoUrls[0];
         }
 
-        if (isDeleted) {
-          // Delete from Firebase
-          await deleteDoc(doc(db, `restaurants/${restaurantId}/menu_items/${item.id}`));
-          deletedCount++;
-        } else if (isNewItem) {
-          // Create new in Firebase
-          await addDoc(
-            collection(db, `restaurants/${restaurantId}/menu_items`),
-            cleanItem
-          );
-          createdCount++;
-        } else if (isModified) {
-          // Update existing in Firebase
-          await updateDoc(
-            doc(db, `restaurants/${restaurantId}/menu_items/${item.id}`),
-            cleanItem
-          );
-          updatedCount++;
+        processedItems.push({
+          item,
+          cleanData: cleanItem,
+          isNew: isNewItem,
+          isDeleted,
+          isModified,
+        });
+      }
+
+      // Step 2: Batch write to Firebase (up to 500 operations per batch)
+      console.log('💾 Step 2/2: Writing to Firebase in batches...');
+      const BATCH_SIZE = 500;
+      
+      for (let i = 0; i < processedItems.length; i += BATCH_SIZE) {
+        const batch = writeBatch(db);
+        const batchItems = processedItems.slice(i, i + BATCH_SIZE);
+        
+        for (const { item, cleanData, isNew, isDeleted, isModified } of batchItems) {
+          if (isDeleted) {
+            const docRef = doc(db, `restaurants/${restaurantId}/menu_items/${item.id}`);
+            batch.delete(docRef);
+            deletedCount++;
+          } else if (isNew) {
+            const docRef = doc(collection(db, `restaurants/${restaurantId}/menu_items`));
+            batch.set(docRef, cleanData);
+            createdCount++;
+          } else if (isModified) {
+            const docRef = doc(db, `restaurants/${restaurantId}/menu_items/${item.id}`);
+            batch.update(docRef, cleanData);
+            updatedCount++;
+          }
         }
+        
+        await batch.commit();
+        console.log(`  ✓ Batch ${Math.floor(i / BATCH_SIZE) + 1} committed (${batchItems.length} operations)`);
       }
 
       // Clean up blob URLs
@@ -520,7 +551,7 @@ export function MenuTab({ restaurantId }: MenuTabProps) {
                   </h3>
                   <div className="mt-2 text-sm text-orange-700">
                     <p>
-                      Changes are saved locally. Click <strong>"Publish Changes"</strong> to save them to Firebase, 
+                      Changes are saved locally. Click <strong>"Publish Changes"</strong> to save them to Menu, 
                       or <strong>"Discard All"</strong> to cancel all pending changes.
                     </p>
                   </div>
