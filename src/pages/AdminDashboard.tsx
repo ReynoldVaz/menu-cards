@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { db, auth } from '../firebase.config';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { onAuthStateChanged, type User } from 'firebase/auth';
@@ -10,6 +10,7 @@ import { EventsTab } from './admin/EventsTab';
 import { SettingsTab } from './admin/SettingsTab';
 import { QRTab } from './admin/QRTab';
 import { SubscribersTab } from './admin/SubscribersTab';
+import { ExitConfirmDialog } from '../components/ExitConfirmDialog';
 
 interface AdminDashboardTab {
   id: 'restaurants' | 'menu' | 'events' | 'settings' | 'qr' | 'subscribers';
@@ -22,8 +23,12 @@ export function AdminDashboard() {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<AdminDashboardTab['id']>('restaurants');
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true to prevent flash
   const [error, setError] = useState<string>('');
+  const [authChecked, setAuthChecked] = useState(false); // Track if auth check is complete
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const location = useLocation();
 
   const tabs: AdminDashboardTab[] = [
     { id: 'restaurants', label: 'Restaurant', icon: '' },
@@ -44,9 +49,10 @@ export function AdminDashboard() {
         if (cancelled) return;
         if (!user) {
           setError('Not authenticated');
-          navigate('/admin/auth');
+          navigate('/', { replace: true }); // Redirect to landing page
           return;
         }
+        setAuthChecked(true); // Auth is valid, allow rendering
         await loadRestaurant();
       } finally {
         if (!cancelled) setLoading(false);
@@ -55,6 +61,69 @@ export function AdminDashboard() {
     init();
     return () => { cancelled = true; };
   }, [searchParams]);
+
+  // Handle browser back/forward button
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      
+      // Show confirmation dialog
+      setShowExitDialog(true);
+      
+      // Push current state back to prevent immediate navigation
+      window.history.pushState(null, '', location.pathname + location.search);
+    };
+
+    // Push initial state
+    window.history.pushState(null, '', location.pathname + location.search);
+    
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [location.pathname, location.search]);
+
+  // Intercept clicks on links
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a');
+      
+      if (link && link.href) {
+        const url = new URL(link.href);
+        const currentPath = window.location.pathname;
+        
+        // Check if navigating away from dashboard
+        if (url.pathname !== currentPath && currentPath === '/admin/dashboard') {
+          e.preventDefault();
+          setPendingNavigation(url.pathname + url.search + url.hash);
+          setShowExitDialog(true);
+        }
+      }
+    };
+    
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
+  }, []);
+
+  const handleExitConfirm = useCallback(() => {
+    setShowExitDialog(false);
+    
+    if (pendingNavigation) {
+      // Navigate to pending destination
+      navigate(pendingNavigation, { replace: true });
+      setPendingNavigation(null);
+    } else {
+      // Handle browser back button - navigate to landing page
+      navigate('/', { replace: true });
+    }
+  }, [pendingNavigation, navigate]);
+
+  const handleExitCancel = useCallback(() => {
+    setShowExitDialog(false);
+    setPendingNavigation(null);
+  }, []);
 
   function ensureAuth(): Promise<User | null> {
     if (auth.currentUser) return Promise.resolve(auth.currentUser);
@@ -151,8 +220,26 @@ export function AdminDashboard() {
     }
   }
 
+  // Don't render anything until auth is checked to prevent flash
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100">
+    <>
+      <ExitConfirmDialog 
+        isOpen={showExitDialog}
+        onConfirm={handleExitConfirm}
+        onCancel={handleExitCancel}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100">
       {/* Header */}
       <div className="bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 shadow-[inset_-2px_-2px_5px_rgba(255,255,255,0.7),inset_2px_2px_5px_rgba(0,0,0,0.1)]">
         <div className="max-w-7xl mx-auto px-4 py-6">
@@ -257,5 +344,6 @@ export function AdminDashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }
