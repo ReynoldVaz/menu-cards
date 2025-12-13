@@ -91,6 +91,11 @@ export function AdminDashboard() {
       const link = target.closest('a');
       
       if (link && link.href) {
+        // Skip links that open in new tab/window
+        if (link.target === '_blank' || link.target === '_new') {
+          return;
+        }
+        
         const url = new URL(link.href);
         const currentPath = window.location.pathname;
         
